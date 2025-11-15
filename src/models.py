@@ -4,7 +4,18 @@ from datetime import datetime, timezone
 from typing import Optional
 
 class Base(DeclarativeBase):
-    pass
+    __abstract__ = True
+
+    repr_cols_num: int = 10
+    repr_cols: list[str] = []
+
+    def __repr__(self):
+        cols = []
+        for idx, col in enumerate(self.__table__.columns.keys()):
+            if col in self.repr_cols or idx < self.repr_cols_num:
+                cols.append(f"{col}={getattr(self, col)}")
+
+        return f"<{self.__class__.__name__} {", ".join(cols)}>"
 
 
 class UserORM(Base):

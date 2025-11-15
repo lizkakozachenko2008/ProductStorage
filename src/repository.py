@@ -1,6 +1,6 @@
-from typing import List, Type, TypeVar
+from typing import Any, List, Optional, Type, TypeVar, Sequence
 
-from sqlalchemy import update, delete, select, ClauseElement
+from sqlalchemy import select
 
 from src.database import db
 from src.models import (
@@ -41,12 +41,11 @@ class SqlAlchemyRepository[ModelType]:
 
     def update(
         self,
-        data: dict,
-        conditions: List[ClauseElement] = None,
+        data: dict[str, Any],
         **filters
-    ) -> ModelType:
+    ) -> Optional[ModelType]:
         with db.session as session:
-            query = session.query(self.model).filter(*conditions or [], **filters)
+            query = session.query(self.model).filter_by(**filters)
             obj = query.one_or_none()
 
             if obj:
@@ -54,12 +53,13 @@ class SqlAlchemyRepository[ModelType]:
                     setattr(obj, key, value)
                 session.commit()
 
+            print(obj)
+
             return obj
 
     def delete(self,
-        conditions: List[ClauseElement] = None,
         **filters
-    ) -> ModelType:
+    ) -> Optional[ModelType]:
         with db.session as session:
             obj = session.query(self.model).filter_by(**filters).first()
             if obj:
@@ -70,34 +70,30 @@ class SqlAlchemyRepository[ModelType]:
 
     def find(
             self,
-            conditions: List[ClauseElement] = None,
             **filters
-    ) -> ModelType:
+    ) -> Optional[ModelType]:
         with db.session as session:
             query = (
                 select(self.model)
-                .where(*(conditions or []))
                 .filter_by(**filters)
             )
 
             result = session.execute(query)
-            return result.scalars().first()
+            return result.scalar_one_or_none()
 
     def find_all(
             self,
-            conditions: List[ClauseElement] = None,
             **filters,
-    ) -> List[ModelType]:
+    ) -> Sequence[ModelType]:
         with db.session as session:
             query = (
                 select(self.model)
-                .where(*(conditions or []))
                 .filter_by(**filters)
             )
 
             result = session.execute(query)
 
-            return result.unique().scalars().all()
+            return result.scalars().all()
 
     # МЕТОДЫ ДЛЯ ЗАПРОСОВ
     def find_low_stock(self):

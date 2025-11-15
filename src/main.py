@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import APIRouter, FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 import uvicorn
@@ -36,8 +36,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# СДЕЛАТЬ РАЗДЕЛЕНИЕ СРОЧНО ИНЧЕ ВСЁ ПОЛЕТИТ 😭😭😭😭😭
+user_router = APIRouter(
+    prefix="/users",
+    tags=["Users"]
+)
+# user_router = APIRouter(
+#     prefix="",
+#     tags=[""]
+# )
+# user_router = APIRouter(
+#     prefix=""
+# )
+# user_router = APIRouter(
+#     prefix=""
+# )
+# user_router = APIRouter(
+#     prefix=""
+# )
+# user_router = APIRouter(
+#     prefix=""
+# )
+# user_router = APIRouter(
+#     prefix=""
+# )
+# user_router = APIRouter(
+#     prefix=""
+# )
+
+
 # ДЛЯ ПОЛЬЗОВАТЕЛЕЙ
-@app.get("/users", response_model=list[UserDTO])
+@user_router.get("", response_model=list[UserDTO])
 def get_users(user_service: UserServiceType):
     return user_service.get_all_users()
 
@@ -49,15 +79,13 @@ def get_user(user_id: int, user_service: UserServiceType):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 @app.post("/users", response_model=UserDTO)
-def create_user(user: UserCreateDTO, user_service: UserServiceType):
-    return user_service.add_one_user(user)
+def create_user(user: UserCreateDTO, user_service: UserServiceType) -> UserDTO:
+    user_db = user_service.add_one_user(user)
+    return user_db
 
 @app.put("/users/{user_id}", response_model=UserDTO)
 def update_user(user_id: int, user: UserBaseDTO, user_service: UserServiceType):
-    try:
-        return user_service.update_user(user_id, user)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user_service.update_user(user_id, user)
 
 @app.delete("/users/{user_id}", response_model=UserDTO)
 def delete_user(user_id: int, user_service: UserServiceType):
@@ -66,7 +94,10 @@ def delete_user(user_id: int, user_service: UserServiceType):
     except Exception:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
+
 # ДЛЯ АДМИНИСТРАТОРОВ 
+
+
 @app.get("/admins", response_model=list[AdminDTO])
 def get_admins(admin_service: AdminServiceType):
     return admin_service.get_all_admins()
@@ -88,6 +119,7 @@ def delete_admin(login: str, admin_service: AdminServiceType):
         return admin_service.delete_admin(login)
     except Exception:
         raise HTTPException(status_code=404, detail="Администратор не найден")
+
 
 # ДЛЯ КАТЕГОРИЙ
 @app.get("/categories", response_model=list[CategoryDTO])
@@ -119,6 +151,7 @@ def delete_category(category_id: int, category_service: CategoryServiceType):
     except Exception:
         raise HTTPException(status_code=404, detail="Категория не найдена")
 
+
 #  ДЛЯ ТОВАРОВ 
 @app.get("/products", response_model=list[ProductDTO])
 def get_products(product_service: ProductServiceType):
@@ -148,6 +181,7 @@ def delete_product(product_id: int, product_service: ProductServiceType):
         return product_service.delete_product(product_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Товар не найден")
+
 
 #  ДЛЯ ОТСТОЙНИКОВ
 @app.get("/overflow-bins", response_model=list[OverflowBinDTO])
@@ -179,6 +213,7 @@ def delete_overflow_bin(bin_id: int, overflow_bin_service: OverflowBinServiceTyp
     except Exception:
         raise HTTPException(status_code=404, detail="Отстойник не найден")
 
+
 # ДЛЯ ЗАКАЗОВ НА ПОКУПКУ 
 @app.get("/purchase-orders", response_model=list[PurchaseOrderDTO])
 def get_purchase_orders(purchase_order_service: PurchaseOrderServiceType):
@@ -208,6 +243,7 @@ def delete_purchase_order(order_id: int, purchase_order_service: PurchaseOrderSe
         return purchase_order_service.delete_purchase_order(order_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Заказ на покупку не найден")
+
 
 # ДЛЯ СТЕЛЛАЖЕЙ 
 @app.get("/shelves", response_model=list[ShelfDTO])
@@ -239,6 +275,7 @@ def delete_shelf(shelf_id: int, shelf_service: ShelfServiceType):
     except Exception:
         raise HTTPException(status_code=404, detail="Стеллаж не найден")
 
+
 # ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ
 @app.get("/movement-history", response_model=list[MovementHistoryDTO])
 def get_movement_history(movement_history_service: MovementHistoryServiceType):
@@ -254,6 +291,7 @@ def get_movement_history_record(history_id: int, movement_history_service: Movem
 @app.post("/movement-history", response_model=MovementHistoryDTO)
 def create_movement_history(movement_history: MovementHistoryCreateDTO, movement_history_service: MovementHistoryServiceType):
     return movement_history_service.add_one_movement_history(movement_history)
+
 
 # ДЛЯ УВЕДОМЛЕНИЙ
 @app.get("/notifications", response_model=list[NotificationDTO])
@@ -285,6 +323,7 @@ def delete_notification(notification_id: int, notification_service: Notification
     except Exception:
         raise HTTPException(status_code=404, detail="Уведомление не найдено")
 
+
 # ДЛЯ РАЗМЕЩЕНИЯ ТОВАРОВ 
 @app.get("/product-placements", response_model=list[ProductPlacementDTO])
 def get_product_placements(product_placement_service: ProductPlacementServiceType):
@@ -314,6 +353,7 @@ def delete_product_placement(placement_id: int, product_placement_service: Produ
         return product_placement_service.delete_product_placement(placement_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Размещение товара не найдено")
+
 
 # ДЛЯ ПОСТАВОК 
 @app.get("/supplies", response_model=list[SupplyDTO])
@@ -345,6 +385,7 @@ def delete_supply(supply_id: int, supply_service: SupplyServiceType):
     except Exception:
         raise HTTPException(status_code=404, detail="Поставка не найдена")
 
+
 # ЗАПРОСЫ 
 @app.get("/products/low-stock", response_model=list[ProductDTO])
 def get_low_stock_products(product_service: ProductServiceType):
@@ -361,6 +402,22 @@ def get_recent_movements(
 @app.get('/')
 def root():
     return RedirectResponse('/docs')
+
+
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+app.include_router(user_router)
+
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8000)

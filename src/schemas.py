@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, EmailStr
+from pydantic import BaseModel, ConfigDict, Field, EmailStr, field_validator
 from typing import Optional, Annotated
 from datetime import datetime
 
@@ -13,9 +13,17 @@ class UserCreateDTO(UserBaseDTO):
     password: PasswordType
     confirm_password: PasswordType
 
+    @field_validator("confirm_password")
+    def passwords_match(cls, v, info):
+        password = info.data.get("password")
+        if password != v:
+            raise ValueError("Passwords do not match")
+        return v
+
 class UserDTO(UserBaseDTO):
-    id: int
     model_config = ConfigDict(from_attributes=True)
+
+    id: int
 
 # Admin DTOs
 class AdminBaseDTO(BaseModel):
@@ -25,20 +33,32 @@ class AdminCreateDTO(AdminBaseDTO):
     password: PasswordType
     confirm_password: PasswordType
 
+    @field_validator("confirm_password")
+    def passwords_match(cls, v, info):
+        password = info.data.get("password")
+        if password != v:
+            raise ValueError("Passwords do not match")
+        return v
+
+
 class AdminDTO(AdminBaseDTO):
     model_config = ConfigDict(from_attributes=True)
+
 
 # Category DTOs
 class CategoryBaseDTO(BaseModel):
     name: Annotated[str, Field(max_length=100)]
     description: Optional[str] = None
 
+
 class CategoryCreateDTO(CategoryBaseDTO):
     pass
+
 
 class CategoryDTO(CategoryBaseDTO):
     id: int
     model_config = ConfigDict(from_attributes=True)
+
 
 # Product DTOs
 class ProductBaseDTO(BaseModel):
@@ -50,25 +70,31 @@ class ProductBaseDTO(BaseModel):
     current_quantity: int = 0
     price: Optional[float] = None
 
+
 class ProductCreateDTO(ProductBaseDTO):
     pass
+
 
 class ProductDTO(ProductBaseDTO):
     id: int
     model_config = ConfigDict(from_attributes=True)
+
 
 # OverflowBin DTOs
 class OverflowBinBaseDTO(BaseModel):
     product_id: int
     quantity: int = 0
 
+
 class OverflowBinCreateDTO(OverflowBinBaseDTO):
     pass
+
 
 class OverflowBinDTO(OverflowBinBaseDTO):
     id: int
     date_added: datetime
     model_config = ConfigDict(from_attributes=True)
+
 
 # PurchaseOrder DTOs
 class PurchaseOrderBaseDTO(BaseModel):
@@ -76,14 +102,17 @@ class PurchaseOrderBaseDTO(BaseModel):
     quantity: int = 0
     status: Annotated[str, Field(max_length=50)] = 'pending'
 
+
 class PurchaseOrderCreateDTO(PurchaseOrderBaseDTO):
     pass
+
 
 class PurchaseOrderDTO(PurchaseOrderBaseDTO):
     id: int
     order_date: datetime
     created_date: datetime
     model_config = ConfigDict(from_attributes=True)
+
 
 # Shelf DTOs
 class ShelfBaseDTO(BaseModel):
@@ -92,12 +121,15 @@ class ShelfBaseDTO(BaseModel):
     max_capacity: int
     current_quantity: int = 0
 
+
 class ShelfCreateDTO(ShelfBaseDTO):
     pass
+
 
 class ShelfDTO(ShelfBaseDTO):
     id: int
     model_config = ConfigDict(from_attributes=True)
+
 
 # MovementHistory DTOs
 class MovementHistoryBaseDTO(BaseModel):
@@ -108,13 +140,16 @@ class MovementHistoryBaseDTO(BaseModel):
     to_overflow: bool = False
     quantity: int = 0
 
+
 class MovementHistoryCreateDTO(MovementHistoryBaseDTO):
     pass
+
 
 class MovementHistoryDTO(MovementHistoryBaseDTO):
     id: int
     movement_date: datetime
     model_config = ConfigDict(from_attributes=True)
+
 
 # Notification DTOs
 class NotificationBaseDTO(BaseModel):
@@ -123,14 +158,17 @@ class NotificationBaseDTO(BaseModel):
     message: str
     priority: Annotated[str, Field(max_length=20)] = 'medium'
 
+
 class NotificationCreateDTO(NotificationBaseDTO):
     pass
+
 
 class NotificationDTO(NotificationBaseDTO):
     id: int
     is_read: bool = False
     created_date: datetime
     model_config = ConfigDict(from_attributes=True)
+
 
 # ProductPlacement DTOs
 class ProductPlacementBaseDTO(BaseModel):
@@ -139,8 +177,10 @@ class ProductPlacementBaseDTO(BaseModel):
     overflow_id: Optional[int] = None
     quantity: int = 0
 
+
 class ProductPlacementCreateDTO(ProductPlacementBaseDTO):
     pass
+
 
 class ProductPlacementDTO(ProductPlacementBaseDTO):
     id: int
@@ -148,14 +188,17 @@ class ProductPlacementDTO(ProductPlacementBaseDTO):
     last_updated: datetime
     model_config = ConfigDict(from_attributes=True)
 
+
 # Supply DTOs
 class SupplyBaseDTO(BaseModel):
     product_id: int
     quantity: int
     status: Annotated[str, Field(max_length=50)] = 'delivered'
 
+
 class SupplyCreateDTO(SupplyBaseDTO):
     pass
+
 
 class SupplyDTO(SupplyBaseDTO):
     id: int

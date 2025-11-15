@@ -1,4 +1,4 @@
-from src.models import Base, UserORM
+from src.models import AdminORM, Base, UserORM
 from src.database import db
 
 def setup_db():
@@ -6,6 +6,18 @@ def setup_db():
         bind=db.engine
     )
     
+    with db.session as session:
+        admin = session.query(AdminORM)
+
+        if admin is None:
+            mock_admin = AdminORM(
+                login="admin",
+                password="12341234"
+            )
+
+            session.add(mock_admin)
+            session.commit()
+
     with db.session as session:
         users = session.query(UserORM)
         if not users:

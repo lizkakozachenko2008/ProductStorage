@@ -1,5 +1,7 @@
 from typing import Annotated
-from fastapi import Depends
+from fastapi import Depends, HTTPException
+from starlette import status
+from sqlalchemy import exc
 from src.repository import RepoFactory, SqlAlchemyRepository
 from src.schemas import (
     UserBaseDTO, UserCreateDTO, UserDTO,
@@ -30,13 +32,20 @@ class UserService:
     
     def add_one_user(self, user: UserCreateDTO) -> UserDTO:
         user_dict = user.model_dump()
+        user_dict.pop("confirm_password")
         db_user = self.user_repo.create(user_dict)
         return UserDTO.model_validate(db_user)
     
     def update_user(self, user_id: int, user: UserBaseDTO) -> UserDTO:
         user_dict = user.model_dump()
-        db_user = self.user_repo.update(user_dict, id=user_id)
-        return UserDTO.model_validate(db_user)
+        db_user = self.user_repo.update(data=user_dict, id=user_id)
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User is None"
+            )
+        user = UserDTO.model_validate(db_user)
+        return user
     
     def delete_user(self, user_id: int) -> UserDTO:
         user = self.user_repo.delete(id=user_id)
@@ -61,9 +70,16 @@ class AdminService:
         return AdminDTO.model_validate(admin)
     
     def add_one_admin(self, admin: AdminCreateDTO) -> AdminDTO:
-        admin_dict = admin.model_dump()
-        db_admin = self.admin_repo.create(admin_dict)
-        return AdminDTO.model_validate(db_admin)
+        try:
+            admin_dict = admin.model_dump()
+            admin_dict.pop("confirm_password")
+            db_admin = self.admin_repo.create(admin_dict)
+            return AdminDTO.model_validate(db_admin)
+        except exc.IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This login is alredy used"
+            )
     
     def delete_admin(self, login: str) -> AdminDTO:
         admin = self.admin_repo.delete(login=login)
@@ -132,6 +148,9 @@ class ProductService:
     def delete_product(self, product_id: int) -> ProductDTO:
         product = self.product_repo.delete(id=product_id)
         return ProductDTO.model_validate(product)
+    
+    def get_low_stock_products(self):
+        return self.product_repo.find_low_stock()
 
 def product_service():
     return ProductService(product_repo=RepoFactory.product_repo())
