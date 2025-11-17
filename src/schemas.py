@@ -9,39 +9,22 @@ class UserBaseDTO(BaseModel):
     email: EmailStr
     login: Annotated[str, Field(max_length=100)]
 
+
 class UserCreateDTO(UserBaseDTO):
     password: PasswordType
-    confirm_password: PasswordType
 
-    @field_validator("confirm_password")
-    def passwords_match(cls, v, info):
-        password = info.data.get("password")
-        if password != v:
-            raise ValueError("Passwords do not match")
-        return v
 
-class UserDTO(UserBaseDTO):
+class UserDTO(UserCreateDTO):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
 
 # Admin DTOs
-class AdminBaseDTO(BaseModel):
+class AdminCreateDTO(BaseModel):
     login: Annotated[str, Field(max_length=100)]
-
-class AdminCreateDTO(AdminBaseDTO):
     password: PasswordType
-    confirm_password: PasswordType
 
-    @field_validator("confirm_password")
-    def passwords_match(cls, v, info):
-        password = info.data.get("password")
-        if password != v:
-            raise ValueError("Passwords do not match")
-        return v
-
-
-class AdminDTO(AdminBaseDTO):
+class AdminDTO(AdminCreateDTO):
     model_config = ConfigDict(from_attributes=True)
 
 

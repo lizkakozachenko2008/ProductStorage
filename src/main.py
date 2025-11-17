@@ -3,25 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 import uvicorn
 from src.setup_db import setup_db
-from src.schemas import (
-    UserBaseDTO, UserCreateDTO, UserDTO,
-    AdminCreateDTO, AdminDTO,
-    CategoryBaseDTO, CategoryCreateDTO, CategoryDTO,
-    ProductBaseDTO, ProductCreateDTO, ProductDTO,
-    OverflowBinBaseDTO, OverflowBinCreateDTO, OverflowBinDTO,
-    PurchaseOrderBaseDTO, PurchaseOrderCreateDTO, PurchaseOrderDTO,
-    ShelfBaseDTO, ShelfCreateDTO, ShelfDTO,
-    MovementHistoryCreateDTO, MovementHistoryDTO,
-    NotificationBaseDTO, NotificationCreateDTO, NotificationDTO,
-    ProductPlacementBaseDTO, ProductPlacementCreateDTO, ProductPlacementDTO,
-    SupplyBaseDTO, SupplyCreateDTO, SupplyDTO
-)
-from src.service import (
-    UserServiceType, AdminServiceType, CategoryServiceType, ProductServiceType,
-    OverflowBinServiceType, PurchaseOrderServiceType, ShelfServiceType,
-    MovementHistoryServiceType, NotificationServiceType, ProductPlacementServiceType,
-    SupplyServiceType
-)
+from src.schemas import *
+
+from src.service import *
+
 from src.settings import settings
 
 setup_db()
@@ -148,10 +133,16 @@ def update_category(category_id: int, category: CategoryBaseDTO, category_servic
 def delete_category(category_id: int, category_service: CategoryServiceType):
     try:
         return category_service.delete_category(category_id)
-    except Exception:
+    except ValueError as e:
+        # Обрабатываем ошибку "невозможно удалить категорию с продуктами"
+        if "продукт" in str(e).lower():
+            raise HTTPException(status_code=400, detail=str(e))
+        else:
+            raise HTTPException(status_code=404, detail="Категория не найдена")
+    except Exception as e:
+        # Для других ошибок (например, категория не найдена)
         raise HTTPException(status_code=404, detail="Категория не найдена")
-
-
+    
 #  ДЛЯ ТОВАРОВ 
 @app.get("/products", response_model=list[ProductDTO])
 def get_products(product_service: ProductServiceType):

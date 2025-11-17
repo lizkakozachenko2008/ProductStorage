@@ -3,19 +3,18 @@ from fastapi import Depends, HTTPException
 from starlette import status
 from sqlalchemy import exc
 from src.repository import RepoFactory, SqlAlchemyRepository
-from src.schemas import (
-    UserBaseDTO, UserCreateDTO, UserDTO,
-    AdminBaseDTO, AdminCreateDTO, AdminDTO,
-    CategoryBaseDTO, CategoryCreateDTO, CategoryDTO,
-    ProductBaseDTO, ProductCreateDTO, ProductDTO,
-    OverflowBinBaseDTO, OverflowBinCreateDTO, OverflowBinDTO,
-    PurchaseOrderBaseDTO, PurchaseOrderCreateDTO, PurchaseOrderDTO,
-    ShelfBaseDTO, ShelfCreateDTO, ShelfDTO,
-    MovementHistoryBaseDTO, MovementHistoryCreateDTO, MovementHistoryDTO,
-    NotificationBaseDTO, NotificationCreateDTO, NotificationDTO,
-    ProductPlacementBaseDTO, ProductPlacementCreateDTO, ProductPlacementDTO,
-    SupplyBaseDTO, SupplyCreateDTO, SupplyDTO
-)
+from src.schemas import *
+
+
+# Кастомные исключения для категорий (ДОБАВЛЕНО)
+class CategoryNotFoundError(Exception):
+    pass
+
+class CategoryHasProductsError(Exception):
+    def __init__(self, products_count: int):
+        self.products_count = products_count
+        super().__init__(f"Невозможно удалить категорию. В ней находится {products_count} продукт(ов)")
+
 
 # Сервис для пользователей
 class UserService:
@@ -32,8 +31,10 @@ class UserService:
     
     def add_one_user(self, user: UserCreateDTO) -> UserDTO:
         user_dict = user.model_dump()
-        user_dict.pop("confirm_password")
+
         db_user = self.user_repo.create(user_dict)
+        print(db_user)
+
         return UserDTO.model_validate(db_user)
     
     def update_user(self, user_id: int, user: UserBaseDTO) -> UserDTO:
@@ -72,7 +73,7 @@ class AdminService:
     def add_one_admin(self, admin: AdminCreateDTO) -> AdminDTO:
         try:
             admin_dict = admin.model_dump()
-            admin_dict.pop("confirm_password")
+            
             db_admin = self.admin_repo.create(admin_dict)
             return AdminDTO.model_validate(db_admin)
         except exc.IntegrityError:
@@ -114,8 +115,26 @@ class CategoryService:
         return CategoryDTO.model_validate(db_category)
     
     def delete_category(self, category_id: int) -> CategoryDTO:
-        category = self.category_repo.delete(id=category_id)
-        return CategoryDTO.model_validate(category)
+    # Сначала находим категорию
+        category = self.category_repo.find(id=category_id)
+        if not category:
+            raise CategoryNotFoundError()
+    
+    # Проверяем есть ли продукты в категории
+    # Нужно получить продукты через репозиторий продуктов
+        from src.repository import RepoFactory
+        product_repo = RepoFactory.product_repo()
+        products_count = product_repo.count_by_category(category_id)
+    
+        if products_count > 0:
+            raise CategoryHasProductsError(products_count)
+    
+    # Если проверки прошли - удаляем
+        deleted_category = self.category_repo.delete(id=category_id)
+        if not deleted_category:
+            raise CategoryNotFoundError()
+        
+        return CategoryDTO.model_validate(deleted_category)
 
 def category_service():
     return CategoryService(category_repo=RepoFactory.category_repo())
@@ -152,13 +171,14 @@ class ProductService:
     def get_low_stock_products(self):
         return self.product_repo.find_low_stock()
 
-def product_service():
-    return ProductService(product_repo=RepoFactory.product_repo())
-
-def get_low_stock_products(self) -> list[ProductDTO]:
+    # ИСПРАВЛЕННЫЙ МЕТОД (ДОБАВЛЕН)
+    def get_low_stock_products(self) -> list[ProductDTO]:
         """Товары с низким запасом (текущее количество <= минимальное)"""
         products = self.product_repo.find_low_stock()
         return [ProductDTO.model_validate(row) for row in products]
+
+def product_service():
+    return ProductService(product_repo=RepoFactory.product_repo())
 
 ProductServiceType = Annotated[ProductService, Depends(product_service)]
 

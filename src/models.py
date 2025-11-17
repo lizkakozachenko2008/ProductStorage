@@ -39,6 +39,7 @@ class CategoryORM(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    products: Mapped[list['ProductORM']] = relationship('ProductORM', back_populates='category')
 
 class ProductORM(Base):
     __tablename__ = 'products'
@@ -142,5 +143,3 @@ class SupplyORM(Base):  # Поставка
     status: Mapped[str] = mapped_column(String(50), default='delivered')  # delivered, pending, cancelled
 
     product: Mapped['ProductORM'] = relationship()
-
-CategoryORM.products = relationship('ProductORM', back_populates='category')

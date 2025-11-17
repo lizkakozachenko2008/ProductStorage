@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            height: 70px;
+            background-color: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .left-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .right-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .buttonn, .vxod, .admin {
+            border: 0;
+            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .buttonn:hover, .vxod:hover, .admin:hover {
+            background: linear-gradient(135deg, #F7C48F 0%, #8B7355 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 115, 85, 0.3);
+        }
+
+        .corzina-icon {
+            width: 50px;
+            height: 50px;
+            margin-left: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .corzina-icon:hover {
+            transform: scale(1.1) translateY(-2px);
+        }
+
+        /* Основной контент магазина */
+        .shop-content {
+            margin-top: 70px;
+            padding: 40px 20px;
+        }
+
+        .shop-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .shop-title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .shop-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Фильтры и поиск */
+        .shop-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #F7C48F;
+            border-radius: 25px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #8B7355;
+            box-shadow: 0 5px 15px rgba(139, 115, 85, 0.2);
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 12px 25px;
+            border: 2px solid #F7C48F;
+            background: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .category-btn.active,
+        .category-btn:hover {
+            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+            color: white;
+            border-color: #8B7355;
+        }
+
+        /* Сетка товаров */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #8B7355;
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .product-category {
+            color: #8B7355;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .product-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .product-description {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .add-to-cart {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-cart:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #ff6b6b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        /* Баннер скидки */
+        .discount-banner {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin: 50px auto;
+            border-radius: 20px;
+            max-width: 1200px;
+        }
+
+        .discount-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .discount-text {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .shop-title {
+                font-size: 2.2rem;
+            }
+
+            .shop-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .category-filter {
+                justify-content: center;
+            }
+
+            .products-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                padding: 0 10px;
+            }
+
+            .discount-banner {
+                margin: 30px 10px;
+                padding: 20px;
+            }
+
+            .discount-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .shop-content {
+                padding: 20px 10px;
+            }
+
+            .shop-title {
+                font-size: 1.8rem;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .product-card {
+                margin: 0 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <div class="logo-container">
+                <a href="index.html" class="logo">StoreMarket</a>
+            </div>
+        </div>
+        <div class="right-section">
+            <a href="reg.html"><input class="buttonn" type="button" value="Зарегистрироваться"></a>
+            <a href="vxod.html"><input class="vxod" type="button" value="Войти"></a>
+            <a href="admin.html"><input class="admin" type="button" value="Админ"></a>
+            <img class="corzina-icon" src="тележка.png" alt="Корзина">
+        </div>
+    </div>
+
+    <main class="shop-content">
+        <div class="shop-header">
+            <h1 class="shop-title">Наши товары</h1>
+            <p class="shop-subtitle">Широкий ассортимент качественных продуктов по доступным ценам. Быстрая доставка и свежие товары каждый день!</p>
+        </div>
+
+        <div class="shop-controls">
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Поиск товаров...">
+            </div>
+            <div class="category-filter">
+                <button class="category-btn active">Все товары</button>
+                <button class="category-btn">Овощи</button>
+                <button class="category-btn">Фрукты</button>
+                <button class="category-btn">Молочные</button>
+                <button class="category-btn">Мясо</button>
+            </div>
+        </div>
+
+        <div class="discount-banner">
+            <h2 class="discount-title">Скидка 20% на первый заказ!</h2>
+            <p class="discount-text">Используйте промокод WELCOME20 при оформлении заказа</p>
+        </div>
+
+        <div class="products-grid">
+            <!-- Товар 1 -->
+            <div class="product-card">
+                <div class="product-image">🥦</div>
+                <div class="product-info">
+                    <div class="product-category">Овощи</div>
+                    <h3 class="product-name">Свежая брокколи</h3>
+                    <p class="product-description">Свежая органическая брокколи, богатая витаминами</p>
+                    <div class="product-meta">
+                        <span>В наличии: 25 кг</span>
+                        <span>⭐ 4.8</span>
+                    </div>
+                    <div class="product-price">₽ 189</div>
+                    <button class="add-to-cart">В корзину</button>
+                </div>
+            </div>
+
+            <!-- Товар 2 -->
+            <div class="product-card">
+                <div class="product-image">🍎</div>
+                <div class="product-info">
+                    <div class="product-category">Фрукты</div>
+                    <h3 class="product-name">Яблоки Гренни Смит</h3>
+                    <p class="product-description">Сочные зеленые яблоки, идеальные для выпечки</p>
+                    <div class="product-meta">
+                        <span>В наличии: 40 кг</span>
+                        <span>⭐ 4.9</span>
+                    </div>
+                    <div class="product-price">₽ 129</div>
+                    <button class="add-to-cart">В корзину</button>
+                </div>
+            </div>
+
+            <!-- Товар 3 -->
+            <div class="product-card">
+                <div class="product-image">🥛</div>
+                <div class="product-info">
+                    <div class="product-category">Молочные</div>
+                    <h3 class="product-name">Молоко фермерское</h3>
+                    <p class="product-description">Натуральное молоко 3.2%, без консервантов</p>
+                    <div class="product-meta">
+                        <span>В наличии: 15 л</span>
+                        <span>⭐ 4.7</span>
+                    </div>
+                    <div class="product-price">₽ 89</div>
+                    <button class="add-to-cart">В корзину</button>
+                </div>
+            </div>
+
+            <!-- Товар 4 -->
+            <div class="product-card">
+                <div class="product-image">🥩</div>
+                <div class="product-info">
+                    <div class="product-category">Мясо</div>
+                    <h3 class="product-name">Говяжья вырезка</h3>
+                    <p class="product-description">Премиальная говяжья вырезка, мраморная</p>
+                    <div class="product-meta">
+                        <span>В наличии: 8 кг</span>
+                        <span>⭐ 5.0</span>
+                    </div>
+                    <div class="product-price">₽ 899</div>
+                    <button class="add-to-cart">В корзину</button>
+                </div>
+            </div>
+
+            <!-- Товар 5 -->
+            <div class="product-card">
+                <div class="product-image">🍓</div>
+                <div class="product-info">
+                    <div class="product-category">Фрукты</div>
+                    <h3 class="product-name">Клубника свежая</h3>
+                    <p class="product-description">Сладкая клубника из Краснодарского края</p>
+                    <div class="product-meta">
+                        <span>В наличии: 12 кг</span>
+                        <span>⭐ 4.6</span>
+                    </div>
+                    <div class="product-price">₽ 299</div>
+                    <button class="add-to-cart">В корзину</button>
+                </div>
+            </div>
+
+            <!-- Товар 6 -->
+            <div class="product-card">
+                <div class="product-image">🧀</div>
+                <div class="product-info">
+                    <div class="product-category">Молочные</div>
+                    <h3 class="product-name">Сыр Гауда</h3>
+                    <p class="product-description">Голландский сыр Гауда, выдержанный 6 месяцев</p>
+                    <div class="product-meta">
+                        <span>В наличии: 5 кг</span>
+                        <span>⭐ 4.8</span>
+                    </div>
+                    <div class="product-price">₽ 459</div>
+                    <button class="add-to-cart">В корзину</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Простая логика для фильтрации и поиска
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            const searchInput = document.querySelector('.search-input');
+            const productCards = document.querySelectorAll('.product-card');
+
+            // Фильтрация по категориям
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const category = this.textContent;
+                    filterProducts(category, searchInput.value);
+                });
+            });
+
+            // Поиск товаров
+            searchInput.addEventListener('input', function() {
+                const activeCategory = document.querySelector('.category-btn.active').textContent;
+                filterProducts(activeCategory, this.value);
+            });
+
+            function filterProducts(category, searchText) {
+                productCards.forEach(card => {
+                    const productCategory = card.querySelector('.product-category').textContent;
+                    const productName = card.querySelector('.product-name').textContent.toLowerCase();
+                    const productDesc = card.querySelector('.product-description').textContent.toLowerCase();
+                    
+                    const categoryMatch = category === 'Все товары' || productCategory === category;
+                    const searchMatch = searchText === '' || 
+                        productName.includes(searchText.toLowerCase()) || 
+                        productDesc.includes(searchText.toLowerCase());
+                    
+                    if (categoryMatch && searchMatch) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            // Добавление в корзину
+            const addToCartButtons = document.querySelectorAll('.add-to-cart');
+            addToCartButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const productName = this.closest('.product-card').querySelector('.product-name').textContent;
+                    alert(`Товар "${productName}" добавлен в корзину!`);
+                    // Здесь можно добавить логику для реальной корзины
+                });
+            });
+        });
+    </script>
+</body>
+</html>

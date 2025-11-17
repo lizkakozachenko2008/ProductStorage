@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Продукты - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .products-table-container {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .table-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .add-product-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .add-product-btn:hover {
+            background: #e8b47a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 80px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .name-column {
+            width: 200px;
+        }
+
+        .category-column {
+            width: 150px;
+        }
+
+        .min-quantity-column {
+            width: 120px;
+        }
+
+        .unit-column {
+            width: 120px;
+        }
+
+        .description-column {
+            width: 250px;
+        }
+
+        .price-column {
+            width: 120px;
+        }
+
+        .quantity-column {
+            width: 120px;
+        }
+
+        .actions-column {
+            width: 180px;
+            text-align: center;
+        }
+
+        .editable-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: rgba(247, 196, 143, 0.1);
+            color: #5a4a42;
+        }
+
+        .editable-input:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+            background: white;
+        }
+
+        .editable-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: rgba(247, 196, 143, 0.1);
+            color: #5a4a42;
+        }
+
+        .editable-select:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+            background: white;
+        }
+
+        .number-input {
+            width: 80px;
+            padding: 5px 8px;
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        .price-input {
+            width: 100px;
+            padding: 5px 8px;
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .price-input:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-save, .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+            transform: translateY(-1px);
+        }
+
+        /* Стили для формы добавления */
+        .add-form {
+            background: rgba(247, 196, 143, 0.1);
+            border: 2px dashed #F7C48F;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .low-stock {
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .critical-stock {
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .admin-title {
+                font-size: 2.5rem;
+            }
+
+            .container {
+                padding: 0 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .form-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <a href="adminok.html" class="logo">StoreMarket</a>
+        </div>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление продуктами</h1>
+            <p class="admin-subtitle">Добавление, редактирование и управление товарами на складе</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <div class="products-table-container">
+            <div class="table-header">
+                <h2 class="table-title">Список продуктов</h2>
+                <button class="add-product-btn" id="showAddForm">+ Добавить продукт</button>
+            </div>
+
+            <!-- Форма добавления нового продукта -->
+            <div class="add-form" id="addForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newProductName">Название продукта</label>
+                        <input type="text" id="newProductName" class="editable-input" placeholder="Введите название" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newProductCategory">Категория</label>
+                        <select id="newProductCategory" class="editable-select" required>
+                            <option value="">Выберите категорию</option>
+                            <!-- Категории будут загружены через JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newProductMinQuantity">Мин. количество</label>
+                        <input type="number" id="newProductMinQuantity" class="number-input" value="10" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newProductUnit">Единица измерения</label>
+                        <select id="newProductUnit" class="editable-select" required>
+                            <option value="шт">шт</option>
+                            <option value="кг">кг</option>
+                            <option value="г">г</option>
+                            <option value="л">л</option>
+                            <option value="мл">мл</option>
+                            <option value="уп">уп</option>
+                            <option value="пак">пак</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="newProductDescription">Описание</label>
+                        <input type="text" id="newProductDescription" class="editable-input" placeholder="Введите описание продукта">
+                    </div>
+                    <div class="form-group">
+                        <label for="newProductPrice">Цена (BYN)</label>
+                        <input type="number" id="newProductPrice" class="price-input" value="0.00" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newProductQuantity">Количество</label>
+                        <input type="number" id="newProductQuantity" class="number-input" value="0" min="0" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn-add" id="addProductBtn">Добавить</button>
+                    <button class="btn-cancel" id="hideAddForm">Отмена</button>
+                </div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th class="id-column">ID</th>
+                        <th class="name-column">Название</th>
+                        <th class="category-column">Категория</th>
+                        <th class="min-quantity-column">Мин. количество</th>
+                        <th class="unit-column">Единица измерения</th>
+                        <th class="description-column">Описание</th>
+                        <th class="price-column">Цена (BYN)</th>
+                        <th class="quantity-column">Количество</th>
+                        <th class="actions-column">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    <!-- Данные будут загружены через JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+   <script>
+    const API_BASE_URL = 'http://localhost:8000';
+
+    // Элементы DOM
+    const productsTableBody = document.getElementById('productsTableBody');
+    const addForm = document.getElementById('addForm');
+    const showAddFormBtn = document.getElementById('showAddForm');
+    const hideAddFormBtn = document.getElementById('hideAddForm');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const messageContainer = document.getElementById('messageContainer');
+    const categorySelect = document.getElementById('newProductCategory');
+
+    // Загрузка продуктов и категорий при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadCategories();
+        await loadProducts();
+    });
+
+    // Показать/скрыть форму добавления
+    showAddFormBtn.addEventListener('click', () => {
+        addForm.style.display = 'block';
+        document.getElementById('newProductName').focus();
+    });
+
+    hideAddFormBtn.addEventListener('click', () => {
+        addForm.style.display = 'none';
+        resetAddForm();
+    });
+
+    // Обработка добавления продукта
+    addProductBtn.addEventListener('click', async () => {
+        const name = document.getElementById('newProductName').value.trim();
+        const categoryId = document.getElementById('newProductCategory').value;
+        const minQuantity = parseInt(document.getElementById('newProductMinQuantity').value);
+        const unit = document.getElementById('newProductUnit').value;
+        const description = document.getElementById('newProductDescription').value.trim();
+        const price = parseFloat(document.getElementById('newProductPrice').value);
+        const quantity = parseInt(document.getElementById('newProductQuantity').value);
+
+        // Валидация
+        if (!name || !categoryId || isNaN(minQuantity) || !unit || isNaN(price) || isNaN(quantity)) {
+            showMessage('Пожалуйста, заполните все обязательные поля корректно', 'error');
+            return;
+        }
+
+        if (minQuantity < 0 || price < 0 || quantity < 0) {
+            showMessage('Значения не могут быть отрицательными', 'error');
+            return;
+        }
+
+        try {
+            const productData = { 
+                name,
+                category_id: parseInt(categoryId),
+                min_quantity: minQuantity,
+                unit,
+                description,
+                price,
+                current_quantity: quantity
+            };
+            
+            await createProduct(productData);
+            showMessage('Продукт успешно создан', 'success');
+
+            // Проверяем низкий остаток после создания
+            if (quantity < minQuantity) {
+                showLowStockWarning(name, quantity, minQuantity);
+            }
+
+            // Перезагружаем список продуктов
+            await loadProducts();
+            
+            // Скрываем форму и сбрасываем
+            addForm.style.display = 'none';
+            resetAddForm();
+
+        } catch (error) {
+            console.error('Ошибка при создании продукта:', error);
+            showMessage('Ошибка при создании продукта: ' + error.message, 'error');
+        }
+    });
+
+    // Функция загрузки продуктов
+    async function loadProducts() {
+        try {
+            productsTableBody.innerHTML = '<tr><td colspan="9" class="empty-message">Загрузка...</td></tr>';
+            
+            const products = await getProducts();
+            
+            if (products.length === 0) {
+                productsTableBody.innerHTML = '<tr><td colspan="9" class="empty-message">Продукты не найдены</td></tr>';
+                return;
+            }
+
+            productsTableBody.innerHTML = '';
+            products.forEach(product => {
+                const row = createProductRow(product);
+                productsTableBody.appendChild(row);
+            });
+
+            // Проверяем низкие остатки после загрузки
+            checkLowStockProducts(products);
+
+        } catch (error) {
+            console.error('Ошибка при загрузке продуктов:', error);
+            productsTableBody.innerHTML = '<tr><td colspan="9" class="empty-message">Ошибка при загрузке продуктов</td></tr>';
+        }
+    }
+
+    // Проверка продуктов с низким остатком
+    function checkLowStockProducts(products) {
+        const lowStockProducts = products.filter(product => 
+            product.current_quantity <= product.min_quantity
+        );
+
+        if (lowStockProducts.length > 0) {
+            showLowStockSummary(lowStockProducts);
+        }
+    }
+
+    // Показать сводку по продуктам с низким остатком
+    function showLowStockSummary(lowStockProducts) {
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'message warning-message';
+        summaryDiv.innerHTML = `
+            <div style="text-align: left;">
+                <strong>⚠️ Внимание! Низкий остаток у следующих продуктов:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    ${lowStockProducts.map(product => 
+                        `<li><strong>${product.name}</strong>: ${product.current_quantity} ${product.unit} (мин: ${product.min_quantity} ${product.unit})</li>`
+                    ).join('')}
+                </ul>
+            </div>
+        `;
+        
+        // Вставляем сообщение перед таблицей
+        const tableContainer = document.querySelector('.products-table-container');
+        tableContainer.insertBefore(summaryDiv, tableContainer.firstChild);
+        
+        // Автоматически скрыть через 10 секунд
+        setTimeout(() => {
+            summaryDiv.remove();
+        }, 10000);
+    }
+
+    // Показать предупреждение о низком остатке для одного продукта
+    function showLowStockWarning(productName, currentQuantity, minQuantity) {
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'message warning-message';
+        warningDiv.innerHTML = `
+            ⚠️ <strong>${productName}</strong>: остаток ${currentQuantity} ниже минимального уровня (${minQuantity})
+        `;
+        
+        messageContainer.appendChild(warningDiv);
+        
+        // Автоматически скрыть через 5 секунд
+        setTimeout(() => {
+            warningDiv.remove();
+        }, 5000);
+    }
+
+    // Функция загрузки категорий
+    async function loadCategories() {
+        try {
+            const categories = await getCategories();
+            categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Ошибка при загрузке категорий:', error);
+            showMessage('Ошибка при загрузке категорий', 'error');
+        }
+    }
+
+    // Создание строки продукта
+    function createProductRow(product) {
+        // Определяем класс для строки в зависимости от уровня запасов
+        let rowClass = '';
+        if (product.current_quantity <= product.min_quantity) {
+            rowClass = 'critical-stock';
+        } else if (product.current_quantity <= product.min_quantity * 1.5) {
+            rowClass = 'low-stock';
+        }
+
+        const row = document.createElement('tr');
+        if (rowClass) row.className = rowClass;
+        
+        row.innerHTML = `
+            <td class="id-column">${product.id}</td>
+            <td class="name-column">
+                <input type="text" class="editable-input" value="${product.name || ''}" data-field="name">
+            </td>
+            <td class="category-column">
+                <select class="editable-select" data-field="category_id">
+                    <!-- Категории будут загружены динамически -->
+                </select>
+            </td>
+            <td class="min-quantity-column">
+                <input type="number" class="number-input" value="${product.min_quantity || 0}" min="0" data-field="min_quantity">
+            </td>
+            <td class="unit-column">
+                <select class="editable-select" data-field="unit">
+                    <option value="шт" ${product.unit === 'шт' ? 'selected' : ''}>шт</option>
+                    <option value="кг" ${product.unit === 'кг' ? 'selected' : ''}>кг</option>
+                    <option value="г" ${product.unit === 'г' ? 'selected' : ''}>г</option>
+                    <option value="л" ${product.unit === 'л' ? 'selected' : ''}>л</option>
+                    <option value="мл" ${product.unit === 'мл' ? 'selected' : ''}>мл</option>
+                    <option value="уп" ${product.unit === 'уп' ? 'selected' : ''}>уп</option>
+                    <option value="пак" ${product.unit === 'пак' ? 'selected' : ''}>пак</option>
+                </select>
+            </td>
+            <td class="description-column">
+                <input type="text" class="editable-input" value="${product.description || ''}" data-field="description">
+            </td>
+            <td class="price-column">
+                <input type="number" class="price-input" value="${product.price || 0}" min="0" step="0.01" data-field="price">
+            </td>
+            <td class="quantity-column">
+                <input type="number" class="number-input" value="${product.current_quantity || 0}" min="0" data-field="current_quantity">
+            </td>
+            <td class="actions-column">
+                <div class="action-btns">
+                    <button class="btn-save" onclick="saveProduct(${product.id}, this)">Сохранить</button>
+                    <button class="btn-delete" onclick="deleteProduct(${product.id})">Удалить</button>
+                </div>
+            </td>
+        `;
+
+        // Загружаем категории для select
+        loadCategoriesForRow(row, product.category_id);
+
+        return row;
+    }
+
+    // Загрузка категорий для строки
+    async function loadCategoriesForRow(row, selectedCategoryId) {
+        try {
+            const categories = await getCategories();
+            const categorySelect = row.querySelector('select[data-field="category_id"]');
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                option.selected = category.id === selectedCategoryId;
+                categorySelect.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Ошибка при загрузке категорий для строки:', error);
+        }
+    }
+
+    // Сохранение продукта (редактирование)
+    async function saveProduct(productId, button) {
+        const row = button.closest('tr');
+        const inputs = row.querySelectorAll('input[data-field], select[data-field]');
+        
+        const productData = {};
+        inputs.forEach(input => {
+            const field = input.dataset.field;
+            if (input.type === 'number') {
+                productData[field] = parseFloat(input.value);
+            } else if (input.type === 'select-one' && field === 'category_id') {
+                productData[field] = parseInt(input.value);
+            } else {
+                productData[field] = input.value.trim();
+            }
+        });
+
+        // Валидация обязательных полей
+        if (!productData.name || !productData.category_id || isNaN(productData.min_quantity) || 
+            !productData.unit || isNaN(productData.price) || isNaN(productData.current_quantity)) {
+            showMessage('Пожалуйста, заполните все поля корректно', 'error');
+            return;
+        }
+
+        if (productData.min_quantity < 0 || productData.price < 0 || productData.current_quantity < 0) {
+            showMessage('Значения не могут быть отрицательными', 'error');
+            return;
+        }
+
+        try {
+            button.textContent = 'Сохранение...';
+            button.disabled = true;
+            
+            await updateProduct(productId, productData);
+            showMessage('Продукт успешно обновлен', 'success');
+            
+            // Проверяем низкий остаток после обновления
+            if (productData.current_quantity <= productData.min_quantity) {
+                showLowStockWarning(productData.name, productData.current_quantity, productData.min_quantity);
+            }
+            
+            // Обновляем класс строки в зависимости от уровня запасов
+            updateRowStockClass(row, productData.current_quantity, productData.min_quantity);
+            
+        } catch (error) {
+            console.error('Ошибка при обновлении продукта:', error);
+            showMessage('Ошибка при обновлении продукта: ' + error.message, 'error');
+        } finally {
+            button.textContent = 'Сохранить';
+            button.disabled = false;
+        }
+    }
+
+    // Обновление класса строки в зависимости от уровня запасов
+    function updateRowStockClass(row, currentQuantity, minQuantity) {
+        row.className = '';
+        if (currentQuantity <= minQuantity) {
+            row.className = 'critical-stock';
+        } else if (currentQuantity <= minQuantity * 1.5) {
+            row.className = 'low-stock';
+        }
+    }
+
+    // Удаление продукта
+    async function deleteProduct(productId) {
+        if (!confirm('Вы уверены, что хотите удалить этот продукт?')) {
+            return;
+        }
+
+        try {
+            await deleteProductRequest(productId);
+            showMessage('Продукт успешно удален', 'success');
+            await loadProducts(); // Перезагружаем список
+        } catch (error) {
+            console.error('Ошибка при удалении продукта:', error);
+            showMessage('Ошибка при удалении продукта: ' + error.message, 'error');
+        }
+    }
+
+    // Сброс формы добавления
+    function resetAddForm() {
+        document.getElementById('newProductName').value = '';
+        document.getElementById('newProductCategory').value = '';
+        document.getElementById('newProductMinQuantity').value = '10';
+        document.getElementById('newProductUnit').value = 'шт';
+        document.getElementById('newProductDescription').value = '';
+        document.getElementById('newProductPrice').value = '0.00';
+        document.getElementById('newProductQuantity').value = '0';
+    }
+
+    // API функции
+
+    // Получить все продукты
+    async function getProducts() {
+        const response = await fetch(`${API_BASE_URL}/products`);
+        if (!response.ok) {
+            throw new Error('Ошибка при получении продуктов');
+        }
+        return await response.json();
+    }
+
+    // Получить все категории
+    async function getCategories() {
+        const response = await fetch(`${API_BASE_URL}/categories`);
+        if (!response.ok) {
+            throw new Error('Ошибка при получении категорий');
+        }
+        return await response.json();
+    }
+
+    // Создать продукт
+    async function createProduct(productData) {
+        const response = await fetch(`${API_BASE_URL}/products`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(productData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка при создании продукта');
+        }
+        
+        return await response.json();
+    }
+
+    // Обновить продукт
+    async function updateProduct(productId, productData) {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(productData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка при обновлении продукта');
+        }
+        
+        return await response.json();
+    }
+
+    // Удалить продукт
+    async function deleteProductRequest(productId) {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка при удалении продукта');
+        }
+        
+        return await response.json();
+    }
+
+    // Функция для показа сообщений
+    function showMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}-message`;
+        messageDiv.textContent = message;
+        
+        messageContainer.innerHTML = '';
+        messageContainer.appendChild(messageDiv);
+        
+        // Автоматически скрыть сообщение через 5 секунд
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 5000);
+    }
+
+    // Проверка авторизации администратора
+    function checkAdminAuth() {
+        const adminData = localStorage.getItem('admin');
+        if (!adminData) {
+            window.location.href = 'admin.html';
+            return null;
+        }
+        return JSON.parse(adminData);
+    }
+
+    // Проверяем авторизацию при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        const admin = checkAdminAuth();
+        if (!admin) {
+            return;
+        }
+    });
+</script>
+</body>
+</html>

@@ -3,11 +3,12 @@ from typing import Any, List, Optional, Type, TypeVar, Sequence
 from sqlalchemy import select
 
 from src.database import db
-from src.models import (
-    AdminORM, Base, UserORM, CategoryORM, ProductORM, 
-    OverflowBinORM, PurchaseOrderORM, ShelfORM, MovementHistoryORM,
-    NotificationORM, ProductPlacementORM, SupplyORM
-)
+from src.models import * 
+# (
+#     AdminORM, Base, UserORM, CategoryORM, ProductORM, 
+#     OverflowBinORM, PurchaseOrderORM, ShelfORM, MovementHistoryORM,
+#     NotificationORM, ProductPlacementORM, SupplyORM
+# )
 
 
 ModelType = TypeVar('ModelType', bound=Base)
