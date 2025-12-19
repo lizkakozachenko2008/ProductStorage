@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, field_validator
-from typing import Optional, Annotated
+from typing import Optional, Annotated, List
 from datetime import datetime
 
 PasswordType = Annotated[str, Field(min_length=8, max_length=15)]
@@ -187,3 +187,65 @@ class SupplyDTO(SupplyBaseDTO):
     id: int
     supply_date: datetime
     model_config = ConfigDict(from_attributes=True)
+
+class ProductPlaceRequestDTO(BaseModel):
+    product_id: int = Field(gt=0, description="ID товара")
+    shelf_id: Optional[int] = Field(None, gt=0, description="ID стеллажа (если None - в отстойник)")
+    overflow_id: Optional[int] = Field(None, gt=0, description="ID отстойника")
+    quantity: int = Field(gt=0, description="Количество для размещения")
+
+# DTO для элемента отчета по размещению
+class PlacementReportItemDTO(BaseModel):
+    product_id: int
+    product_name: str
+    shelf_id: Optional[int]
+    shelf_name: Optional[str]
+    overflow_id: Optional[int]
+    quantity: int
+    total_quantity: int  
+    unit: str 
+
+# DTO для полного отчета по размещению
+class PlacementReportDTO(BaseModel):
+    items: List[PlacementReportItemDTO]
+    total_products: int
+    total_quantity: int
+    shelves_used: int
+    overflow_used: int
+
+# DTO для отчета по поставкам и отгрузкам за месяц
+class MonthlyReportItemDTO(BaseModel):
+    date: datetime
+    product_id: int
+    product_name: str
+    type: str 
+    quantity: int
+    reference_id: int  
+
+class MonthlyReportDTO(BaseModel):
+    year: int
+    month: int
+    items: List[MonthlyReportItemDTO]
+    total_supplied: int
+    total_shipped: int
+    net_change: int  
+
+# DTO для уведомления об освободившемся месте
+class FreeSpaceNotificationDTO(BaseModel):
+    shelf_id: int
+    shelf_name: str
+    product_id: int
+    product_name: str
+    overflow_bin_id: int
+    available_quantity: int 
+    shelf_capacity: int
+    shelf_current: int
+    free_space: int
+    can_fit: bool  
+
+# DTO для ответа на размещение товара
+class PlacementResponseDTO(BaseModel):
+    placement: ProductPlacementDTO
+    product_updated: ProductDTO
+    shelf_updated: Optional[ShelfDTO] = None
+    message: str

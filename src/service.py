@@ -1,9 +1,24 @@
-from typing import Annotated
+from typing import Annotated, List  
 from fastapi import Depends, HTTPException
 from starlette import status
 from sqlalchemy import exc
 from src.repository import RepoFactory, SqlAlchemyRepository
-from src.schemas import *
+from src.schemas import (
+    UserDTO, UserCreateDTO, UserBaseDTO,
+    AdminDTO, AdminCreateDTO,
+    CategoryDTO, CategoryCreateDTO, CategoryBaseDTO,
+    ProductDTO, ProductCreateDTO, ProductBaseDTO,
+    OverflowBinDTO, OverflowBinCreateDTO, OverflowBinBaseDTO,
+    PurchaseOrderDTO, PurchaseOrderCreateDTO, PurchaseOrderBaseDTO,
+    ShelfDTO, ShelfCreateDTO, ShelfBaseDTO,
+    MovementHistoryDTO, MovementHistoryCreateDTO, MovementHistoryBaseDTO,
+    NotificationDTO, NotificationCreateDTO, NotificationBaseDTO,
+    ProductPlacementDTO, ProductPlacementCreateDTO, ProductPlacementBaseDTO,
+    SupplyDTO, SupplyCreateDTO, SupplyBaseDTO,
+    ProductPlaceRequestDTO, PlacementReportDTO, MonthlyReportDTO,
+    FreeSpaceNotificationDTO, PlacementResponseDTO,
+    PlacementReportItemDTO, MonthlyReportItemDTO
+)
 
 
 # Кастомные исключения для категорий (ДОБАВЛЕНО)
@@ -21,7 +36,7 @@ class UserService:
     def __init__(self, user_repo: SqlAlchemyRepository):
         self.user_repo: SqlAlchemyRepository = user_repo
 
-    def get_all_users(self) -> list[UserDTO]:
+    def get_all_users(self) -> List[UserDTO]:
         users = self.user_repo.find_all()
         return [UserDTO.model_validate(row) for row in users]
 
@@ -31,10 +46,7 @@ class UserService:
     
     def add_one_user(self, user: UserCreateDTO) -> UserDTO:
         user_dict = user.model_dump()
-
         db_user = self.user_repo.create(user_dict)
-        print(db_user)
-
         return UserDTO.model_validate(db_user)
     
     def update_user(self, user_id: int, user: UserBaseDTO) -> UserDTO:
@@ -62,7 +74,7 @@ class AdminService:
     def __init__(self, admin_repo: SqlAlchemyRepository):
         self.admin_repo: SqlAlchemyRepository = admin_repo
 
-    def get_all_admins(self) -> list[AdminDTO]:
+    def get_all_admins(self) -> List[AdminDTO]:
         admins = self.admin_repo.find_all()
         return [AdminDTO.model_validate(row) for row in admins]
 
@@ -73,13 +85,12 @@ class AdminService:
     def add_one_admin(self, admin: AdminCreateDTO) -> AdminDTO:
         try:
             admin_dict = admin.model_dump()
-            
             db_admin = self.admin_repo.create(admin_dict)
             return AdminDTO.model_validate(db_admin)
         except exc.IntegrityError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="This login is alredy used"
+                detail="This login is already used"
             )
     
     def delete_admin(self, login: str) -> AdminDTO:
@@ -96,7 +107,7 @@ class CategoryService:
     def __init__(self, category_repo: SqlAlchemyRepository):
         self.category_repo: SqlAlchemyRepository = category_repo
 
-    def get_all_categories(self) -> list[CategoryDTO]:
+    def get_all_categories(self) -> List[CategoryDTO]:
         categories = self.category_repo.find_all()
         return [CategoryDTO.model_validate(row) for row in categories]
 
@@ -115,13 +126,12 @@ class CategoryService:
         return CategoryDTO.model_validate(db_category)
     
     def delete_category(self, category_id: int) -> CategoryDTO:
-    # Сначала находим категорию
+        # Сначала находим категорию
         category = self.category_repo.find(id=category_id)
         if not category:
             raise CategoryNotFoundError()
     
-    # Проверяем есть ли продукты в категории
-    # Нужно получить продукты через репозиторий продуктов
+        # Проверяем есть ли продукты в категории
         from src.repository import RepoFactory
         product_repo = RepoFactory.product_repo()
         products_count = product_repo.count_by_category(category_id)
@@ -129,7 +139,7 @@ class CategoryService:
         if products_count > 0:
             raise CategoryHasProductsError(products_count)
     
-    # Если проверки прошли - удаляем
+        # Если проверки прошли - удаляем
         deleted_category = self.category_repo.delete(id=category_id)
         if not deleted_category:
             raise CategoryNotFoundError()
@@ -146,7 +156,7 @@ class ProductService:
     def __init__(self, product_repo: SqlAlchemyRepository):
         self.product_repo: SqlAlchemyRepository = product_repo
 
-    def get_all_products(self) -> list[ProductDTO]:
+    def get_all_products(self) -> List[ProductDTO]:
         products = self.product_repo.find_all()
         return [ProductDTO.model_validate(row) for row in products]
 
@@ -168,14 +178,154 @@ class ProductService:
         product = self.product_repo.delete(id=product_id)
         return ProductDTO.model_validate(product)
     
-    def get_low_stock_products(self):
-        return self.product_repo.find_low_stock()
-
-    # ИСПРАВЛЕННЫЙ МЕТОД (ДОБАВЛЕН)
-    def get_low_stock_products(self) -> list[ProductDTO]:
+    def get_low_stock_products(self) -> List[ProductDTO]:
         """Товары с низким запасом (текущее количество <= минимальное)"""
         products = self.product_repo.find_low_stock()
         return [ProductDTO.model_validate(row) for row in products]
+
+    def place_product(self, placement_data: ProductPlaceRequestDTO) -> PlacementResponseDTO:
+        """Разместить товар на складе (на стеллаж или в отстойник)"""
+        from src.repository import RepoFactory
+        
+        # Проверяем существование товара
+        product = self.product_repo.find(id=placement_data.product_id)
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Товар с ID {placement_data.product_id} не найден"
+            )
+        
+        shelf_updated = None
+        
+        # Если размещаем на стеллаже
+        if placement_data.shelf_id:
+            shelf_repo = RepoFactory.shelf_repo()
+            shelf = shelf_repo.find(id=placement_data.shelf_id)
+            if not shelf:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Стеллаж с ID {placement_data.shelf_id} не найден"
+                )
+            
+            # Проверяем достаточно ли места
+            if shelf.current_quantity + placement_data.quantity > shelf.max_capacity:
+                free_space = shelf.max_capacity - shelf.current_quantity
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Недостаточно места на стеллаже '{shelf.name}'. "
+                           f"Свободно: {free_space}, требуется: {placement_data.quantity}"
+                )
+            
+            # Обновляем стеллаж
+            updated_shelf = shelf_repo.update(
+                data={"current_quantity": shelf.current_quantity + placement_data.quantity},
+                id=shelf.id
+            )
+            shelf_updated = ShelfDTO.model_validate(updated_shelf)
+        
+        # Если размещаем в отстойник
+        elif placement_data.overflow_id:
+            overflow_repo = RepoFactory.overflow_bin_repo()
+            overflow_bin = overflow_repo.find(id=placement_data.overflow_id)
+            if not overflow_bin:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Отстойник с ID {placement_data.overflow_id} не найден"
+                )
+        
+        # Создаем запись о размещении
+        placement_repo = RepoFactory.product_placement_repo()
+        placement_dict = placement_data.model_dump()
+        placement = placement_repo.create(placement_dict)
+        
+        # Обновляем общее количество товара
+        updated_product = self.product_repo.update(
+            data={"current_quantity": product.current_quantity + placement_data.quantity},
+            id=product.id
+        )
+        
+        # Создаем запись в истории перемещений
+        movement_repo = RepoFactory.movement_history_repo()
+        movement_data = {
+            "product_id": product.id,
+            "quantity": placement_data.quantity,
+            "to_shelf_id": placement_data.shelf_id,
+            "to_overflow": placement_data.overflow_id is not None
+        }
+        movement_repo.create(movement_data)
+        
+        return PlacementResponseDTO(
+            placement=ProductPlacementDTO.model_validate(placement),
+            product_updated=ProductDTO.model_validate(updated_product),
+            shelf_updated=shelf_updated,
+            message=f"Товар '{product.name}' успешно размещен"
+        )
+
+    def get_placement_report(self) -> PlacementReportDTO:
+        """Получить полный отчет по размещению товаров на складе"""
+        from src.repository import RepoFactory
+        
+        # Получаем все размещения
+        placement_repo = RepoFactory.product_placement_repo()
+        placements = placement_repo.find_all()
+        
+        if not placements:
+            return PlacementReportDTO(
+                items=[],
+                total_products=0,
+                total_quantity=0,
+                shelves_used=0,
+                overflow_used=0
+            )
+        
+        # Получаем дополнительные данные
+        product_repo = RepoFactory.product_repo()
+        shelf_repo = RepoFactory.shelf_repo()
+        overflow_repo = RepoFactory.overflow_bin_repo()
+        
+        products = product_repo.find_all()
+        shelves = shelf_repo.find_all()
+        
+        # Создаем словари для быстрого доступа
+        product_dict = {p.id: p for p in products}
+        shelf_dict = {s.id: s for s in shelves}
+        
+        # Формируем отчет
+        items = []
+        total_quantity = 0
+        used_shelves = set()
+        used_overflows = set()
+        
+        for placement in placements:
+            product = product_dict.get(placement.product_id)
+            shelf = shelf_dict.get(placement.shelf_id) if placement.shelf_id else None
+            
+            if product:
+                item = PlacementReportItemDTO(
+                    product_id=product.id,
+                    product_name=product.name,
+                    shelf_id=placement.shelf_id,
+                    shelf_name=shelf.name if shelf else None,
+                    overflow_id=placement.overflow_id,
+                    quantity=placement.quantity,
+                    total_quantity=product.current_quantity,
+                    unit=product.unit
+                )
+                items.append(item)
+                total_quantity += placement.quantity
+                
+                if placement.shelf_id:
+                    used_shelves.add(placement.shelf_id)
+                if placement.overflow_id:
+                    used_overflows.add(placement.overflow_id)
+        
+        return PlacementReportDTO(
+            items=items,
+            total_products=len(set(p.product_id for p in placements)),
+            total_quantity=total_quantity,
+            shelves_used=len(used_shelves),
+            overflow_used=len(used_overflows)
+        )
 
 def product_service():
     return ProductService(product_repo=RepoFactory.product_repo())
@@ -187,7 +337,7 @@ class OverflowBinService:
     def __init__(self, overflow_bin_repo: SqlAlchemyRepository):
         self.overflow_bin_repo: SqlAlchemyRepository = overflow_bin_repo
 
-    def get_all_overflow_bins(self) -> list[OverflowBinDTO]:
+    def get_all_overflow_bins(self) -> List[OverflowBinDTO]:
         bins = self.overflow_bin_repo.find_all()
         return [OverflowBinDTO.model_validate(row) for row in bins]
 
@@ -209,6 +359,60 @@ class OverflowBinService:
         bin = self.overflow_bin_repo.delete(id=bin_id)
         return OverflowBinDTO.model_validate(bin)
 
+    def check_overflow_for_free_shelves(self) -> List[FreeSpaceNotificationDTO]:
+        """Проверить, можно ли разместить товары из отстойника на освободившихся стеллажах"""
+        from src.repository import RepoFactory
+        
+        notifications = []
+        
+        # Получаем товары в отстойнике
+        overflow_items = self.overflow_bin_repo.find_overflow_with_stock()
+        if not overflow_items:
+            return notifications
+        
+        # Получаем стеллажи
+        shelf_repo = RepoFactory.shelf_repo()
+        shelves = shelf_repo.find_all()
+        
+        # Получаем товары
+        product_repo = RepoFactory.product_repo()
+        products = product_repo.find_all()
+        product_dict = {p.id: p for p in products}
+        
+        # Получаем текущие размещения на стеллажах
+        placement_repo = RepoFactory.product_placement_repo()
+        
+        for overflow in overflow_items:
+            product = product_dict.get(overflow.product_id)
+            if not product:
+                continue
+            
+            # Ищем подходящие стеллажи
+            for shelf in shelves:
+                # Проверяем свободное место
+                free_space = shelf.max_capacity - shelf.current_quantity
+                
+                # Проверяем, может ли товар поместиться хотя бы частично
+                can_fit = free_space > 0
+                
+                if can_fit:
+                    notification = FreeSpaceNotificationDTO(
+                        shelf_id=shelf.id,
+                        shelf_name=shelf.name,
+                        product_id=product.id,
+                        product_name=product.name,
+                        overflow_bin_id=overflow.id,
+                        available_quantity=overflow.quantity,
+                        shelf_capacity=shelf.max_capacity,
+                        shelf_current=shelf.current_quantity,
+                        free_space=free_space,
+                        can_fit=free_space >= overflow.quantity
+                    )
+                    notifications.append(notification)
+                    # Не прерываем цикл, чтобы проверить все стеллажи
+        
+        return notifications
+
 def overflow_bin_service():
     return OverflowBinService(overflow_bin_repo=RepoFactory.overflow_bin_repo())
 
@@ -219,7 +423,7 @@ class PurchaseOrderService:
     def __init__(self, purchase_order_repo: SqlAlchemyRepository):
         self.purchase_order_repo: SqlAlchemyRepository = purchase_order_repo
 
-    def get_all_purchase_orders(self) -> list[PurchaseOrderDTO]:
+    def get_all_purchase_orders(self) -> List[PurchaseOrderDTO]:
         orders = self.purchase_order_repo.find_all()
         return [PurchaseOrderDTO.model_validate(row) for row in orders]
 
@@ -251,7 +455,7 @@ class ShelfService:
     def __init__(self, shelf_repo: SqlAlchemyRepository):
         self.shelf_repo: SqlAlchemyRepository = shelf_repo
 
-    def get_all_shelves(self) -> list[ShelfDTO]:
+    def get_all_shelves(self) -> List[ShelfDTO]:
         shelves = self.shelf_repo.find_all()
         return [ShelfDTO.model_validate(row) for row in shelves]
 
@@ -283,7 +487,7 @@ class MovementHistoryService:
     def __init__(self, movement_history_repo: SqlAlchemyRepository):
         self.movement_history_repo: SqlAlchemyRepository = movement_history_repo
 
-    def get_all_movement_history(self) -> list[MovementHistoryDTO]:
+    def get_all_movement_history(self) -> List[MovementHistoryDTO]:
         history = self.movement_history_repo.find_all()
         return [MovementHistoryDTO.model_validate(row) for row in history]
 
@@ -296,7 +500,7 @@ class MovementHistoryService:
         db_history = self.movement_history_repo.create(history_dict)
         return MovementHistoryDTO.model_validate(db_history)
     
-    def get_recent_movements(self, days: int = 7) -> list[MovementHistoryDTO]:
+    def get_recent_movements(self, days: int = 7) -> List[MovementHistoryDTO]:
         """Последние перемещения за указанное количество дней"""
         movements = self.movement_history_repo.find_recent_movements(days)
         return [MovementHistoryDTO.model_validate(row) for row in movements]
@@ -311,7 +515,7 @@ class NotificationService:
     def __init__(self, notification_repo: SqlAlchemyRepository):
         self.notification_repo: SqlAlchemyRepository = notification_repo
 
-    def get_all_notifications(self) -> list[NotificationDTO]:
+    def get_all_notifications(self) -> List[NotificationDTO]:
         notifications = self.notification_repo.find_all()
         return [NotificationDTO.model_validate(row) for row in notifications]
 
@@ -343,7 +547,7 @@ class ProductPlacementService:
     def __init__(self, product_placement_repo: SqlAlchemyRepository):
         self.product_placement_repo: SqlAlchemyRepository = product_placement_repo
 
-    def get_all_product_placements(self) -> list[ProductPlacementDTO]:
+    def get_all_product_placements(self) -> List[ProductPlacementDTO]:
         placements = self.product_placement_repo.find_all()
         return [ProductPlacementDTO.model_validate(row) for row in placements]
 
@@ -375,7 +579,7 @@ class SupplyService:
     def __init__(self, supply_repo: SqlAlchemyRepository):
         self.supply_repo: SqlAlchemyRepository = supply_repo
 
-    def get_all_supplies(self) -> list[SupplyDTO]:
+    def get_all_supplies(self) -> List[SupplyDTO]:
         supplies = self.supply_repo.find_all()
         return [SupplyDTO.model_validate(row) for row in supplies]
 
@@ -396,6 +600,67 @@ class SupplyService:
     def delete_supply(self, supply_id: int) -> SupplyDTO:
         supply = self.supply_repo.delete(id=supply_id)
         return SupplyDTO.model_validate(supply)
+
+    def get_monthly_supply_shipment_report(self, year: int, month: int) -> MonthlyReportDTO:
+        """Получить отчет по поставкам и отгрузкам за указанный месяц"""
+        from src.repository import RepoFactory
+        
+        # Получаем поставки за месяц
+        supplies = self.supply_repo.find_supplies_by_month(year, month)
+        
+        # Получаем отгрузки (перемещения со склада) за месяц
+        movement_repo = RepoFactory.movement_history_repo()
+        shipments = movement_repo.find_shipments_by_month(year, month)
+        
+        # Получаем информацию о товарах
+        product_repo = RepoFactory.product_repo()
+        products = product_repo.find_all()
+        product_dict = {p.id: p for p in products}
+        
+        # Формируем общий список операций
+        items = []
+        total_supplied = 0
+        total_shipped = 0
+        
+        # Добавляем поставки
+        for supply in supplies:
+            product = product_dict.get(supply.product_id)
+            item = MonthlyReportItemDTO(
+                date=supply.supply_date,
+                product_id=supply.product_id,
+                product_name=product.name if product else "Неизвестный товар",
+                type="supply",
+                quantity=supply.quantity,
+                reference_id=supply.id
+            )
+            items.append(item)
+            total_supplied += supply.quantity
+        
+        # Добавляем отгрузки
+        for shipment in shipments:
+            product = product_dict.get(shipment.product_id)
+            item = MonthlyReportItemDTO(
+                date=shipment.movement_date,
+                product_id=shipment.product_id,
+                product_name=product.name if product else "Неизвестный товар",
+                type="shipment",
+                quantity=shipment.quantity,
+                reference_id=shipment.id
+            )
+            items.append(item)
+            total_shipped += shipment.quantity
+        
+        # Сортируем по дате
+        items.sort(key=lambda x: x.date)
+        
+        return MonthlyReportDTO(
+            year=year,
+            month=month,
+            items=items,
+            total_supplied=total_supplied,
+            total_shipped=total_shipped,
+            net_change=total_supplied - total_shipped
+        )
 
 def supply_service():
     return SupplyService(supply_repo=RepoFactory.supply_repo())

@@ -127,6 +127,88 @@ class SqlAlchemyRepository[ModelType]:
         with db.session as session:
             result = session.execute(stmt)
             return result.scalars().all()
+        
+    # МЕТОД ДЛЯ ПОДСЧЕТА КОЛИЧЕСТВА ПРОДУКТОВ В КАТЕГОРИИ
+    def count_by_category(self, category_id: int) -> int:
+        """Подсчитать количество продуктов в категории"""
+        from src.models import ProductORM
+        
+        if self.model != ProductORM:
+            raise ValueError("Этот метод доступен только для ProductORM")
+            
+        stmt = select(ProductORM).where(ProductORM.category_id == category_id)
+        with db.session as session:
+            result = session.execute(stmt)
+            return len(result.scalars().all())
+
+    # МЕТОД ДЛЯ ПОИСКА ТОВАРОВ В ОТСТОЙНИКЕ (с количеством > 0)
+    def find_overflow_with_stock(self):
+        """Найти товары в отстойнике с положительным количеством"""
+        from src.models import OverflowBinORM
+        
+        if self.model != OverflowBinORM:
+            raise ValueError("Этот метод доступен только для OverflowBinORM")
+            
+        stmt = select(OverflowBinORM).where(OverflowBinORM.quantity > 0)
+        with db.session as session:
+            result = session.execute(stmt)
+            return result.scalars().all()
+
+    # МЕТОД ДЛЯ ПОИСКА РАЗМЕЩЕНИЙ НА КОНКРЕТНОМ СТЕЛЛАЖЕ
+    def find_placements_on_shelf(self, shelf_id: int):
+        """Найти размещения на конкретном стеллаже"""
+        from src.models import ProductPlacementORM
+        
+        if self.model != ProductPlacementORM:
+            raise ValueError("Этот метод доступен только для ProductPlacementORM")
+            
+        stmt = select(ProductPlacementORM).where(
+            ProductPlacementORM.shelf_id == shelf_id,
+            ProductPlacementORM.quantity > 0
+        )
+        with db.session as session:
+            result = session.execute(stmt)
+            return result.scalars().all()
+
+    # МЕТОД ДЛЯ ОТЧЕТА О ПОСТАВКАХ ЗА МЕСЯЦ
+    def find_supplies_by_month(self, year: int, month: int):
+        """Найти поставки за указанный месяц"""
+        from src.models import SupplyORM
+        from sqlalchemy import extract
+        
+        if self.model != SupplyORM:
+            raise ValueError("Этот метод доступен только для SupplyORM")
+            
+        stmt = select(SupplyORM).where(
+            extract('year', SupplyORM.supply_date) == year,
+            extract('month', SupplyORM.supply_date) == month
+        ).order_by(SupplyORM.supply_date)
+        
+        with db.session as session:
+            result = session.execute(stmt)
+            return result.scalars().all()
+
+    # МЕТОД ДЛЯ ПОИСКА ПЕРЕМЕЩЕНИЙ С ОТГРУЗКОЙ (со склада наружу)
+    def find_shipments_by_month(self, year: int, month: int):
+        """Найти отгрузки (перемещения со склада наружу) за месяц"""
+        from src.models import MovementHistoryORM
+        from sqlalchemy import extract
+        
+        if self.model != MovementHistoryORM:
+            raise ValueError("Этот метод доступен только для MovementHistoryORM")
+            
+        # Отгрузки: from_shelf есть, to_shelf нет, и не в отстойник
+        stmt = select(MovementHistoryORM).where(
+            extract('year', MovementHistoryORM.movement_date) == year,
+            extract('month', MovementHistoryORM.movement_date) == month,
+            MovementHistoryORM.from_shelf_id.is_not(None),
+            MovementHistoryORM.to_shelf_id.is_(None),
+            MovementHistoryORM.to_overflow == False
+        ).order_by(MovementHistoryORM.movement_date)
+        
+        with db.session as session:
+            result = session.execute(stmt)
+            return result.scalars().all()
 
 
 class RepoFactory:
