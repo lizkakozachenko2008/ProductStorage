@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поставки - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .deliveries-table-container {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .table-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .add-delivery-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .add-delivery-btn:hover {
+            background: #e8b47a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 80px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .product-id-column {
+            width: 150px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .quantity-column {
+            width: 120px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .date-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .status-column {
+            width: 180px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .status-delivered {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .status-cancelled {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit, .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-edit:hover, .btn-save:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+        }
+
+        .editable {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .editable-select {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+            cursor: pointer;
+        }
+
+        .editable:focus, .editable-select:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        .add-form {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+            display: none;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .status-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .status-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .status-option input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        @media (max-width: 992px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .admin-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .status-badge {
+                min-width: 120px;
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+        }
+
+        /* Стили для автодополнения продуктов */
+        .product-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: calc(100% - 30px);
+        }
+
+        .product-suggestion {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-id {
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .suggestion-name {
+            color: #7a6a52;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <a href="adminok.html" class="logo">StoreMarket</a>
+        </div>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление поставками</h1>
+            <p class="admin-subtitle">Просмотр и управление поставками товаров на склад</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <div class="deliveries-table-container">
+            <div class="table-header">
+                <h2 class="table-title">Список поставок</h2>
+                <button class="add-delivery-btn" id="showAddForm">+ Добавить поставку</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th class="id-column">ID</th>
+                        <th class="product-id-column">ID продукта</th>
+                        <th class="quantity-column">Количество</th>
+                        <th class="date-column">Дата поставки</th>
+                        <th class="status-column">Статус</th>
+                        <th class="actions-column">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="deliveriesTableBody">
+                    <!-- Данные будут загружены через JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Форма добавления новой поставки -->
+        <div class="add-form" id="addForm">
+            <h2 class="form-title">Добавить новую поставку</h2>
+            <form id="addDeliveryForm">
+                <div class="form-group">
+                    <label for="deliveryProductId">Продукт</label>
+                    <input type="text" id="deliveryProductId" placeholder="Начните вводить название или ID продукта" required autocomplete="off">
+                    <div id="productSuggestions" class="product-suggestions" style="display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="deliveryQuantity">Количество</label>
+                    <input type="number" id="deliveryQuantity" placeholder="Введите количество" required min="1">
+                </div>
+                <div class="form-group">
+                    <label for="deliveryDate">Дата поставки</label>
+                    <input type="date" id="deliveryDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Статус поставки</label>
+                    <div class="status-options">
+                        <label class="status-option">
+                            <input type="radio" name="deliveryStatus" value="delivered" checked>
+                            <span class="status-badge status-delivered">Доставлено</span>
+                        </label>
+                        <label class="status-option">
+                            <input type="radio" name="deliveryStatus" value="pending">
+                            <span class="status-badge status-pending">На рассмотрении</span>
+                        </label>
+                        <label class="status-option">
+                            <input type="radio" name="deliveryStatus" value="cancelled">
+                            <span class="status-badge status-cancelled">Отменено</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Добавить поставку</button>
+                    <button type="button" class="btn-cancel" id="hideAddForm">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Элементы DOM
+        const deliveriesTableBody = document.getElementById('deliveriesTableBody');
+        const addForm = document.getElementById('addForm');
+        const addDeliveryForm = document.getElementById('addDeliveryForm');
+        const showAddFormBtn = document.getElementById('showAddForm');
+        const hideAddFormBtn = document.getElementById('hideAddForm');
+        const messageContainer = document.getElementById('messageContainer');
+        const deliveryProductIdInput = document.getElementById('deliveryProductId');
+        const productSuggestions = document.getElementById('productSuggestions');
+        const deliveryDateInput = document.getElementById('deliveryDate');
+
+        // Устанавливаем текущую дату по умолчанию
+        const today = new Date().toISOString().split('T')[0];
+        deliveryDateInput.value = today;
+        deliveryDateInput.min = today;
+
+        // Загрузка поставок при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDeliveries();
+        });
+
+        // Показать/скрыть форму добавления
+        showAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'block';
+            deliveryProductIdInput.focus();
+        });
+
+        hideAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'none';
+            addDeliveryForm.reset();
+            deliveryDateInput.value = today;
+            productSuggestions.style.display = 'none';
+        });
+
+        // Автодополнение для выбора продукта
+        let allProducts = [];
+        let selectedProductId = null;
+
+        deliveryProductIdInput.addEventListener('input', async (e) => {
+            const searchTerm = e.target.value.trim();
+            
+            if (searchTerm.length < 2) {
+                productSuggestions.style.display = 'none';
+                return;
+            }
+
+            try {
+                // Загружаем продукты при первом поиске
+                if (allProducts.length === 0) {
+                    allProducts = await getProducts();
+                }
+
+                // Фильтруем продукты по поисковому запросу
+                const filteredProducts = allProducts.filter(product => 
+                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    product.id.toString().includes(searchTerm) ||
+                    product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+
+                if (filteredProducts.length > 0) {
+                    productSuggestions.innerHTML = filteredProducts.map(product => `
+                        <div class="product-suggestion" data-product-id="${product.id}" data-product-name="${product.name}">
+                            <div class="suggestion-id">${product.sku || `ID: ${product.id}`}</div>
+                            <div class="suggestion-name">${product.name}</div>
+                        </div>
+                    `).join('');
+                    productSuggestions.style.display = 'block';
+                } else {
+                    productSuggestions.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Ошибка при поиске продуктов:', error);
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Обработка выбора продукта из списка
+        productSuggestions.addEventListener('click', (e) => {
+            const suggestion = e.target.closest('.product-suggestion');
+            if (suggestion) {
+                const productId = suggestion.dataset.productId;
+                const productName = suggestion.dataset.productName;
+                
+                selectedProductId = productId;
+                deliveryProductIdInput.value = productName;
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Скрыть подсказки при клике вне поля
+        document.addEventListener('click', (e) => {
+            if (!deliveryProductIdInput.contains(e.target) && !productSuggestions.contains(e.target)) {
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Обработка формы добавления поставки
+        addDeliveryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const productId = selectedProductId;
+            const quantity = parseInt(document.getElementById('deliveryQuantity').value);
+            const deliveryDate = document.getElementById('deliveryDate').value;
+            const status = document.querySelector('input[name="deliveryStatus"]:checked').value;
+
+            if (!productId) {
+                showMessage('Пожалуйста, выберите продукт из списка', 'error');
+                return;
+            }
+
+            if (!quantity || quantity < 1) {
+                showMessage('Пожалуйста, введите корректное количество', 'error');
+                return;
+            }
+
+            if (!deliveryDate) {
+                showMessage('Пожалуйста, выберите дату поставки', 'error');
+                return;
+            }
+
+            try {
+                const deliveryData = {
+                    product_id: parseInt(productId),
+                    quantity: quantity,
+                    delivery_date: deliveryDate,
+                    status: status
+                };
+
+                await createDelivery(deliveryData);
+                showMessage('Поставка успешно создана', 'success');
+
+                // Перезагружаем список поставок
+                await loadDeliveries();
+                
+                // Скрываем форму и сбрасываем
+                addForm.style.display = 'none';
+                addDeliveryForm.reset();
+                deliveryDateInput.value = today;
+                selectedProductId = null;
+                productSuggestions.style.display = 'none';
+
+            } catch (error) {
+                console.error('Ошибка при создании поставки:', error);
+                showMessage('Ошибка при создании поставки: ' + error.message, 'error');
+            }
+        });
+
+        // Функция загрузки поставок
+        async function loadDeliveries() {
+            try {
+                deliveriesTableBody.innerHTML = '<tr><td colspan="6" class="empty-message">Загрузка...</td></tr>';
+                
+                const deliveries = await getDeliveries();
+                
+                if (deliveries.length === 0) {
+                    deliveriesTableBody.innerHTML = '<tr><td colspan="6" class="empty-message">Поставки не найдены</td></tr>';
+                    return;
+                }
+
+                deliveriesTableBody.innerHTML = '';
+                deliveries.forEach(delivery => {
+                    const row = createDeliveryRow(delivery);
+                    deliveriesTableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Ошибка при загрузке поставок:', error);
+                deliveriesTableBody.innerHTML = '<tr><td colspan="6" class="empty-message">Ошибка при загрузке поставок</td></tr>';
+            }
+        }
+
+        // Создание строки поставки
+        function createDeliveryRow(delivery) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="id-column">${delivery.id}</td>
+                <td class="product-id-column">
+                    <select class="editable-select" data-field="product_id">
+                        <option value="">Выберите продукт</option>
+                    </select>
+                </td>
+                <td class="quantity-column">
+                    <input type="number" class="editable" value="${delivery.quantity || ''}" data-field="quantity" min="1">
+                </td>
+                <td class="date-column">
+                    <input type="date" class="editable" value="${delivery.delivery_date || ''}" data-field="delivery_date">
+                </td>
+                <td class="status-column">
+                    <select class="editable-select" data-field="status">
+                        <option value="delivered" ${delivery.status === 'delivered' ? 'selected' : ''}>Доставлено</option>
+                        <option value="pending" ${delivery.status === 'pending' ? 'selected' : ''}>На рассмотрении</option>
+                        <option value="cancelled" ${delivery.status === 'cancelled' ? 'selected' : ''}>Отменено</option>
+                    </select>
+                </td>
+                <td class="actions-column">
+                    <div class="action-btns">
+                        <button class="btn-save" onclick="saveDelivery(${delivery.id}, this)">Сохранить</button>
+                        <button class="btn-delete" onclick="deleteDelivery(${delivery.id})">Удалить</button>
+                    </div>
+                </td>
+            `;
+
+            // Заполняем select продуктами асинхронно
+            populateProductSelect(row.querySelector('select[data-field="product_id"]'), delivery.product_id);
+            
+            return row;
+        }
+
+        // Заполнение select продуктами
+        async function populateProductSelect(selectElement, selectedProductId) {
+            try {
+                const products = await getProducts();
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (${product.sku || `ID: ${product.id}`})`;
+                    option.selected = product.id === selectedProductId;
+                    selectElement.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Ошибка при загрузке продуктов для select:', error);
+            }
+        }
+
+        // Сохранение поставки (редактирование)
+        async function saveDelivery(deliveryId, button) {
+            const row = button.closest('tr');
+            const productIdSelect = row.querySelector('select[data-field="product_id"]');
+            const quantityInput = row.querySelector('input[data-field="quantity"]');
+            const dateInput = row.querySelector('input[data-field="delivery_date"]');
+            const statusSelect = row.querySelector('select[data-field="status"]');
+            
+            const deliveryData = {
+                product_id: parseInt(productIdSelect.value),
+                quantity: parseInt(quantityInput.value),
+                delivery_date: dateInput.value,
+                status: statusSelect.value
+            };
+
+            // Проверяем, что все поля заполнены
+            if (!deliveryData.product_id || !deliveryData.quantity || !deliveryData.delivery_date || !deliveryData.status) {
+                showMessage('Пожалуйста, заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                button.textContent = 'Сохранение...';
+                button.disabled = true;
+                
+                await updateDelivery(deliveryId, deliveryData);
+                showMessage('Поставка успешно обновлена', 'success');
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении поставки:', error);
+                showMessage('Ошибка при обновлении поставки: ' + error.message, 'error');
+            } finally {
+                button.textContent = 'Сохранить';
+                button.disabled = false;
+            }
+        }
+
+        async function deleteDelivery(deliveryId) {
+            const shouldDelete = confirm('Вы уверены, что хотите удалить эту поставку?');
+            
+            if (!shouldDelete) {
+                return;
+            }
+
+            try {
+                await deleteDeliveryRequest(deliveryId);
+                showMessage('Поставка успешно удалена', 'success');
+                await loadDeliveries(); // Перезагружаем список
+                
+            } catch (error) {
+                console.error('Ошибка при удалении поставки:', error);
+                showMessage('Ошибка при удалении поставки: ' + error.message, 'error');
+            }
+        }
+
+        // API функции
+
+        // Получить все поставки
+        async function getDeliveries() {
+            const response = await fetch(`${API_BASE_URL}/supplies`);
+            if (!response.ok) {
+                throw new Error('Ошибка при получении поставок');
+            }
+            return await response.json();
+        }
+
+        // Получить все продукты
+        async function getProducts() {
+            const response = await fetch(`${API_BASE_URL}/products`);
+            if (!response.ok) {
+                throw new Error('Ошибка при получении продуктов');
+            }
+            return await response.json();
+        }
+
+        // Создать поставку
+        async function createDelivery(deliveryData) {
+            const response = await fetch(`${API_BASE_URL}/supplies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(deliveryData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при создании поставки');
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить поставку
+        async function updateDelivery(deliveryId, deliveryData) {
+            const response = await fetch(`${API_BASE_URL}/supplies/${deliveryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(deliveryData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при обновлении поставки');
+            }
+            
+            return await response.json();
+        }
+
+        // Удалить поставку
+        async function deleteDeliveryRequest(deliveryId) {
+            const response = await fetch(`${API_BASE_URL}/supplies/${deliveryId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при удалении поставки');
+            }
+            
+            return await response.json();
+        }
+
+        // Функция для показа сообщений
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageDiv);
+            
+            // Автоматически скрыть сообщение через 5 секунд
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Проверка авторизации администратора
+        function checkAdminAuth() {
+            const adminData = localStorage.getItem('admin');
+            if (!adminData) {
+                window.location.href = 'admin.html';
+                return null;
+            }
+            return JSON.parse(adminData);
+        }
+        // Проверяем авторизацию при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            const admin = checkAdminAuth();
+            if (!admin) {
+                return;
+            }
+        });
+    </script>
+</body>
+</html>

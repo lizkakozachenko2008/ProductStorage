@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title>Форма регистрации</title>
+</head>
+<body>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --cream: #FFF7D9;
+  --peach: #F7C48F;
+  --soft-green: #001800;
+  --soft-red: #FFB6C1;
+  --soft-blue: #ff0000;
+  --soft-purple: #D8BFD8;
+  --text-dark: #8B7355;
+  --text-light: #FFF7D9;
+  --shadow-soft: 0 8px 32px rgba(247, 196, 143, 0.2);
+  --border-radius: 20px;
+  --orange-primary: #FF6B35;
+  --orange-secondary: #FF8E53;
+  --orange-dark: #E55A2B;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--cream) 0%, var(--peach) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-soft);
+  padding: 50px 40px;
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--orange-primary), var(--orange-secondary), #FFA500, #FF8C00);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.back-arrow {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: linear-gradient(135deg, var(--orange-primary), var(--orange-secondary));
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: white;
+  font-size: 20px;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.back-arrow:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+  background: linear-gradient(135deg, var(--orange-dark), var(--orange-primary));
+}
+
+.text {
+  font-size: 38px;
+  font-weight: 700;
+  text-align: center;
+  background: linear-gradient(135deg, var(--orange-primary), var(--orange-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+form {
+  margin-top: 30px;
+}
+
+form .data {
+  margin: 20px 0;
+}
+
+form .data label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+  display: block;
+}
+
+form .data input {
+  height: 55px;
+  width: 100%;
+  padding: 0 20px;
+  font-size: 16px;
+  border: 2px solid rgba(247, 196, 143, 0.3);
+  border-radius: 15px;
+  background: rgba(255, 247, 217, 0.3);
+  color: var(--text-dark);
+  transition: all 0.3s ease;
+}
+
+form .data input:focus {
+  border-color: var(--orange-primary);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 5px 20px rgba(255, 107, 53, 0.3);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.btn {
+  margin: 30px 0 20px;
+  height: 55px;
+  width: 100%;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+  border: none;
+  background: linear-gradient(135deg, var(--orange-primary), var(--orange-secondary));
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(255, 107, 53, 0.4);
+  background: linear-gradient(135deg, var(--orange-dark), var(--orange-primary));
+}
+
+.btn button {
+  height: 100%;
+  width: 100%;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn:hover button {
+  color: #fff;
+  transform: scale(1.02);
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(247, 196, 143, 0.3);
+  color: var(--text-dark);
+  font-size: 15px;
+}
+
+.login-link a {
+  color: var(--orange-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.login-link a:hover {
+  color: var(--orange-dark);
+  text-decoration: underline;
+}
+
+/* Стили для сообщений */
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  display: none;
+}
+
+.success-message {
+  color: #27ae60;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(39, 174, 96, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(39, 174, 96, 0.2);
+  display: none;
+}
+
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 40px 30px;
+    max-width: 400px;
+  }
+  
+  .text {
+    font-size: 34px;
+  }
+  
+  .back-arrow {
+    top: 15px;
+    left: 15px;
+    width: 35px;
+    height: 35px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 35px 25px;
+    margin: 15px;
+  }
+  
+  .text {
+    font-size: 30px;
+  }
+  
+  form .data input {
+    height: 50px;
+    font-size: 15px;
+  }
+  
+  .btn {
+    height: 50px;
+  }
+  
+  .back-arrow {
+    top: 10px;
+    left: 10px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+}
+    </style>
+    <div class="center">
+        <div class="container">
+            <a href="index.html" class="back-arrow">←</a>
+            <div class="text">
+                Регистрация
+            </div>
+              <form id="registerForm">
+                <div class="data">
+                  <label for="login">Логин</label>
+                  <input type="text" id="login" required>
+                </div>
+                <div class="data">
+                  <label for="email">Почта</label>
+                  <input type="email" id="email" required>
+                </div>
+                <div class="data">
+                  <label for="password">Пароль</label>
+                  <input type="password" id="password" required>
+                </div>
+                
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+                
+                <div class="btn">
+                    <button type="submit">зарегистрироваться</button>
+                 
+                </div>
+                <div class="login-link">
+                  Уже есть аккаунт? <a href="vxod.html">Войти</a>
+                </div>
+              </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000'; 
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const login = document.getElementById('login').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            const submitButton = this.querySelector('button[type="submit"]');
+            
+         
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+      
+            if (!login || !email || !password) {
+                showError('Пожалуйста, заполните все поля');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Пароль должен содержать минимум 6 символов');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showError('Пожалуйста, введите корректный email');
+                return;
+            }
+            
+            try {
+                
+                submitButton.textContent = 'Регистрация...';
+                submitButton.disabled = true;
+                this.classList.add('loading');
+                
+                
+                const existingUsers = await getUsers();
+                const userExists = existingUsers.some(user => user.login === login);
+                
+                if (userExists) {
+                    showError('Пользователь с таким логином уже существует');
+                    return;
+                }
+                
+                const userData = {
+                    login: login,
+                    email: email,
+                    password: password
+                };
+                
+                const newUser = await createUser(userData);
+                
+                showSuccess('Регистрация прошла успешно! Перенаправление на страницу входа...');
+                this.reset();
+                setTimeout(() => {
+                    window.location.href = 'vxod.html';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Ошибка при регистрации:', error);
+                showError('Ошибка при регистрации. Пожалуйста, попробуйте еще раз.');
+            } finally {
+               
+                submitButton.textContent = 'зарегистрироваться';
+                submitButton.disabled = false;
+                this.classList.remove('loading');
+            }
+        });
+
+        async function createUser(userData) {
+            const response = await fetch(`${API_BASE_URL}/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при создании пользователя');
+            }
+            
+            return await response.json();
+        }
+
+        async function getUsers() {
+            const response = await fetch(`${API_BASE_URL}/users`);
+            
+            if (!response.ok) {
+                throw new Error('Ошибка при получении данных пользователей');
+            }
+            
+            return await response.json();
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+       
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+        }
+
+     
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        async function getUserById(userId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${userId}`);
+                if (!response.ok) {
+                    throw new Error('Пользователь не найден');
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка при получении пользователя:', error);
+                return null;
+            }
+        }
+
+        async function updateUser(userId, userData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка при обновлении пользователя');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка при обновлении пользователя:', error);
+                throw error;
+            }
+        }
+
+        async function deleteUser(userId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка при удалении пользователя');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка при удалении пользователя:', error);
+                throw error;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                console.log('Пользователь уже авторизован');
+               
+            }
+        });
+    </script>
+</body>
+</html>

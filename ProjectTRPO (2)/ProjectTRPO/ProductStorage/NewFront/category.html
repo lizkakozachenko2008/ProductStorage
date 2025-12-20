@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Категории - StoreMarket</title>
+    <style>
+     * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .categories-table-container {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .table-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .add-category-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .add-category-btn:hover {
+            background: #e8b47a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 80px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .name-column {
+            width: 200px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .description-column {
+            width: auto;
+            color: #7a6a52;
+            line-height: 1.5;
+        }
+
+        .actions-column {
+            width: 200px;
+            text-align: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit, .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-edit:hover, .btn-save:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+        }
+
+        .editable {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .editable:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        .add-form {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+            display: none;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .admin-title {
+                font-size: 2.5rem;
+            }
+
+            .container {
+                padding: 0 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+
+        .products-column {
+            width: 300px;
+            color: #7a6a52;
+        }
+
+        .products-list {
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(247, 196, 143, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid rgba(247, 196, 143, 0.2);
+        }
+
+        .product-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .product-quantity {
+            font-size: 0.85rem;
+            color: #7a6a52;
+            background: rgba(247, 196, 143, 0.2);
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .no-products {
+            color: #95a5a6;
+            font-style: italic;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .description-column {
+            width: 250px;
+        }
+
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <a href="adminok.html" class="logo">StoreMarket</a>
+        </div>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление категориями</h1>
+            <p class="admin-subtitle">Создание, редактирование и управление категориями товаров</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <div class="categories-table-container">
+            <div class="table-header">
+                <h2 class="table-title">Список категорий</h2>
+                <button class="add-category-btn" id="showAddForm">+ Добавить категорию</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th class="id-column">ID</th>
+                        <th class="name-column">Название категории</th>
+                        <th class="description-column">Описание категории</th>
+                        <th class="products-column">Продукты в категории</th>
+                        <th class="actions-column">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="categoriesTableBody">
+                    <!-- Данные будут загружены через JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Форма добавления новой категории -->
+        <div class="add-form" id="addForm">
+            <h2 class="form-title">Добавить новую категорию</h2>
+            <form id="addCategoryForm">
+                <div class="form-group">
+                    <label for="categoryName">Название категории</label>
+                    <input type="text" id="categoryName" placeholder="Введите название категории" required>
+                </div>
+                <div class="form-group">
+                    <label for="categoryDescription">Описание категории</label>
+                    <textarea id="categoryDescription" placeholder="Введите описание категории" rows="4" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Добавить категорию</button>
+                    <button type="button" class="btn-cancel" id="hideAddForm">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+   <script>
+        // Конфигурация
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // Глобальные переменные для отладки
+        window.debugMode = true;
+        
+        // Элементы DOM
+        const categoriesTableBody = document.getElementById('categoriesTableBody');
+        const addForm = document.getElementById('addForm');
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const showAddFormBtn = document.getElementById('showAddForm');
+        const hideAddFormBtn = document.getElementById('hideAddForm');
+        const messageContainer = document.getElementById('messageContainer');
+        
+        // Утилиты для отладки
+        function debugLog(...args) {
+            if (window.debugMode) {
+                console.log('🔍 DEBUG:', ...args);
+            }
+        }
+        
+        function debugError(...args) {
+            console.error('❌ DEBUG ERROR:', ...args);
+        }
+        
+        // Проверка CORS и доступности сервера
+        async function checkServerHealth() {
+            debugLog('Проверяем доступность сервера...');
+            
+            const testUrls = [
+                'http://localhost:8000/docs',
+                'http://localhost:8000/categories',
+                'http://127.0.0.1:8000/categories'
+            ];
+            
+            for (const url of testUrls) {
+                try {
+                    debugLog(`Тестируем ${url}...`);
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'no-cors', // Для простой проверки доступности
+                        cache: 'no-cache'
+                    });
+                    
+                    // Если мы здесь, значит сервер доступен (даже если CORS блокирует)
+                    debugLog(`✅ Сервер доступен по адресу: ${url}`);
+                    return url.replace('/docs', '').replace('/categories', '');
+                    
+                } catch (error) {
+                    debugLog(`❌ ${url} недоступен:`, error.message);
+                }
+            }
+            
+            return null;
+        }
+
+        // Загрузка категорий и продуктов при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            debugLog('Страница category.html загружена');
+            
+            // Проверяем авторизацию
+            const admin = checkAdminAuth();
+            if (!admin) {
+                debugError('Нет авторизации, перенаправляем на страницу входа');
+                window.location.href = 'admin.html';
+                return;
+            }
+            
+            // Проверяем доступность сервера
+            const serverUrl = await checkServerHealth();
+            if (!serverUrl) {
+                showMessage(
+                    '⚠️ Сервер не запущен или недоступен. Запустите бэкенд командой: ' +
+                    '<code>python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000</code>', 
+                    'error'
+                );
+                
+                categoriesTableBody.innerHTML = `
+                    <tr><td colspan="5" class="empty-message">
+                        <div style="color: #c0392b; padding: 20px; text-align: center;">
+                            <h3 style="margin-bottom: 15px;">Сервер не запущен!</h3>
+                            <p>Для работы страницы необходимо запустить бэкенд:</p>
+                            <pre style="background: #f1f1f1; padding: 10px; border-radius: 5px; margin: 10px 0;">
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+                            </pre>
+                            <p>После запуска <button onclick="location.reload()" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">обновите страницу</button></p>
+                        </div>
+                    </td></tr>
+                `;
+                return;
+            }
+            
+            debugLog('Сервер доступен, начинаем загрузку данных...');
+            
+            // Если сервер на другом URL, обновляем константу
+            if (serverUrl !== API_BASE_URL) {
+                debugLog(`Используем альтернативный URL сервера: ${serverUrl}`);
+                window.ACTUAL_API_BASE_URL = serverUrl;
+            }
+            
+            try {
+                await loadCategoriesWithProducts();
+            } catch (error) {
+                debugError('Критическая ошибка при загрузке:', error);
+            }
+        });
+
+        // Показать/скрыть форму добавления
+        showAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'block';
+            document.getElementById('categoryName').focus();
+        });
+
+        hideAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'none';
+            addCategoryForm.reset();
+        });
+
+        // Обработка формы добавления категории
+        addCategoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('categoryName').value.trim();
+            const description = document.getElementById('categoryDescription').value.trim();
+
+            if (!name || !description) {
+                showMessage('Пожалуйста, заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                const categoryData = { name, description };
+                const result = await createCategory(categoryData);
+                debugLog('Категория создана:', result);
+                showMessage('Категория успешно создана', 'success');
+
+                // Перезагружаем список категорий
+                await loadCategoriesWithProducts();
+                
+                // Скрываем форму и сбрасываем
+                addForm.style.display = 'none';
+                addCategoryForm.reset();
+
+            } catch (error) {
+                debugError('Ошибка при создании категории:', error);
+                showMessage('Ошибка при создании категории: ' + error.message, 'error');
+            }
+        });
+
+        // Функция загрузки категорий с продуктами
+        async function loadCategoriesWithProducts() {
+            debugLog('Запуск loadCategoriesWithProducts()');
+            
+            try {
+                categoriesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка данных...</td></tr>';
+                
+                // Сначала загружаем категории
+                debugLog('Шаг 1: Загружаем категории');
+                const categories = await getCategories();
+                debugLog(`Получено категорий: ${categories.length}`, categories);
+                
+                if (categories.length === 0) {
+                    categoriesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Категории не найдены. Создайте первую категорию.</td></tr>';
+                    return;
+                }
+                
+                // Затем загружаем продукты
+                debugLog('Шаг 2: Загружаем продукты');
+                let products = [];
+                try {
+                    products = await getProducts();
+                    debugLog(`Получено продуктов: ${products.length}`);
+                } catch (productError) {
+                    debugError('Ошибка при загрузке продуктов:', productError);
+                    // Продолжаем без продуктов
+                }
+                
+                // Отображаем данные
+                debugLog('Шаг 3: Отображаем таблицу');
+                categoriesTableBody.innerHTML = '';
+                categories.forEach(category => {
+                    // Находим продукты этой категории
+                    const categoryProducts = products.filter(product => product.category_id === category.id);
+                    const row = createCategoryRow(category, categoryProducts);
+                    categoriesTableBody.appendChild(row);
+                });
+                
+                debugLog('✅ Данные успешно загружены и отображены');
+                
+            } catch (error) {
+                debugError('❌ Ошибка в loadCategoriesWithProducts:', error);
+                
+                // Показываем понятное сообщение об ошибке
+                categoriesTableBody.innerHTML = `
+                    <tr><td colspan="5" class="empty-message">
+                        <div style="color: #c0392b; padding: 20px;">
+                            <h3 style="margin-bottom: 10px;">Ошибка загрузки данных</h3>
+                            <p><strong>Тип ошибки:</strong> ${error.name}</p>
+                            <p><strong>Сообщение:</strong> ${error.message}</p>
+                            <p><strong>Что проверить:</strong></p>
+                            <ol style="text-align: left; margin-left: 20px;">
+                                <li>Запущен ли бэкенд-сервер?</li>
+                                <li>Доступен ли он по адресу http://localhost:8000?</li>
+                                <li>Есть ли CORS ошибки в консоли браузера?</li>
+                            </ol>
+                            <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Попробовать снова
+                            </button>
+                        </div>
+                    </td></tr>
+                `;
+                
+                // Показываем ошибку в консоли
+                console.error('Полный стек ошибки:', error);
+                throw error;
+            }
+        }
+
+        // Создание строки категории с продуктами
+        function createCategoryRow(category, products) {
+            debugLog(`Создаем строку для категории ${category.id}: ${category.name}`);
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="id-column">${category.id}</td>
+                <td class="name-column">
+                    <input type="text" class="editable" value="${category.name || ''}" data-field="name">
+                </td>
+                <td class="description-column">
+                    <textarea class="editable" data-field="description">${category.description || ''}</textarea>
+                </td>
+                <td class="products-column">
+                    <div class="products-list">
+                        ${products.length > 0 ? 
+                            products.map(product => `
+                                <div class="product-item">
+                                    <span class="product-name">${product.name}</span>
+                                    <span class="product-quantity">${product.current_quantity || 0} ${product.unit || 'шт'}</span>
+                                </div>
+                            `).join('') : 
+                            '<div class="no-products">Нет продуктов</div>'
+                        }
+                    </div>
+                </td>
+                <td class="actions-column">
+                    <div class="action-btns">
+                        <button class="btn-save" onclick="saveCategory(${category.id}, this)">Сохранить</button>
+                        <button class="btn-delete" onclick="deleteCategory(${category.id})">Удалить</button>
+                    </div>
+                </td>
+            `;
+            return row;
+        }
+
+        // Сохранение категории (редактирование)
+        async function saveCategory(categoryId, button) {
+            debugLog(`Сохранение категории ${categoryId}`);
+            
+            const row = button.closest('tr');
+            const nameInput = row.querySelector('input[data-field="name"]');
+            const descriptionInput = row.querySelector('textarea[data-field="description"]');
+            
+            const categoryData = {
+                name: nameInput.value.trim(),
+                description: descriptionInput.value.trim()
+            };
+
+            // Проверяем, что есть изменения
+            if (!categoryData.name || !categoryData.description) {
+                showMessage('Пожалуйста, заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                button.textContent = 'Сохранение...';
+                button.disabled = true;
+                
+                const result = await updateCategory(categoryId, categoryData);
+                debugLog('Категория обновлена:', result);
+                showMessage('Категория успешно обновлена', 'success');
+                
+            } catch (error) {
+                debugError('Ошибка при обновлении категории:', error);
+                showMessage('Ошибка при обновлении категории: ' + error.message, 'error');
+            } finally {
+                button.textContent = 'Сохранить';
+                button.disabled = false;
+            }
+        }
+
+        async function deleteCategory(categoryId) {
+            debugLog(`Попытка удаления категории ${categoryId}`);
+            
+            try {
+                // Сначала проверяем есть ли продукты в этой категории
+                const products = await getProducts();
+                const categoryProducts = products.filter(product => product.category_id === categoryId);
+                
+                let shouldDelete = false;
+                
+                if (categoryProducts.length > 0) {
+                    const productNames = categoryProducts.map(p => p.name).join(', ');
+                    shouldDelete = confirm(`В этой категории есть продукты: ${productNames}\n\nУдаление категории приведет к удалению этих продуктов. Продолжить?`);
+                } else {
+                    shouldDelete = confirm('Вы уверены, что хотите удалить эту категорию?');
+                }
+
+                if (!shouldDelete) {
+                    return;
+                }
+
+                debugLog(`Отправляем DELETE запрос для категории ${categoryId}`);
+                const result = await deleteCategoryRequest(categoryId);
+                debugLog('Результат удаления:', result);
+                
+                showMessage('Категория успешно удалена', 'success');
+                await loadCategoriesWithProducts();
+                
+            } catch (error) {
+                debugError('Ошибка при удалении категории:', error);
+                showMessage('Ошибка при удалении категории: ' + error.message, 'error');
+            }
+        }
+
+        // ========== API ФУНКЦИИ ==========
+
+        // Получить все категории
+        async function getCategories() {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories`;
+            
+            debugLog(`GET ${url}`);
+            
+            try {
+                // Вариант 1: Простой запрос
+                const response = await fetch(url);
+                debugLog(`Ответ: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    debugError(`Ошибка HTTP ${response.status}:`, errorText);
+                    throw new Error(`Сервер вернул ошибку ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                debugLog('Получены данные категорий:', data);
+                return data;
+                
+            } catch (error) {
+                debugError('Ошибка в getCategories():', error);
+                
+                // Пробуем с заголовками
+                try {
+                    debugLog('Пробуем с заголовками...');
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    return await response.json();
+                } catch (retryError) {
+                    debugError('Повторная попытка тоже не удалась:', retryError);
+                    throw new Error(`Не удалось получить категории: ${error.message}`);
+                }
+            }
+        }
+
+        // Получить все продукты
+        async function getProducts() {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/products`;
+            
+            debugLog(`GET ${url}`);
+            
+            try {
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    debugLog(`Ошибка продуктов: ${response.status}`);
+                    return []; // Возвращаем пустой массив вместо ошибки
+                }
+                
+                const data = await response.json();
+                debugLog(`Получено ${data.length} продуктов`);
+                return data;
+            } catch (error) {
+                debugError('Ошибка получения продуктов:', error);
+                return []; // Возвращаем пустой массив
+            }
+        }
+
+        // Создать категорию
+        async function createCategory(categoryData) {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories`;
+            
+            debugLog(`POST ${url}`, categoryData);
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(categoryData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при создании категории');
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить категорию
+        async function updateCategory(categoryId, categoryData) {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories/${categoryId}`;
+            
+            debugLog(`PUT ${url}`, categoryData);
+            
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(categoryData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при обновлении категории');
+            }
+            
+            return await response.json();
+        }
+
+        // Удалить категорию
+        async function deleteCategoryRequest(categoryId) {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories/${categoryId}`;
+            
+            debugLog(`DELETE ${url}`);
+            
+            const response = await fetch(url, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                let errorDetail;
+                try {
+                    const errorData = await response.json();
+                    errorDetail = errorData.detail || 'Неизвестная ошибка';
+                } catch (e) {
+                    errorDetail = await response.text();
+                }
+                throw new Error(errorDetail || `Ошибка при удалении категории: ${response.status} ${response.statusText}`);
+            }
+            
+            try {
+                return await response.json();
+            } catch (e) {
+                return { success: true, message: 'Категория удалена' };
+            }
+        }
+
+        // Функция для показа сообщений
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.innerHTML = message; // Используем innerHTML для HTML сообщений
+            messageDiv.style.cursor = 'pointer';
+            messageDiv.onclick = () => messageDiv.remove();
+            
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageDiv);
+            
+            // Автоматически скрыть сообщение через 10 секунд
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 10000);
+        }
+
+        // Проверка авторизации администратора
+        function checkAdminAuth() {
+            try {
+                const adminData = localStorage.getItem('admin');
+                if (!adminData) {
+                    debugError('Нет данных администратора в localStorage');
+                    return null;
+                }
+                
+                const admin = JSON.parse(adminData);
+                if (!admin.isAuthenticated) {
+                    debugError('Администратор не аутентифицирован');
+                    return null;
+                }
+                
+                debugLog('Администратор авторизован:', admin.login);
+                return admin;
+                
+            } catch (error) {
+                debugError('Ошибка при проверке авторизации:', error);
+                return null;
+            }
+        }
+    </script>
+</body>
+</html>
