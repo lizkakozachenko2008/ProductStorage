@@ -453,9 +453,13 @@
         </div>
     </main>
 
-    <script>
+   <script>
+        // Конфигурация
         const API_BASE_URL = 'http://localhost:8000';
-
+        
+        // Глобальные переменные для отладки
+        window.debugMode = true;
+        
         // Элементы DOM
         const categoriesTableBody = document.getElementById('categoriesTableBody');
         const addForm = document.getElementById('addForm');
@@ -463,10 +467,98 @@
         const showAddFormBtn = document.getElementById('showAddForm');
         const hideAddFormBtn = document.getElementById('hideAddForm');
         const messageContainer = document.getElementById('messageContainer');
+        
+        // Утилиты для отладки
+        function debugLog(...args) {
+            if (window.debugMode) {
+                console.log('🔍 DEBUG:', ...args);
+            }
+        }
+        
+        function debugError(...args) {
+            console.error('❌ DEBUG ERROR:', ...args);
+        }
+        
+        // Проверка CORS и доступности сервера
+        async function checkServerHealth() {
+            debugLog('Проверяем доступность сервера...');
+            
+            const testUrls = [
+                'http://localhost:8000/docs',
+                'http://localhost:8000/categories',
+                'http://127.0.0.1:8000/categories'
+            ];
+            
+            for (const url of testUrls) {
+                try {
+                    debugLog(`Тестируем ${url}...`);
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'no-cors', // Для простой проверки доступности
+                        cache: 'no-cache'
+                    });
+                    
+                    // Если мы здесь, значит сервер доступен (даже если CORS блокирует)
+                    debugLog(`✅ Сервер доступен по адресу: ${url}`);
+                    return url.replace('/docs', '').replace('/categories', '');
+                    
+                } catch (error) {
+                    debugLog(`❌ ${url} недоступен:`, error.message);
+                }
+            }
+            
+            return null;
+        }
 
         // Загрузка категорий и продуктов при загрузке страницы
         document.addEventListener('DOMContentLoaded', async () => {
-            await loadCategoriesWithProducts();
+            debugLog('Страница category.html загружена');
+            
+            // Проверяем авторизацию
+            const admin = checkAdminAuth();
+            if (!admin) {
+                debugError('Нет авторизации, перенаправляем на страницу входа');
+                window.location.href = 'admin.html';
+                return;
+            }
+            
+            // Проверяем доступность сервера
+            const serverUrl = await checkServerHealth();
+            if (!serverUrl) {
+                showMessage(
+                    '⚠️ Сервер не запущен или недоступен. Запустите бэкенд командой: ' +
+                    '<code>python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000</code>', 
+                    'error'
+                );
+                
+                categoriesTableBody.innerHTML = `
+                    <tr><td colspan="5" class="empty-message">
+                        <div style="color: #c0392b; padding: 20px; text-align: center;">
+                            <h3 style="margin-bottom: 15px;">Сервер не запущен!</h3>
+                            <p>Для работы страницы необходимо запустить бэкенд:</p>
+                            <pre style="background: #f1f1f1; padding: 10px; border-radius: 5px; margin: 10px 0;">
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+                            </pre>
+                            <p>После запуска <button onclick="location.reload()" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">обновите страницу</button></p>
+                        </div>
+                    </td></tr>
+                `;
+                return;
+            }
+            
+            debugLog('Сервер доступен, начинаем загрузку данных...');
+            
+            // Если сервер на другом URL, обновляем константу
+            if (serverUrl !== API_BASE_URL) {
+                debugLog(`Используем альтернативный URL сервера: ${serverUrl}`);
+                window.ACTUAL_API_BASE_URL = serverUrl;
+            }
+            
+            try {
+                await loadCategoriesWithProducts();
+            } catch (error) {
+                debugError('Критическая ошибка при загрузке:', error);
+            }
         });
 
         // Показать/скрыть форму добавления
@@ -494,7 +586,8 @@
 
             try {
                 const categoryData = { name, description };
-                await createCategory(categoryData);
+                const result = await createCategory(categoryData);
+                debugLog('Категория создана:', result);
                 showMessage('Категория успешно создана', 'success');
 
                 // Перезагружаем список категорий
@@ -505,27 +598,41 @@
                 addCategoryForm.reset();
 
             } catch (error) {
-                console.error('Ошибка при создании категории:', error);
+                debugError('Ошибка при создании категории:', error);
                 showMessage('Ошибка при создании категории: ' + error.message, 'error');
             }
         });
 
         // Функция загрузки категорий с продуктами
         async function loadCategoriesWithProducts() {
+            debugLog('Запуск loadCategoriesWithProducts()');
+            
             try {
-                categoriesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
+                categoriesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка данных...</td></tr>';
                 
-                // Загружаем категории и продукты параллельно
-                const [categories, products] = await Promise.all([
-                    getCategories(),
-                    getProducts()
-                ]);
+                // Сначала загружаем категории
+                debugLog('Шаг 1: Загружаем категории');
+                const categories = await getCategories();
+                debugLog(`Получено категорий: ${categories.length}`, categories);
                 
                 if (categories.length === 0) {
-                    categoriesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Категории не найдены</td></tr>';
+                    categoriesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Категории не найдены. Создайте первую категорию.</td></tr>';
                     return;
                 }
-
+                
+                // Затем загружаем продукты
+                debugLog('Шаг 2: Загружаем продукты');
+                let products = [];
+                try {
+                    products = await getProducts();
+                    debugLog(`Получено продуктов: ${products.length}`);
+                } catch (productError) {
+                    debugError('Ошибка при загрузке продуктов:', productError);
+                    // Продолжаем без продуктов
+                }
+                
+                // Отображаем данные
+                debugLog('Шаг 3: Отображаем таблицу');
                 categoriesTableBody.innerHTML = '';
                 categories.forEach(category => {
                     // Находим продукты этой категории
@@ -533,15 +640,42 @@
                     const row = createCategoryRow(category, categoryProducts);
                     categoriesTableBody.appendChild(row);
                 });
-
+                
+                debugLog('✅ Данные успешно загружены и отображены');
+                
             } catch (error) {
-                console.error('Ошибка при загрузке категорий:', error);
-                categoriesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Ошибка при загрузке категорий</td></tr>';
+                debugError('❌ Ошибка в loadCategoriesWithProducts:', error);
+                
+                // Показываем понятное сообщение об ошибке
+                categoriesTableBody.innerHTML = `
+                    <tr><td colspan="5" class="empty-message">
+                        <div style="color: #c0392b; padding: 20px;">
+                            <h3 style="margin-bottom: 10px;">Ошибка загрузки данных</h3>
+                            <p><strong>Тип ошибки:</strong> ${error.name}</p>
+                            <p><strong>Сообщение:</strong> ${error.message}</p>
+                            <p><strong>Что проверить:</strong></p>
+                            <ol style="text-align: left; margin-left: 20px;">
+                                <li>Запущен ли бэкенд-сервер?</li>
+                                <li>Доступен ли он по адресу http://localhost:8000?</li>
+                                <li>Есть ли CORS ошибки в консоли браузера?</li>
+                            </ol>
+                            <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Попробовать снова
+                            </button>
+                        </div>
+                    </td></tr>
+                `;
+                
+                // Показываем ошибку в консоли
+                console.error('Полный стек ошибки:', error);
+                throw error;
             }
         }
 
         // Создание строки категории с продуктами
         function createCategoryRow(category, products) {
+            debugLog(`Создаем строку для категории ${category.id}: ${category.name}`);
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="id-column">${category.id}</td>
@@ -557,7 +691,7 @@
                             products.map(product => `
                                 <div class="product-item">
                                     <span class="product-name">${product.name}</span>
-                                    <span class="product-quantity">${product.current_quantity} ${product.unit}</span>
+                                    <span class="product-quantity">${product.current_quantity || 0} ${product.unit || 'шт'}</span>
                                 </div>
                             `).join('') : 
                             '<div class="no-products">Нет продуктов</div>'
@@ -576,6 +710,8 @@
 
         // Сохранение категории (редактирование)
         async function saveCategory(categoryId, button) {
+            debugLog(`Сохранение категории ${categoryId}`);
+            
             const row = button.closest('tr');
             const nameInput = row.querySelector('input[data-field="name"]');
             const descriptionInput = row.querySelector('textarea[data-field="description"]');
@@ -595,11 +731,12 @@
                 button.textContent = 'Сохранение...';
                 button.disabled = true;
                 
-                await updateCategory(categoryId, categoryData);
+                const result = await updateCategory(categoryId, categoryData);
+                debugLog('Категория обновлена:', result);
                 showMessage('Категория успешно обновлена', 'success');
                 
             } catch (error) {
-                console.error('Ошибка при обновлении категории:', error);
+                debugError('Ошибка при обновлении категории:', error);
                 showMessage('Ошибка при обновлении категории: ' + error.message, 'error');
             } finally {
                 button.textContent = 'Сохранить';
@@ -607,69 +744,121 @@
             }
         }
 
-async function deleteCategory(categoryId) {
-    console.log(`🔍 Пытаемся удалить категорию с ID: ${categoryId}`);
-    
-    try {
-        // Сначала проверяем есть ли продукты в этой категории
-        const products = await getProducts();
-        const categoryProducts = products.filter(product => product.category_id === categoryId);
-        
-        let shouldDelete = false;
-        
-        if (categoryProducts.length > 0) {
-            const productNames = categoryProducts.map(p => p.name).join(', ');
-            shouldDelete = confirm(`В этой категории есть продукты: ${productNames}\n\nУдаление категории приведет к удалению этих продуктов. Продолжить?`);
-        } else {
-            shouldDelete = confirm('Вы уверены, что хотите удалить эту категорию?');
+        async function deleteCategory(categoryId) {
+            debugLog(`Попытка удаления категории ${categoryId}`);
+            
+            try {
+                // Сначала проверяем есть ли продукты в этой категории
+                const products = await getProducts();
+                const categoryProducts = products.filter(product => product.category_id === categoryId);
+                
+                let shouldDelete = false;
+                
+                if (categoryProducts.length > 0) {
+                    const productNames = categoryProducts.map(p => p.name).join(', ');
+                    shouldDelete = confirm(`В этой категории есть продукты: ${productNames}\n\nУдаление категории приведет к удалению этих продуктов. Продолжить?`);
+                } else {
+                    shouldDelete = confirm('Вы уверены, что хотите удалить эту категорию?');
+                }
+
+                if (!shouldDelete) {
+                    return;
+                }
+
+                debugLog(`Отправляем DELETE запрос для категории ${categoryId}`);
+                const result = await deleteCategoryRequest(categoryId);
+                debugLog('Результат удаления:', result);
+                
+                showMessage('Категория успешно удалена', 'success');
+                await loadCategoriesWithProducts();
+                
+            } catch (error) {
+                debugError('Ошибка при удалении категории:', error);
+                showMessage('Ошибка при удалении категории: ' + error.message, 'error');
+            }
         }
 
-        if (!shouldDelete) {
-            return;
-        }
-
-        console.log(`🗑️ Отправляем запрос на удаление категории ${categoryId}`);
-        const result = await deleteCategoryRequest(categoryId);
-        console.log(`✅ Категория удалена:`, result);
-        
-        showMessage('Категория успешно удалена', 'success');
-        await loadCategoriesWithProducts(); // Перезагружаем список
-        
-    } catch (error) {
-        console.error('❌ Ошибка при удалении категории:', error);
-        console.error('Детали ошибки:', {
-            categoryId: categoryId,
-            errorMessage: error.message,
-            errorStack: error.stack
-        });
-        showMessage('Ошибка при удалении категории: ' + error.message, 'error');
-    }
-}
-
-
-        // API функции
+        // ========== API ФУНКЦИИ ==========
 
         // Получить все категории
         async function getCategories() {
-            const response = await fetch(`${API_BASE_URL}/categories`);
-            if (!response.ok) {
-                throw new Error('Ошибка при получении категорий');
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories`;
+            
+            debugLog(`GET ${url}`);
+            
+            try {
+                // Вариант 1: Простой запрос
+                const response = await fetch(url);
+                debugLog(`Ответ: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    debugError(`Ошибка HTTP ${response.status}:`, errorText);
+                    throw new Error(`Сервер вернул ошибку ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                debugLog('Получены данные категорий:', data);
+                return data;
+                
+            } catch (error) {
+                debugError('Ошибка в getCategories():', error);
+                
+                // Пробуем с заголовками
+                try {
+                    debugLog('Пробуем с заголовками...');
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    return await response.json();
+                } catch (retryError) {
+                    debugError('Повторная попытка тоже не удалась:', retryError);
+                    throw new Error(`Не удалось получить категории: ${error.message}`);
+                }
             }
-            return await response.json();
         }
 
         // Получить все продукты
         async function getProducts() {
-            const response = await fetch(`${API_BASE_URL}/products`);
-            if (!response.ok) {
-                throw new Error('Ошибка при получении продуктов');
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/products`;
+            
+            debugLog(`GET ${url}`);
+            
+            try {
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    debugLog(`Ошибка продуктов: ${response.status}`);
+                    return []; // Возвращаем пустой массив вместо ошибки
+                }
+                
+                const data = await response.json();
+                debugLog(`Получено ${data.length} продуктов`);
+                return data;
+            } catch (error) {
+                debugError('Ошибка получения продуктов:', error);
+                return []; // Возвращаем пустой массив
             }
-            return await response.json();
         }
 
         // Создать категорию
         async function createCategory(categoryData) {
-            const response = await fetch(`${API_BASE_URL}/categories`, {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories`;
+            
+            debugLog(`POST ${url}`, categoryData);
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -687,7 +876,12 @@ async function deleteCategory(categoryId) {
 
         // Обновить категорию
         async function updateCategory(categoryId, categoryData) {
-            const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories/${categoryId}`;
+            
+            debugLog(`PUT ${url}`, categoryData);
+            
+            const response = await fetch(url, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -704,74 +898,76 @@ async function deleteCategory(categoryId) {
         }
 
         // Удалить категорию
-async function deleteCategoryRequest(categoryId) {
-    console.log(`🌐 Отправляем DELETE запрос на: ${API_BASE_URL}/categories/${categoryId}`);
-    
-    const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
-        method: 'DELETE'
-    });
-    
-    console.log(`📊 Ответ сервера:`, {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-    });
-    
-    if (!response.ok) {
-        let errorDetail;
-        try {
-            const errorData = await response.json();
-            errorDetail = errorData.detail || 'Неизвестная ошибка';
-            console.error('📋 Детали ошибки от сервера:', errorData);
-        } catch (e) {
-            errorDetail = await response.text();
-            console.error('📋 Текст ошибки:', errorDetail);
+        async function deleteCategoryRequest(categoryId) {
+            const baseUrl = window.ACTUAL_API_BASE_URL || API_BASE_URL;
+            const url = `${baseUrl}/categories/${categoryId}`;
+            
+            debugLog(`DELETE ${url}`);
+            
+            const response = await fetch(url, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                let errorDetail;
+                try {
+                    const errorData = await response.json();
+                    errorDetail = errorData.detail || 'Неизвестная ошибка';
+                } catch (e) {
+                    errorDetail = await response.text();
+                }
+                throw new Error(errorDetail || `Ошибка при удалении категории: ${response.status} ${response.statusText}`);
+            }
+            
+            try {
+                return await response.json();
+            } catch (e) {
+                return { success: true, message: 'Категория удалена' };
+            }
         }
-        throw new Error(errorDetail || `Ошибка при удалении категории: ${response.status} ${response.statusText}`);
-    }
-    
-    try {
-        const result = await response.json();
-        console.log('✅ Успешный ответ:', result);
-        return result;
-    } catch (e) {
-        console.log('✅ Категория удалена (пустой ответ)');
-        return { success: true };
-    }
-}
 
         // Функция для показа сообщений
         function showMessage(message, type) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
-            messageDiv.textContent = message;
+            messageDiv.innerHTML = message; // Используем innerHTML для HTML сообщений
+            messageDiv.style.cursor = 'pointer';
+            messageDiv.onclick = () => messageDiv.remove();
             
             messageContainer.innerHTML = '';
             messageContainer.appendChild(messageDiv);
             
-            // Автоматически скрыть сообщение через 5 секунд
+            // Автоматически скрыть сообщение через 10 секунд
             setTimeout(() => {
-                messageDiv.remove();
-            }, 5000);
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 10000);
         }
 
         // Проверка авторизации администратора
         function checkAdminAuth() {
-            const adminData = localStorage.getItem('admin');
-            if (!adminData) {
-                window.location.href = 'admin.html';
+            try {
+                const adminData = localStorage.getItem('admin');
+                if (!adminData) {
+                    debugError('Нет данных администратора в localStorage');
+                    return null;
+                }
+                
+                const admin = JSON.parse(adminData);
+                if (!admin.isAuthenticated) {
+                    debugError('Администратор не аутентифицирован');
+                    return null;
+                }
+                
+                debugLog('Администратор авторизован:', admin.login);
+                return admin;
+                
+            } catch (error) {
+                debugError('Ошибка при проверке авторизации:', error);
                 return null;
             }
-            return JSON.parse(adminData);
         }
-
-        // Проверяем авторизацию при загрузке
-        document.addEventListener('DOMContentLoaded', () => {
-            const admin = checkAdminAuth();
-            if (!admin) {
-                return;
-            }
-        });
     </script>
 </body>
 </html>

@@ -1,15 +1,10 @@
-from typing import Any, List, Optional, Type, TypeVar, Sequence
-
-from sqlalchemy import select
+from typing import Any, List, Optional, Type, TypeVar, Sequence, Dict
+from sqlalchemy import select, func, extract, and_, or_, text
+from sqlalchemy.orm import Session
+from datetime import datetime, timedelta, date
 
 from src.database import db
-from src.models import * 
-# (
-#     AdminORM, Base, UserORM, CategoryORM, ProductORM, 
-#     OverflowBinORM, PurchaseOrderORM, ShelfORM, MovementHistoryORM,
-#     NotificationORM, ProductPlacementORM, SupplyORM
-# )
-
+from src.models import *
 
 ModelType = TypeVar('ModelType', bound=Base)
 
@@ -24,7 +19,6 @@ class SqlAlchemyRepository[ModelType]:
             session.add(model)
             session.commit()
             session.refresh(model)
-
             return model
 
     def create_multiple(self, data: List[dict]) -> List[ModelType]:
@@ -36,15 +30,9 @@ class SqlAlchemyRepository[ModelType]:
 
             session.add_all(list_models)
             session.commit()
-            session.refresh(list_models)
-
             return list_models
 
-    def update(
-        self,
-        data: dict[str, Any],
-        **filters
-    ) -> Optional[ModelType]:
+    def update(self, data: dict[str, Any], **filters) -> Optional[ModelType]:
         with db.session as session:
             query = session.query(self.model).filter_by(**filters)
             obj = query.one_or_none()
@@ -53,14 +41,11 @@ class SqlAlchemyRepository[ModelType]:
                 for key, value in data.items():
                     setattr(obj, key, value)
                 session.commit()
-
-            print(obj)
+                session.refresh(obj)
 
             return obj
 
-    def delete(self,
-        **filters
-    ) -> Optional[ModelType]:
+    def delete(self, **filters) -> Optional[ModelType]:
         with db.session as session:
             obj = session.query(self.model).filter_by(**filters).first()
             if obj:
@@ -69,146 +54,258 @@ class SqlAlchemyRepository[ModelType]:
             
             return obj
 
-    def find(
-            self,
-            **filters
-    ) -> Optional[ModelType]:
+    def find(self, **filters) -> Optional[ModelType]:
         with db.session as session:
             query = (
                 select(self.model)
                 .filter_by(**filters)
+                .options(*self.model.get_loads()) # type: ignore
             )
-
             result = session.execute(query)
             return result.scalar_one_or_none()
 
-    def find_all(
-            self,
-            **filters,
-    ) -> Sequence[ModelType]:
+    def find_all(self, **filters) -> Sequence[ModelType]:
         with db.session as session:
             query = (
                 select(self.model)
                 .filter_by(**filters)
+                .options(*self.model.get_loads()) # type: ignore
             )
-
             result = session.execute(query)
-
             return result.scalars().all()
 
-    # МЕТОДЫ ДЛЯ ЗАПРОСОВ
-    def find_low_stock(self):
+    # Специальные методы для StockORM
+    def update_stock_quantity(self, product_id: int, quantity_change: int,
+                            is_reservation: bool = False) -> Optional[ModelType]:
+        """Обновить количество запасов товара"""
+        if self.model != StockORM:
+            raise ValueError("Этот метод доступен только для StockORM")
+        
+        with db.session as session:
+            stock = session.query(StockORM).filter_by(product_id=product_id).first()
+            
+            if not stock:
+                # Создаем запись запасов, если ее нет
+                stock = StockORM(
+                    product_id=product_id,
+                    total_quantity=max(quantity_change, 0) if not is_reservation else 0,
+                    reserved_quantity=max(quantity_change, 0) if is_reservation else 0
+                )
+                stock.calculate_available()
+                session.add(stock)
+            else:
+                if is_reservation:
+                    # Изменяем резерв
+                    stock.reserved_quantity += quantity_change
+                    if stock.reserved_quantity < 0:
+                        stock.reserved_quantity = 0
+                else:
+                    # Изменяем общее количество
+                    stock.total_quantity += quantity_change
+                    if stock.total_quantity < 0:
+                        stock.total_quantity = 0
+                
+                # Пересчитываем доступное количество
+                stock.calculate_available()
+                stock.last_updated = datetime.now(timezone.utc)
+            
+            session.commit()
+            session.refresh(stock)
+            return stock
+
+    def get_available_quantity(self, product_id: int) -> int:
+        """Получить доступное количество товара"""
+        if self.model != StockORM:
+            raise ValueError("Этот метод доступен только для StockORM")
+        
+        stock = self.find(product_id=product_id)
+        if stock:
+            return stock.available_quantity
+        return 0
+
+    def reserve_stock(self, product_id: int, quantity: int) -> Optional[ModelType]:
+        """Зарезервировать количество товара"""
+        return self.update_stock_quantity(product_id, quantity, is_reservation=True)
+
+    def release_stock(self, product_id: int, quantity: int) -> Optional[ModelType]:
+        """Освободить зарезервированное количество товара"""
+        return self.update_stock_quantity(product_id, -quantity, is_reservation=True)
+
+    # Методы для поиска низких запасов
+    def find_low_stock(self) -> List[ProductORM]:
         """Найти товары с текущим количеством <= минимальному"""
         from src.models import ProductORM
         
         if self.model != ProductORM:
             raise ValueError("Этот метод доступен только для ProductORM")
             
-        stmt = select(ProductORM).where(
-            ProductORM.current_quantity <= ProductORM.min_quantity
-        )
         with db.session as session:
+            stmt = (
+                select(ProductORM)
+                .join(StockORM, ProductORM.id == StockORM.product_id)
+                .where(StockORM.available_quantity <= ProductORM.min_quantity)
+            )
             result = session.execute(stmt)
             return result.scalars().all()
 
-    def find_recent_movements(self, days: int = 7):
-        """Найти перемещения за последние N дней"""
-        from src.models import MovementHistoryORM
-        from datetime import datetime, timedelta
+    # Методы для отчетов
+    def get_product_placements_summary(self) -> List[Dict]:
+        """Получить сводку по размещению товаров"""
+        if self.model != ProductPlacementORM:
+            raise ValueError("Этот метод доступен только для ProductPlacementORM")
         
+        with db.session as session:
+            stmt = (
+                select(
+                    ProductPlacementORM.product_id,
+                    func.sum(ProductPlacementORM.quantity).label('total_placed'),
+                    func.count(ProductPlacementORM.id).label('placement_count')
+                )
+                .group_by(ProductPlacementORM.product_id)
+            )
+            result = session.execute(stmt)
+            return [dict(row._mapping) for row in result]
+
+    def get_monthly_supplies(self, year: int, month: int) -> List[SupplyORM]:
+        """Найти поставки за указанный месяц"""
+        if self.model != SupplyORM:
+            raise ValueError("Этот метод доступен только для SupplyORM")
+        
+        with db.session as session:
+            stmt = (
+                select(SupplyORM)
+                .where(
+                    extract('year', SupplyORM.supply_date) == year,
+                    extract('month', SupplyORM.supply_date) == month
+                )
+                .order_by(SupplyORM.supply_date)
+            )
+            result = session.execute(stmt)
+            return result.scalars().all()
+
+    def get_monthly_shipments(self, year: int, month: int) -> List[ShipmentORM]:
+        """Найти отгрузки за указанный месяц"""
+        if self.model != ShipmentORM:
+            raise ValueError("Этот метод доступен только для ShipmentORM")
+        
+        with db.session as session:
+            stmt = (
+                select(ShipmentORM)
+                .where(
+                    extract('year', ShipmentORM.shipment_date) == year,
+                    extract('month', ShipmentORM.shipment_date) == month
+                )
+                .order_by(ShipmentORM.shipment_date)
+            )
+            result = session.execute(stmt)
+            return result.scalars().all()
+
+    def get_overflow_with_stock(self) -> List[OverflowBinORM]:
+        """Найти товары в отстойнике с положительным количеством"""
+        if self.model != OverflowBinORM:
+            raise ValueError("Этот метод доступен только для OverflowBinORM")
+        
+        with db.session as session:
+            stmt = select(OverflowBinORM).where(OverflowBinORM.quantity > 0)
+            result = session.execute(stmt)
+            return result.scalars().all()
+
+    def find_recent_movements(self, days: int = 7) -> List[MovementHistoryORM]:
+        """Найти перемещения за последние N дней"""
         if self.model != MovementHistoryORM:
             raise ValueError("Этот метод доступен только для MovementHistoryORM")
         
         since_date = datetime.now() - timedelta(days=days)
-        stmt = select(MovementHistoryORM).where(
-            MovementHistoryORM.movement_date >= since_date
-        ).order_by(MovementHistoryORM.movement_date.desc())
-        
         with db.session as session:
+            stmt = (
+                select(MovementHistoryORM)
+                .where(MovementHistoryORM.movement_date >= since_date)
+                .order_by(MovementHistoryORM.movement_date.desc())
+            )
             result = session.execute(stmt)
             return result.scalars().all()
-        
-    # МЕТОД ДЛЯ ПОДСЧЕТА КОЛИЧЕСТВА ПРОДУКТОВ В КАТЕГОРИИ
+
     def count_by_category(self, category_id: int) -> int:
         """Подсчитать количество продуктов в категории"""
-        from src.models import ProductORM
-        
         if self.model != ProductORM:
             raise ValueError("Этот метод доступен только для ProductORM")
-            
-        stmt = select(ProductORM).where(ProductORM.category_id == category_id)
+        
         with db.session as session:
+            stmt = select(func.count(ProductORM.id)).where(ProductORM.category_id == category_id)
             result = session.execute(stmt)
-            return len(result.scalars().all())
+            return result.scalar() or 0
 
-    # МЕТОД ДЛЯ ПОИСКА ТОВАРОВ В ОТСТОЙНИКЕ (с количеством > 0)
-    def find_overflow_with_stock(self):
-        """Найти товары в отстойнике с положительным количеством"""
-        from src.models import OverflowBinORM
+    def get_stock_statistics(self) -> Dict:
+        """Получить статистику по запасам"""
+        if self.model != StockORM:
+            raise ValueError("Этот метод доступен только для StockORM")
         
-        if self.model != OverflowBinORM:
-            raise ValueError("Этот метод доступен только для OverflowBinORM")
-            
-        stmt = select(OverflowBinORM).where(OverflowBinORM.quantity > 0)
         with db.session as session:
-            result = session.execute(stmt)
-            return result.scalars().all()
+            # Общая статистика
+            total_stats = session.execute(
+                select(
+                    func.count(StockORM.id).label('total_products'),
+                    func.sum(StockORM.total_quantity).label('total_quantity'),
+                    func.sum(StockORM.reserved_quantity).label('total_reserved'),
+                    func.sum(StockORM.available_quantity).label('total_available')
+                )
+            ).first()
+            
+            # Товары с низким запасом
+            low_stock_count = session.execute(
+                select(func.count(ProductORM.id))
+                .join(StockORM, ProductORM.id == StockORM.product_id)
+                .where(StockORM.available_quantity <= ProductORM.min_quantity)
+            ).scalar() or 0
+            
+            # Товары с нулевым запасом
+            out_of_stock_count = session.execute(
+                select(func.count(StockORM.id))
+                .where(StockORM.available_quantity <= 0)
+            ).scalar() or 0
+            
+            return {
+                'total_products': total_stats.total_products or 0,
+                'total_quantity': total_stats.total_quantity or 0,
+                'total_reserved': total_stats.total_reserved or 0,
+                'total_available': total_stats.total_available or 0,
+                'low_stock_count': low_stock_count,
+                'out_of_stock_count': out_of_stock_count
+            }
 
-    # МЕТОД ДЛЯ ПОИСКА РАЗМЕЩЕНИЙ НА КОНКРЕТНОМ СТЕЛЛАЖЕ
-    def find_placements_on_shelf(self, shelf_id: int):
-        """Найти размещения на конкретном стеллаже"""
-        from src.models import ProductPlacementORM
+    def get_inventory_value(self) -> float:
+        """Рассчитать общую стоимость инвентаря"""
+        if self.model != ProductORM:
+            raise ValueError("Этот метод доступен только для ProductORM")
         
-        if self.model != ProductPlacementORM:
-            raise ValueError("Этот метод доступен только для ProductPlacementORM")
-            
-        stmt = select(ProductPlacementORM).where(
-            ProductPlacementORM.shelf_id == shelf_id,
-            ProductPlacementORM.quantity > 0
-        )
         with db.session as session:
+            stmt = (
+                select(func.sum(ProductORM.price * StockORM.available_quantity))
+                .join(StockORM, ProductORM.id == StockORM.product_id)
+                .where(ProductORM.price.is_not(None))
+            )
             result = session.execute(stmt)
-            return result.scalars().all()
+            return result.scalar() or 0.0
 
-    # МЕТОД ДЛЯ ОТЧЕТА О ПОСТАВКАХ ЗА МЕСЯЦ
-    def find_supplies_by_month(self, year: int, month: int):
-        """Найти поставки за указанный месяц"""
-        from src.models import SupplyORM
-        from sqlalchemy import extract
-        
-        if self.model != SupplyORM:
-            raise ValueError("Этот метод доступен только для SupplyORM")
-            
-        stmt = select(SupplyORM).where(
-            extract('year', SupplyORM.supply_date) == year,
-            extract('month', SupplyORM.supply_date) == month
-        ).order_by(SupplyORM.supply_date)
+    def get_shelf_utilization(self) -> List[Dict]:
+        """Получить статистику использования стеллажей"""
+        if self.model != ShelfORM:
+            raise ValueError("Этот метод доступен только для ShelfORM")
         
         with db.session as session:
+            stmt = (
+                select(
+                    ShelfORM.id,
+                    ShelfORM.name,
+                    ShelfORM.max_capacity,
+                    ShelfORM.current_quantity,
+                    ((ShelfORM.current_quantity * 100.0) / ShelfORM.max_capacity).label('utilization_percent'),
+                    (ShelfORM.max_capacity - ShelfORM.current_quantity).label('free_space')
+                )
+                .order_by(ShelfORM.current_quantity.desc())
+            )
             result = session.execute(stmt)
-            return result.scalars().all()
-
-    # МЕТОД ДЛЯ ПОИСКА ПЕРЕМЕЩЕНИЙ С ОТГРУЗКОЙ (со склада наружу)
-    def find_shipments_by_month(self, year: int, month: int):
-        """Найти отгрузки (перемещения со склада наружу) за месяц"""
-        from src.models import MovementHistoryORM
-        from sqlalchemy import extract
-        
-        if self.model != MovementHistoryORM:
-            raise ValueError("Этот метод доступен только для MovementHistoryORM")
-            
-        # Отгрузки: from_shelf есть, to_shelf нет, и не в отстойник
-        stmt = select(MovementHistoryORM).where(
-            extract('year', MovementHistoryORM.movement_date) == year,
-            extract('month', MovementHistoryORM.movement_date) == month,
-            MovementHistoryORM.from_shelf_id.is_not(None),
-            MovementHistoryORM.to_shelf_id.is_(None),
-            MovementHistoryORM.to_overflow == False
-        ).order_by(MovementHistoryORM.movement_date)
-        
-        with db.session as session:
-            result = session.execute(stmt)
-            return result.scalars().all()
+            return [dict(row._mapping) for row in result]
 
 
 class RepoFactory:
@@ -227,6 +324,10 @@ class RepoFactory:
     @staticmethod
     def product_repo() -> SqlAlchemyRepository[ProductORM]:
         return SqlAlchemyRepository(ProductORM)
+
+    @staticmethod
+    def stock_repo() -> SqlAlchemyRepository[StockORM]:
+        return SqlAlchemyRepository(StockORM)
 
     @staticmethod
     def overflow_bin_repo() -> SqlAlchemyRepository[OverflowBinORM]:
@@ -255,3 +356,7 @@ class RepoFactory:
     @staticmethod
     def supply_repo() -> SqlAlchemyRepository[SupplyORM]:
         return SqlAlchemyRepository(SupplyORM)
+
+    @staticmethod
+    def shipment_repo() -> SqlAlchemyRepository[ShipmentORM]:
+        return SqlAlchemyRepository(ShipmentORM)

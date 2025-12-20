@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказы на покупку - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .orders-table-container {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .table-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .add-order-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .add-order-btn:hover {
+            background: #e8b47a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 100px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .product-column {
+            width: 200px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .quantity-column {
+            width: 120px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .order-date-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .status-column {
+            width: 180px;
+        }
+
+        .created-date-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .actions-column {
+            width: 180px;
+            text-align: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit, .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-edit:hover, .btn-save:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+        }
+
+        .editable {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .editable-select {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+            cursor: pointer;
+        }
+
+        .editable:focus, .editable-select:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        .add-form {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+            display: none;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .status-pending {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .status-processing {
+            background: rgba(52, 152, 219, 0.2);
+            color: #2980b9;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .status-completed {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .status-cancelled {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .status-shipped {
+            background: rgba(155, 89, 182, 0.2);
+            color: #8e44ad;
+            border: 1px solid rgba(155, 89, 182, 0.3);
+        }
+
+        .status-delivered {
+            background: rgba(41, 128, 185, 0.2);
+            color: #2c3e50;
+            border: 1px solid rgba(41, 128, 185, 0.3);
+        }
+
+        .status-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .status-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .status-option input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        /* Стили для автодополнения продуктов */
+        .product-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: calc(100% - 30px);
+        }
+
+        .product-suggestion {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-id {
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .suggestion-name {
+            color: #7a6a52;
+            font-size: 0.9rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .admin-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .status-badge {
+                min-width: 120px;
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+            
+            .status-options {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <a href="adminok.html" class="logo">StoreMarket</a>
+        </div>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление заказами на покупку</h1>
+            <p class="admin-subtitle">Просмотр и управление заказами на покупку товаров</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <div class="orders-table-container">
+            <div class="table-header">
+                <h2 class="table-title">Список заказов на покупку</h2>
+                <button class="add-order-btn" id="showAddForm">+ Добавить заказ</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th class="id-column">Номер заказа</th>
+                        <th class="product-column">Товар</th>
+                        <th class="quantity-column">Количество</th>
+                        <th class="order-date-column">Дата заказа</th>
+                        <th class="status-column">Статус заказа</th>
+                        <th class="created-date-column">Дата создания</th>
+                        <th class="actions-column">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                    <tr><td colspan="7" class="empty-message">Загрузка заказов...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Форма добавления нового заказа -->
+        <div class="add-form" id="addForm">
+            <h2 class="form-title">Добавить новый заказ на покупку</h2>
+            <form id="addOrderForm">
+                <div class="form-group">
+                    <label for="orderProductId">Товар *</label>
+                    <input type="text" id="orderProductId" placeholder="Начните вводить название или ID товара" required autocomplete="off">
+                    <div id="productSuggestions" class="product-suggestions" style="display: none;"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="orderQuantity">Количество *</label>
+                        <input type="number" id="orderQuantity" placeholder="Введите количество" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="orderDate">Дата заказа</label>
+                        <input type="date" id="orderDate">
+                        <small class="form-text">Оставьте пустым для текущей даты</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Статус заказа *</label>
+                    <div class="status-options">
+                        <label class="status-option">
+                            <input type="radio" name="orderStatus" value="pending" checked>
+                            <span class="status-badge status-pending">В ожидании</span>
+                        </label>
+                        <label class="status-option">
+                            <input type="radio" name="orderStatus" value="processing">
+                            <span class="status-badge status-processing">В обработке</span>
+                        </label>
+                        <label class="status-option">
+                            <input type="radio" name="orderStatus" value="completed">
+                            <span class="status-badge status-completed">Завершен</span>
+                        </label>
+                        <label class="status-option">
+                            <input type="radio" name="orderStatus" value="cancelled">
+                            <span class="status-badge status-cancelled">Отменен</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Добавить заказ</button>
+                    <button type="button" class="btn-cancel" id="hideAddForm">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Элементы DOM
+        const ordersTableBody = document.getElementById('ordersTableBody');
+        const addForm = document.getElementById('addForm');
+        const addOrderForm = document.getElementById('addOrderForm');
+        const showAddFormBtn = document.getElementById('showAddForm');
+        const hideAddFormBtn = document.getElementById('hideAddForm');
+        const messageContainer = document.getElementById('messageContainer');
+        const orderProductIdInput = document.getElementById('orderProductId');
+        const productSuggestions = document.getElementById('productSuggestions');
+        const orderDateInput = document.getElementById('orderDate');
+
+        // Устанавливаем текущую дату по умолчанию
+        const today = new Date().toISOString().split('T')[0];
+        orderDateInput.value = today;
+
+        // Переменные для хранения данных
+        let allProducts = [];
+        let selectedProductId = null;
+
+        // Загрузка заказов при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadProductsForSuggestions();
+            await loadOrders();
+        });
+
+        // Показать/скрыть форму добавления
+        showAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'block';
+            orderProductIdInput.focus();
+        });
+
+        hideAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'none';
+            addOrderForm.reset();
+            orderDateInput.value = today;
+            productSuggestions.style.display = 'none';
+            selectedProductId = null;
+        });
+
+        // Загрузка продуктов для автодополнения
+        async function loadProductsForSuggestions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки продуктов');
+                }
+                
+                allProducts = await response.json();
+                console.log('Загружено продуктов:', allProducts.length);
+            } catch (error) {
+                console.error('Ошибка при загрузке продуктов:', error);
+                showMessage('Ошибка при загрузке списка продуктов', 'error');
+            }
+        }
+
+        // Автодополнение для выбора продукта
+        orderProductIdInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.trim();
+            
+            if (searchTerm.length < 2) {
+                productSuggestions.style.display = 'none';
+                return;
+            }
+
+            // Фильтруем продукты по поисковому запросу
+            const filteredProducts = allProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.id.toString().includes(searchTerm)
+            );
+
+            if (filteredProducts.length > 0) {
+                productSuggestions.innerHTML = filteredProducts.map(product => `
+                    <div class="product-suggestion" 
+                         data-product-id="${product.id}" 
+                         data-product-name="${product.name}">
+                        <div class="suggestion-id">ID: ${product.id}</div>
+                        <div class="suggestion-name">${product.name}</div>
+                        <div class="suggestion-name" style="font-size: 0.8rem; color: #95a5a6;">
+                            В наличии: ${product.current_quantity || 0} ${product.unit || 'шт'}
+                        </div>
+                    </div>
+                `).join('');
+                productSuggestions.style.display = 'block';
+            } else {
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Обработка выбора продукта из списка
+        productSuggestions.addEventListener('click', (e) => {
+            const suggestion = e.target.closest('.product-suggestion');
+            if (suggestion) {
+                const productId = suggestion.dataset.productId;
+                const productName = suggestion.dataset.productName;
+                
+                selectedProductId = productId;
+                orderProductIdInput.value = `${productName} (ID: ${productId})`;
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Скрыть подсказки при клике вне поля
+        document.addEventListener('click', (e) => {
+            if (!orderProductIdInput.contains(e.target) && !productSuggestions.contains(e.target)) {
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Обработка формы добавления заказа
+        addOrderForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const quantity = parseInt(document.getElementById('orderQuantity').value);
+            const orderDate = document.getElementById('orderDate').value;
+            const status = document.querySelector('input[name="orderStatus"]:checked').value;
+
+            if (!selectedProductId) {
+                showMessage('Пожалуйста, выберите товар из списка', 'error');
+                return;
+            }
+
+            if (!quantity || quantity < 1) {
+                showMessage('Пожалуйста, введите корректное количество', 'error');
+                return;
+            }
+
+            try {
+                const orderData = {
+                    product_id: parseInt(selectedProductId),
+                    quantity: quantity,
+                    supplier: "Поставщик", // Обязательное поле
+                    expected_delivery_date: orderDate || null,
+                    notes: ""
+                };
+
+                console.log('Создание заказа с данными:', orderData);
+
+                const result = await createOrder(orderData);
+                console.log('Заказ создан:', result);
+                
+                showMessage('Заказ успешно создан', 'success');
+                
+                // Обновляем статус отдельно, если он не "pending"
+                if (status !== 'pending') {
+                    try {
+                        await updateOrderStatus(result.id, status);
+                        console.log('Статус обновлен:', status);
+                    } catch (statusError) {
+                        console.warn('Не удалось обновить статус:', statusError);
+                    }
+                }
+
+                // Перезагружаем список заказов
+                await loadOrders();
+                
+                // Скрываем форму и сбрасываем
+                addForm.style.display = 'none';
+                addOrderForm.reset();
+                orderDateInput.value = today;
+                selectedProductId = null;
+                productSuggestions.style.display = 'none';
+
+            } catch (error) {
+                console.error('Ошибка при создании заказа:', error);
+                showMessage('Ошибка при создании заказа: ' + error.message, 'error');
+            }
+        });
+
+        // Функция загрузки заказов
+        async function loadOrders() {
+            try {
+                ordersTableBody.innerHTML = '<tr><td colspan="7" class="empty-message">Загрузка...</td></tr>';
+                
+                const orders = await getOrders();
+                
+                if (orders.length === 0) {
+                    ordersTableBody.innerHTML = '<tr><td colspan="7" class="empty-message">Заказы не найдены</td></tr>';
+                    return;
+                }
+
+                ordersTableBody.innerHTML = '';
+                orders.forEach(order => {
+                    const row = createOrderRow(order);
+                    ordersTableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Ошибка при загрузке заказов:', error);
+                ordersTableBody.innerHTML = '<tr><td colspan="7" class="empty-message">Ошибка при загрузке заказов</td></tr>';
+            }
+        }
+
+        // Создание строки заказа
+        function createOrderRow(order) {
+            const row = document.createElement('tr');
+            
+            // Определяем класс статуса
+            let statusClass = '';
+            let statusText = '';
+            switch(order.status) {
+                case 'pending':
+                    statusClass = 'status-pending';
+                    statusText = 'В ожидании';
+                    break;
+                case 'in_progress':
+                    statusClass = 'status-processing';
+                    statusText = 'В обработке';
+                    break;
+                case 'delivered':
+                    statusClass = 'status-delivered';
+                    statusText = 'Доставлен';
+                    break;
+                case 'cancelled':
+                    statusClass = 'status-cancelled';
+                    statusText = 'Отменен';
+                    break;
+                default:
+                    statusClass = 'status-pending';
+                    statusText = order.status || 'В ожидании';
+            }
+
+            // Форматируем даты
+            const formatDate = (dateString) => {
+                if (!dateString) return 'Н/Д';
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('ru-RU');
+                } catch {
+                    return dateString;
+                }
+            };
+
+            row.innerHTML = `
+                <td class="id-column">${order.id}</td>
+                <td class="product-column">
+                    ${order.product_name || `Товар ID: ${order.product_id}`}
+                </td>
+                <td class="quantity-column">
+                    <input type="number" class="editable" value="${order.quantity || ''}" data-field="quantity" min="1">
+                </td>
+                <td class="order-date-column">
+                    ${formatDate(order.expected_delivery_date || order.order_date)}
+                </td>
+                <td class="status-column">
+                    <select class="editable-select" data-field="status">
+                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>В ожидании</option>
+                        <option value="in_progress" ${order.status === 'in_progress' ? 'selected' : ''}>В обработке</option>
+                        <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Доставлен</option>
+                        <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Отменен</option>
+                    </select>
+                </td>
+                <td class="created-date-column">
+                    ${formatDate(order.created_date || order.order_date)}
+                </td>
+                <td class="actions-column">
+                    <div class="action-btns">
+                        <button class="btn-save" onclick="saveOrder(${order.id}, this)">Сохранить</button>
+                        <button class="btn-delete" onclick="deleteOrder(${order.id})">Удалить</button>
+                    </div>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        // Сохранение заказа (сохранить изменения в таблице)
+        async function saveOrder(orderId, button) {
+            const row = button.closest('tr');
+            const quantityInput = row.querySelector('input[data-field="quantity"]');
+            const statusSelect = row.querySelector('select[data-field="status"]');
+            
+            // Получаем текущий product_id заказа
+            let currentProductId;
+            try {
+                const order = await getOrderById(orderId);
+                currentProductId = order.product_id;
+            } catch (error) {
+                console.error('Не удалось получить product_id:', error);
+                showMessage('Ошибка: не удалось получить информацию о заказе', 'error');
+                return;
+            }
+
+            const orderData = {
+                product_id: parseInt(currentProductId),
+                quantity: parseInt(quantityInput.value),
+                supplier: "Поставщик", // Обязательное поле
+                expected_delivery_date: null,
+                notes: ""
+            };
+
+            // Проверяем, что обязательные поля заполнены
+            if (!orderData.quantity || orderData.quantity < 1) {
+                showMessage('Пожалуйста, введите корректное количество', 'error');
+                quantityInput.focus();
+                return;
+            }
+
+            try {
+                button.textContent = 'Сохранение...';
+                button.disabled = true;
+                
+                console.log('Обновление заказа:', orderId, orderData);
+                
+                // Сначала обновляем заказ
+                const updateResult = await updateOrder(orderId, orderData);
+                console.log('Заказ обновлен:', updateResult);
+                
+                // Затем обновляем статус
+                await updateOrderStatus(orderId, statusSelect.value);
+                
+                showMessage('Заказ успешно обновлен', 'success');
+                
+                // Обновляем отображение
+                await loadOrders();
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении заказа:', error);
+                showMessage('Ошибка при обновлении заказа: ' + error.message, 'error');
+            } finally {
+                button.textContent = 'Сохранить';
+                button.disabled = false;
+            }
+        }
+
+        // Удаление заказа
+        async function deleteOrder(orderId) {
+            const shouldDelete = confirm('Вы уверены, что хотите удалить этот заказ?');
+            
+            if (!shouldDelete) {
+                return;
+            }
+
+            try {
+                await deleteOrderRequest(orderId);
+                showMessage('Заказ успешно удален', 'success');
+                await loadOrders(); // Перезагружаем список
+                
+            } catch (error) {
+                console.error('Ошибка при удалении заказа:', error);
+                showMessage('Ошибка при удалении заказа: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== API функции ====================
+
+        // Получить все заказы
+        async function getOrders() {
+            const response = await fetch(`${API_BASE_URL}/purchase-orders`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Ошибка получения заказов:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Получить заказ по ID
+        async function getOrderById(orderId) {
+            const response = await fetch(`${API_BASE_URL}/purchase-orders/${orderId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: Заказ не найден`);
+            }
+            
+            return await response.json();
+        }
+
+        // Создать заказ
+        async function createOrder(orderData) {
+            console.log('Отправка запроса на создание заказа:', orderData);
+            
+            const response = await fetch(`${API_BASE_URL}/purchase-orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при создании заказа';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить заказ (пробуем PUT, если не работает - PATCH)
+        async function updateOrder(orderId, orderData) {
+            console.log('Обновление заказа через PUT:', orderId, orderData);
+            
+            // Сначала пробуем PUT
+            const response = await fetch(`${API_BASE_URL}/purchase-orders/${orderId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn('PUT не сработал:', errorText);
+                
+                // Пробуем PATCH
+                console.log('Пробуем PATCH...');
+                return await updateOrderWithPatch(orderId, orderData);
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить заказ с помощью PATCH
+        async function updateOrderWithPatch(orderId, orderData) {
+            const response = await fetch(`${API_BASE_URL}/purchase-orders/${orderId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка PATCH:', errorText);
+                let errorDetail = 'Ошибка при обновлении заказа';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить статус заказа
+        async function updateOrderStatus(orderId, status) {
+            const response = await fetch(`${API_BASE_URL}/purchase-orders/${orderId}/status?status=${encodeURIComponent(status)}`, {
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn('Не удалось обновить статус:', errorText);
+                // Не бросаем ошибку, т.к. это не критично
+                return null;
+            }
+            
+            return await response.json();
+        }
+
+        // Удалить заказ
+        async function deleteOrderRequest(orderId) {
+            const response = await fetch(`${API_BASE_URL}/purchase-orders/${orderId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при удалении заказа';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Функция для показа сообщений
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageDiv);
+            
+            // Автоматически скрыть сообщение через 5 секунд
+            setTimeout(() => {
+                if (messageDiv.parentNode === messageContainer) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Сделаем функции глобальными для использования в onclick
+        window.saveOrder = saveOrder;
+        window.deleteOrder = deleteOrder;
+    </script>
+</body>
+</html>

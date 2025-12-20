@@ -1,570 +1,1308 @@
+from sqlalchemy import create_engine, Engine
+from sqlalchemy.orm import sessionmaker, Session
 from fastapi import APIRouter, FastAPI, HTTPException, Depends, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 import uvicorn
-from src.setup_db import setup_db
-from src.settings import settings
-from typing import List
+from typing import List, Optional, Dict, Any
+from datetime import datetime, date
+from pydantic import BaseModel
+import json
+from fastapi import HTTPException, Path, Query
 
-# Импортируем только необходимые DTO
-from src.schemas import (
-    UserDTO, UserCreateDTO, UserBaseDTO,
-    AdminDTO, AdminCreateDTO,
-    CategoryDTO, CategoryCreateDTO, CategoryBaseDTO,
-    ProductDTO, ProductCreateDTO, ProductBaseDTO,
-    OverflowBinDTO, OverflowBinCreateDTO, OverflowBinBaseDTO,
-    PurchaseOrderDTO, PurchaseOrderCreateDTO, PurchaseOrderBaseDTO,
-    ShelfDTO, ShelfCreateDTO, ShelfBaseDTO,
-    MovementHistoryDTO, MovementHistoryCreateDTO, MovementHistoryBaseDTO,
-    NotificationDTO, NotificationCreateDTO, NotificationBaseDTO,
-    ProductPlacementDTO, ProductPlacementCreateDTO, ProductPlacementBaseDTO,
-    SupplyDTO, SupplyCreateDTO, SupplyBaseDTO,
-    ProductPlaceRequestDTO, PlacementReportDTO, MonthlyReportDTO,
-    FreeSpaceNotificationDTO, PlacementResponseDTO
-)
+DATABASE_URL = 'sqlite:///mydb.db'
 
-# Импортируем только типы сервисов и функции зависимостей
-from src.service import (
-    UserServiceType, AdminServiceType, CategoryServiceType, ProductServiceType,
-    OverflowBinServiceType, PurchaseOrderServiceType, ShelfServiceType,
-    MovementHistoryServiceType, NotificationServiceType, ProductPlacementServiceType,
-    SupplyServiceType
-)
+class Database:
+    def __init__(self) -> None:
+        self.engine: Engine = create_engine(
+            url=DATABASE_URL,
+            echo=True
+        )
 
-setup_db()
+        self.session_factory: sessionmaker = (
+            sessionmaker(
+                bind=self.engine,
+                autoflush=False,
+                autocommit=False
+        ))
 
-app = FastAPI()
+    @property
+    def session(self) -> Session:
+        return self.session_factory()
 
+db = Database()
+
+app = FastAPI(title="Продуктовый склад API", version="1.0.0")
+
+# ВАЖНО: ИСПРАВЛЕННЫЕ CORS НАСТРОЙКИ
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.origins,
+    allow_origins=["*"],  # Разрешаем все источники
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
-# ===== СОЗДАНИЕ РОУТЕРОВ ДЛЯ КАЖДОГО РАЗДЕЛА =====
+# Модели данных для API
+class ProductBase(BaseModel):
+    name: str
+    category_id: int
+    min_quantity: int = 0
+    unit: str = "шт"
+    description: Optional[str] = None
+    price: Optional[float] = None
+    current_quantity: int = 0
 
-user_router = APIRouter(prefix="/users", tags=["Users"])
-admin_router = APIRouter(prefix="/admins", tags=["Administrators"])
-category_router = APIRouter(prefix="/categories", tags=["Categories"])
-product_router = APIRouter(prefix="/products", tags=["Products"])
-overflow_bin_router = APIRouter(prefix="/overflow-bins", tags=["Overflow Bins"])
-purchase_order_router = APIRouter(prefix="/purchase-orders", tags=["Purchase Orders"])
-shelf_router = APIRouter(prefix="/shelves", tags=["Shelves"])
-movement_history_router = APIRouter(prefix="/movement-history", tags=["Movement History"])
-notification_router = APIRouter(prefix="/notifications", tags=["Notifications"])
-product_placement_router = APIRouter(prefix="/product-placements", tags=["Product Placements"])
-supply_router = APIRouter(prefix="/supplies", tags=["Supplies"])
-warehouse_router = APIRouter(prefix="/warehouse", tags=["Warehouse Operations"])
-reports_router = APIRouter(prefix="/reports", tags=["Reports"])
-system_notifications_router = APIRouter(prefix="/system-notifications", tags=["System Notifications"])
+class ProductCreate(ProductBase):
+    pass
 
-# ===== ЭНДПОИНТЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ =====
-@user_router.get("", response_model=List[UserDTO])
-def get_users(user_service: UserServiceType):
-    return user_service.get_all_users()
+class ProductResponse(ProductBase):
+    id: int
+    category_name: Optional[str] = None
 
-@user_router.get("/{user_id}", response_model=UserDTO)
-def get_user(user_id: int, user_service: UserServiceType):
-    try:
-        return user_service.get_one_user(user_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+class PurchaseOrderBase(BaseModel):
+    product_id: int
+    quantity: int
+    supplier: Optional[str] = None
+    expected_delivery_date: Optional[date] = None
+    notes: Optional[str] = None
 
-@user_router.post("", response_model=UserDTO)
-def create_user(user: UserCreateDTO, user_service: UserServiceType):
-    user_db = user_service.add_one_user(user)
-    return user_db
+class PurchaseOrderCreate(PurchaseOrderBase):
+    pass
 
-@user_router.put("/{user_id}", response_model=UserDTO)
-def update_user(user_id: int, user: UserBaseDTO, user_service: UserServiceType):
-    return user_service.update_user(user_id, user)
+class PurchaseOrderResponse(PurchaseOrderBase):
+    id: int
+    order_date: datetime
+    status: str = "pending"
+    created_date: datetime
 
-@user_router.delete("/{user_id}", response_model=UserDTO)
-def delete_user(user_id: int, user_service: UserServiceType):
-    try:
-        return user_service.delete_user(user_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+class SupplyBase(BaseModel):
+    purchase_order_id: Optional[int] = None
+    product_id: int
+    quantity: int
+    supplier: str  
+    delivery_date: Optional[date] = None
+    invoice_number: Optional[str] = None
+    notes: Optional[str] = None
+    status: str = "delivered"
 
-# ===== ЭНДПОИНТЫ ДЛЯ АДМИНИСТРАТОРОВ =====
-@admin_router.get("", response_model=List[AdminDTO])
-def get_admins(admin_service: AdminServiceType):
-    return admin_service.get_all_admins()
+class SupplyCreate(SupplyBase):
+    pass
 
-@admin_router.get("/{login}", response_model=AdminDTO)
-def get_admin(login: str, admin_service: AdminServiceType):
-    try:
-        return admin_service.get_one_admin(login)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Администратор не найден")
+class SupplyResponse(SupplyBase):
+    id: int
+    supply_date: datetime
+    status: str = "delivered"
+    product_name: Optional[str] = None
+    purchase_order_status: Optional[str] = None
 
-@admin_router.post("", response_model=AdminDTO)
-def create_admin(admin: AdminCreateDTO, admin_service: AdminServiceType):
-    return admin_service.add_one_admin(admin)
+class StockUpdate(BaseModel):
+    product_id: int
+    quantity_change: int
+    reason: str = "supply"
+    notes: Optional[str] = None
 
-@admin_router.delete("/{login}", response_model=AdminDTO)
-def delete_admin(login: str, admin_service: AdminServiceType):
-    try:
-        return admin_service.delete_admin(login)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Администратор не найден")
+# Модели для размещения товаров
+class ProductPlacementBase(BaseModel):
+    product_id: int
+    shelf_id: Optional[int] = None
+    overflow_id: Optional[int] = None
+    quantity: int
+    placement_date: Optional[datetime] = None
+    notes: Optional[str] = None
 
-# ===== ЭНДПОИНТЫ ДЛЯ КАТЕГОРИЙ =====
-@category_router.get("", response_model=List[CategoryDTO])
-def get_categories(category_service: CategoryServiceType):
-    return category_service.get_all_categories()
+class ProductPlacementCreate(ProductPlacementBase):
+    pass
 
-@category_router.get("/{category_id}", response_model=CategoryDTO)
-def get_category(category_id: int, category_service: CategoryServiceType):
-    try:
-        return category_service.get_one_category(category_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Категория не найдена")
+class ProductPlacementResponse(ProductPlacementBase):
+    id: int
+    placement_date: datetime
+    product_name: Optional[str] = None
+    shelf_name: Optional[str] = None
 
-@category_router.post("", response_model=CategoryDTO)
-def create_category(category: CategoryCreateDTO, category_service: CategoryServiceType):
-    return category_service.add_one_category(category)
+# Модели для стеллажей
+class ShelfBase(BaseModel):
+    name: str
+    max_capacity: int
+    current_quantity: int = 0
+    location: Optional[str] = None
+    description: Optional[str] = None
 
-@category_router.put("/{category_id}", response_model=CategoryDTO)
-def update_category(category_id: int, category: CategoryBaseDTO, category_service: CategoryServiceType):
-    try:
-        return category_service.update_category(category_id, category)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Категория не найдена")
+class ShelfCreate(ShelfBase):
+    pass
 
-@category_router.delete("/{category_id}", response_model=CategoryDTO)
-def delete_category(category_id: int, category_service: CategoryServiceType):
-    try:
-        return category_service.delete_category(category_id)
-    except ValueError as e:
-        if "продукт" in str(e).lower():
-            raise HTTPException(status_code=400, detail=str(e))
-        else:
-            raise HTTPException(status_code=404, detail="Категория не найдена")
-    except Exception as e:
-        raise HTTPException(status_code=404, detail="Категория не найдена")
+class ShelfResponse(ShelfBase):
+    id: int
+    free_space: Optional[int] = None
 
-# ===== ЭНДПОИНТЫ ДЛЯ ТОВАРОВ =====
-@product_router.get("", response_model=List[ProductDTO])
-def get_products(product_service: ProductServiceType):
-    return product_service.get_all_products()
+# Модели для отстойника
+class OverflowBinBase(BaseModel):
+    name: str
+    max_capacity: int = 1000
+    current_quantity: int = 0
+    location: Optional[str] = None
 
-@product_router.get("/{product_id}", response_model=ProductDTO)
-def get_product(product_id: int, product_service: ProductServiceType):
-    try:
-        return product_service.get_one_product(product_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Товар не найден")
+class OverflowBinCreate(OverflowBinBase):
+    pass
 
-@product_router.post("", response_model=ProductDTO)
-def create_product(product: ProductCreateDTO, product_service: ProductServiceType):
-    return product_service.add_one_product(product)
+class OverflowBinResponse(OverflowBinBase):
+    id: int
+    free_space: Optional[int] = None
 
-@product_router.put("/{product_id}", response_model=ProductDTO)
-def update_product(product_id: int, product: ProductBaseDTO, product_service: ProductServiceType):
-    try:
-        return product_service.update_product(product_id, product)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Товар не найден")
+# Модель для товаров в отстойнике (согласно вашей модели OverflowBinORM)
+class OverflowItemBase(BaseModel):
+    product_id: int
+    quantity: int
+    notes: Optional[str] = None
 
-@product_router.delete("/{product_id}", response_model=ProductDTO)
-def delete_product(product_id: int, product_service: ProductServiceType):
-    try:
-        return product_service.delete_product(product_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Товар не найден")
+class OverflowItemCreate(OverflowItemBase):
+    pass
 
-@product_router.get("/low-stock", response_model=List[ProductDTO])
-def get_low_stock_products(product_service: ProductServiceType):
-    """Товары с низким запасом (текущее количество <= минимальное)"""
-    return product_service.get_low_stock_products()
+class OverflowItemResponse(OverflowItemBase):
+    id: int
+    date_added: datetime
+    product_name: Optional[str] = None
 
-# ===== ЭНДПОИНТЫ ДЛЯ ОТСТОЙНИКОВ =====
-@overflow_bin_router.get("", response_model=List[OverflowBinDTO])
-def get_overflow_bins(overflow_bin_service: OverflowBinServiceType):
-    return overflow_bin_service.get_all_overflow_bins()
+# Специальный обработчик для OPTIONS запросов
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
-@overflow_bin_router.get("/{bin_id}", response_model=OverflowBinDTO)
-def get_overflow_bin(bin_id: int, overflow_bin_service: OverflowBinServiceType):
-    try:
-        return overflow_bin_service.get_one_overflow_bin(bin_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Отстойник не найден")
-
-@overflow_bin_router.post("", response_model=OverflowBinDTO)
-def create_overflow_bin(overflow_bin: OverflowBinCreateDTO, overflow_bin_service: OverflowBinServiceType):
-    return overflow_bin_service.add_one_overflow_bin(overflow_bin)
-
-@overflow_bin_router.put("/{bin_id}", response_model=OverflowBinDTO)
-def update_overflow_bin(bin_id: int, overflow_bin: OverflowBinBaseDTO, overflow_bin_service: OverflowBinServiceType):
-    try:
-        return overflow_bin_service.update_overflow_bin(bin_id, overflow_bin)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Отстойник не найден")
-
-@overflow_bin_router.delete("/{bin_id}", response_model=OverflowBinDTO)
-def delete_overflow_bin(bin_id: int, overflow_bin_service: OverflowBinServiceType):
-    try:
-        return overflow_bin_service.delete_overflow_bin(bin_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Отстойник не найден")
-
-# ===== ЭНДПОИНТЫ ДЛЯ ЗАКАЗОВ НА ПОКУПКУ =====
-@purchase_order_router.get("", response_model=List[PurchaseOrderDTO])
-def get_purchase_orders(purchase_order_service: PurchaseOrderServiceType):
-    return purchase_order_service.get_all_purchase_orders()
-
-@purchase_order_router.get("/{order_id}", response_model=PurchaseOrderDTO)
-def get_purchase_order(order_id: int, purchase_order_service: PurchaseOrderServiceType):
-    try:
-        return purchase_order_service.get_one_purchase_order(order_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Заказ на покупку не найден")
-
-@purchase_order_router.post("", response_model=PurchaseOrderDTO)
-def create_purchase_order(purchase_order: PurchaseOrderCreateDTO, purchase_order_service: PurchaseOrderServiceType):
-    return purchase_order_service.add_one_purchase_order(purchase_order)
-
-@purchase_order_router.put("/{order_id}", response_model=PurchaseOrderDTO)
-def update_purchase_order(order_id: int, purchase_order: PurchaseOrderBaseDTO, purchase_order_service: PurchaseOrderServiceType):
-    try:
-        return purchase_order_service.update_purchase_order(order_id, purchase_order)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Заказ на покупку не найден")
-
-@purchase_order_router.delete("/{order_id}", response_model=PurchaseOrderDTO)
-def delete_purchase_order(order_id: int, purchase_order_service: PurchaseOrderServiceType):
-    try:
-        return purchase_order_service.delete_purchase_order(order_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Заказ на покупку не найден")
-
-# ===== ЭНДПОИНТЫ ДЛЯ СТЕЛЛАЖЕЙ =====
-@shelf_router.get("", response_model=List[ShelfDTO])
-def get_shelves(shelf_service: ShelfServiceType):
-    return shelf_service.get_all_shelves()
-
-@shelf_router.get("/{shelf_id}", response_model=ShelfDTO)
-def get_shelf(shelf_id: int, shelf_service: ShelfServiceType):
-    try:
-        return shelf_service.get_one_shelf(shelf_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Стеллаж не найден")
-
-@shelf_router.post("", response_model=ShelfDTO)
-def create_shelf(shelf: ShelfCreateDTO, shelf_service: ShelfServiceType):
-    return shelf_service.add_one_shelf(shelf)
-
-@shelf_router.put("/{shelf_id}", response_model=ShelfDTO)
-def update_shelf(shelf_id: int, shelf: ShelfBaseDTO, shelf_service: ShelfServiceType):
-    try:
-        return shelf_service.update_shelf(shelf_id, shelf)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Стеллаж не найден")
-
-@shelf_router.delete("/{shelf_id}", response_model=ShelfDTO)
-def delete_shelf(shelf_id: int, shelf_service: ShelfServiceType):
-    try:
-        return shelf_service.delete_shelf(shelf_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Стеллаж не найден")
-
-# ===== ЭНДПОИНТЫ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ =====
-@movement_history_router.get("", response_model=List[MovementHistoryDTO])
-def get_movement_history(movement_history_service: MovementHistoryServiceType):
-    return movement_history_service.get_all_movement_history()
-
-@movement_history_router.get("/{history_id}", response_model=MovementHistoryDTO)
-def get_movement_history_record(history_id: int, movement_history_service: MovementHistoryServiceType):
-    try:
-        return movement_history_service.get_one_movement_history(history_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Запись истории перемещений не найдена")
-
-@movement_history_router.post("", response_model=MovementHistoryDTO)
-def create_movement_history(movement_history: MovementHistoryCreateDTO, movement_history_service: MovementHistoryServiceType):
-    return movement_history_service.add_one_movement_history(movement_history)
-
-@movement_history_router.get("/recent/{days}")
-def get_recent_movements(
-    days: int = Path(..., ge=1, le=365, description="Количество дней"),
-    movement_history_service: MovementHistoryServiceType = None
-):
-    """Последние перемещения за указанное количество дней"""
-    return movement_history_service.get_recent_movements(days)
-
-# ===== ЭНДПОИНТЫ ДЛЯ УВЕДОМЛЕНИЙ =====
-@notification_router.get("", response_model=List[NotificationDTO])
-def get_notifications(notification_service: NotificationServiceType):
-    return notification_service.get_all_notifications()
-
-@notification_router.get("/{notification_id}", response_model=NotificationDTO)
-def get_notification(notification_id: int, notification_service: NotificationServiceType):
-    try:
-        return notification_service.get_one_notification(notification_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Уведомление не найдено")
-
-@notification_router.post("", response_model=NotificationDTO)
-def create_notification(notification: NotificationCreateDTO, notification_service: NotificationServiceType):
-    return notification_service.add_one_notification(notification)
-
-@notification_router.put("/{notification_id}", response_model=NotificationDTO)
-def update_notification(notification_id: int, notification: NotificationBaseDTO, notification_service: NotificationServiceType):
-    try:
-        return notification_service.update_notification(notification_id, notification)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Уведомление не найдено")
-
-@notification_router.delete("/{notification_id}", response_model=NotificationDTO)
-def delete_notification(notification_id: int, notification_service: NotificationServiceType):
-    try:
-        return notification_service.delete_notification(notification_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Уведомление не найдено")
-
-# ===== ЭНДПОИНТЫ ДЛЯ РАЗМЕЩЕНИЯ ТОВАРОВ =====
-@product_placement_router.get("", response_model=List[ProductPlacementDTO])
-def get_product_placements(product_placement_service: ProductPlacementServiceType):
-    return product_placement_service.get_all_product_placements()
-
-@product_placement_router.get("/{placement_id}", response_model=ProductPlacementDTO)
-def get_product_placement(placement_id: int, product_placement_service: ProductPlacementServiceType):
-    try:
-        return product_placement_service.get_one_product_placement(placement_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Размещение товара не найдено")
-
-@product_placement_router.post("", response_model=ProductPlacementDTO)
-def create_product_placement(product_placement: ProductPlacementCreateDTO, product_placement_service: ProductPlacementServiceType):
-    return product_placement_service.add_one_product_placement(product_placement)
-
-@product_placement_router.put("/{placement_id}", response_model=ProductPlacementDTO)
-def update_product_placement(placement_id: int, product_placement: ProductPlacementBaseDTO, product_placement_service: ProductPlacementServiceType):
-    try:
-        return product_placement_service.update_product_placement(placement_id, product_placement)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Размещение товара не найдено")
-
-@product_placement_router.delete("/{placement_id}", response_model=ProductPlacementDTO)
-def delete_product_placement(placement_id: int, product_placement_service: ProductPlacementServiceType):
-    try:
-        return product_placement_service.delete_product_placement(placement_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Размещение товара не найдено")
-
-# ===== ЭНДПОИНТЫ ДЛЯ ПОСТАВОК =====
-@supply_router.get("", response_model=List[SupplyDTO])
-def get_supplies(supply_service: SupplyServiceType):
-    return supply_service.get_all_supplies()
-
-@supply_router.get("/{supply_id}", response_model=SupplyDTO)
-def get_supply(supply_id: int, supply_service: SupplyServiceType):
-    try:
-        return supply_service.get_one_supply(supply_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Поставка не найдена")
-
-@supply_router.post("", response_model=SupplyDTO)
-def create_supply(supply: SupplyCreateDTO, supply_service: SupplyServiceType):
-    return supply_service.add_one_supply(supply)
-
-@supply_router.put("/{supply_id}", response_model=SupplyDTO)
-def update_supply(supply_id: int, supply: SupplyBaseDTO, supply_service: SupplyServiceType):
-    try:
-        return supply_service.update_supply(supply_id, supply)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Поставка не найдена")
-
-@supply_router.delete("/{supply_id}", response_model=SupplyDTO)
-def delete_supply(supply_id: int, supply_service: SupplyServiceType):
-    try:
-        return supply_service.delete_supply(supply_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Поставка не найдена")
-
-# ===== ЭНДПОИНТЫ ДЛЯ ОПЕРАЦИЙ СО СКЛАДОМ =====
-@warehouse_router.post("/place-product", response_model=PlacementResponseDTO)
-def place_product_on_warehouse(
-    placement: ProductPlaceRequestDTO,
-    product_service: ProductServiceType
-):
-    """
-    Разместить товар на складе.
-    
-    - Если указан shelf_id: разместить на стеллаже
-    - Если указан overflow_id: разместить в отстойник
-    """
-    return product_service.place_product(placement)
-
-@warehouse_router.post("/move-from-overflow/{overflow_bin_id}/to-shelf/{shelf_id}")
-def move_product_from_overflow_to_shelf(
-    overflow_bin_id: int = Path(..., description="ID отстойника"),
-    shelf_id: int = Path(..., description="ID стеллажа"),
-    overflow_bin_service: OverflowBinServiceType = None,
-    product_service: ProductServiceType = None
-):
-    """Переместить товар из отстойника на стеллаж"""
-    # Получаем информацию об отстойнике
-    overflow_bin = overflow_bin_service.get_one_overflow_bin(overflow_bin_id)
-    if not overflow_bin:
-        raise HTTPException(status_code=404, detail="Отстойник не найден")
-    
-    # Проверяем, есть ли товар в отстойнике
-    if overflow_bin.quantity <= 0:
-        raise HTTPException(status_code=400, detail="В отстойнике нет товара")
-    
-    # Создаем запрос на размещение
-    placement_data = ProductPlaceRequestDTO(
-        product_id=overflow_bin.product_id,
-        shelf_id=shelf_id,
-        quantity=overflow_bin.quantity
-    )
-    
-    try:
-        # Размещаем товар на стеллаже
-        result = product_service.place_product(placement_data)
-        
-        # Удаляем товар из отстойника
-        overflow_bin_service.delete_overflow_bin(overflow_bin_id)
-        
-        return {
-            "message": "Товар успешно перемещен из отстойника на стеллаж",
-            "placement": result.placement,
-            "overflow_bin_deleted": True
+@app.options("/{rest_of_path:path}")
+async def options_handler():
+    return JSONResponse(
+        content={"status": "ok"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
         }
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    )
 
-# ===== ЭНДПОИНТЫ ДЛЯ ОТЧЕТОВ =====
-@reports_router.get("/placement", response_model=PlacementReportDTO)
-def get_product_placement_report(
-    product_service: ProductServiceType = None
-):
-    """Получить отчет по размещению товаров на складе"""
-    return product_service.get_placement_report()
-
-@reports_router.get("/monthly/{year}/{month}", response_model=MonthlyReportDTO)
-def get_monthly_supply_shipment_report(
-    year: int = Path(..., ge=2000, le=2100, description="Год"),
-    month: int = Path(..., ge=1, le=12, description="Месяц (1-12)"),
-    supply_service: SupplyServiceType = None
-):
-    """Получить отчет по поставкам и отгрузкам за указанный месяц"""
-    return supply_service.get_monthly_supply_shipment_report(year, month)
-
-@reports_router.get("/inventory-status")
-def get_inventory_status_report(
-    product_service: ProductServiceType = None
-):
-    """Получить сводный отчет по состоянию инвентаря"""
-    # Товары с низким запасом
-    low_stock = product_service.get_low_stock_products()
-    
-    # Все товары
-    all_products = product_service.get_all_products()
-    
-    # Статистика
-    total_products = len(all_products)
-    total_quantity = sum(p.current_quantity for p in all_products)
-    low_stock_count = len(low_stock)
-    
-    # Группировка по категориям
-    from collections import defaultdict
-    category_stats = defaultdict(lambda: {"total": 0, "low_stock": 0, "quantity": 0})
-    
-    for product in all_products:
-        category_stats[product.category_id]["total"] += 1
-        category_stats[product.category_id]["quantity"] += product.current_quantity
-        
-        # Проверяем, находится ли товар в списке low_stock
-        if any(p.id == product.id for p in low_stock):
-            category_stats[product.category_id]["low_stock"] += 1
-    
-    return {
-        "summary": {
-            "total_products": total_products,
-            "total_quantity": total_quantity,
-            "low_stock_products": low_stock_count,
-            "low_stock_percentage": round((low_stock_count / total_products * 100) if total_products > 0 else 0, 2)
-        },
-        "by_category": [
-            {
-                "category_id": cat_id,
-                **stats
-            } for cat_id, stats in category_stats.items()
-        ],
-        "low_stock_details": [
-            {
-                "id": p.id,
-                "name": p.name,
-                "category_id": p.category_id,
-                "current_quantity": p.current_quantity,
-                "min_quantity": p.min_quantity,
-                "difference": p.min_quantity - p.current_quantity
-            } for p in low_stock
-        ]
-    }
-
-# ===== ЭНДПОИНТЫ ДЛЯ СИСТЕМНЫХ УВЕДОМЛЕНИЙ =====
-@system_notifications_router.get("/overflow-opportunities", response_model=List[FreeSpaceNotificationDTO])
-def get_overflow_placement_opportunities(
-    overflow_bin_service: OverflowBinServiceType = None
-):
-    """
-    Получить уведомления о возможности размещения товаров из отстойника.
-    
-    Система проверяет, есть ли свободное место на стеллажах для товаров,
-    которые находятся в отстойнике.
-    """
-    return overflow_bin_service.check_overflow_for_free_shelves()
-
-@system_notifications_router.get("/low-stock")
-def get_low_stock_notifications(
-    product_service: ProductServiceType = None
-):
-    """Получить уведомления о товарах с низким запасом"""
-    low_stock = product_service.get_low_stock_products()
-    
-    return {
-        "count": len(low_stock),
-        "notifications": [
-            {
-                "product_id": p.id,
-                "product_name": p.name,
-                "current_quantity": p.current_quantity,
-                "min_quantity": p.min_quantity,
-                "urgent": p.current_quantity <= p.min_quantity * 0.5,  # Критически низкий запас
-                "message": f"Товар '{p.name}': текущий запас {p.current_quantity}, минимальный {p.min_quantity}"
-            } for p in low_stock
-        ]
-    }
-
-# ===== КОРНЕВОЙ ЭНДПОИНТ =====
-@app.get('/')
+# Тестовый эндпоинт
+@app.get("/")
 def root():
-    return RedirectResponse('/docs')
+    return RedirectResponse("/docs")
 
-# ===== ПОДКЛЮЧЕНИЕ ВСЕХ РОУТЕРОВ =====
-app.include_router(user_router)
-app.include_router(admin_router)
-app.include_router(category_router)
-app.include_router(product_router)
-app.include_router(overflow_bin_router)
-app.include_router(purchase_order_router)
-app.include_router(shelf_router)
-app.include_router(movement_history_router)
-app.include_router(notification_router)
-app.include_router(product_placement_router)
-app.include_router(supply_router)
-app.include_router(warehouse_router)
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "Продуктовый склад API", "timestamp": datetime.now().isoformat()}
+
+# ===== ТОВАРЫ =====
+products_router = APIRouter(prefix="/products", tags=["Товары"])
+
+# Тестовые данные продуктовых товаров
+PRODUCTS_DATA = [
+    {
+        "id": 1,
+        "name": "Молоко 3.2% 1л",
+        "category_id": 1,
+        "category_name": "Молочные продукты",
+        "current_quantity": 150,
+        "min_quantity": 50,
+        "unit": "шт",
+        "price": 85.50,
+        "description": "Пастеризованное молоко"
+    },
+    {
+        "id": 2,
+        "name": "Хлеб Бородинский",
+        "category_id": 2,
+        "category_name": "Хлебобулочные изделия",
+        "current_quantity": 80,
+        "min_quantity": 30,
+        "unit": "шт",
+        "price": 65.00,
+        "description": "Ржаной хлеб"
+    },
+    {
+        "id": 3,
+        "name": "Яйца куриные С0",
+        "category_id": 3,
+        "category_name": "Яйца",
+        "current_quantity": 200,
+        "min_quantity": 100,
+        "unit": "упак",
+        "price": 120.00,
+        "description": "10 штук в упаковке"
+    },
+    {
+        "id": 4,
+        "name": "Картофель",
+        "category_id": 4,
+        "category_name": "Овощи",
+        "current_quantity": 500,
+        "min_quantity": 200,
+        "unit": "кг",
+        "price": 45.00,
+        "description": "Свежий картофель"
+    },
+    {
+        "id": 5,
+        "name": "Яблоки Голден",
+        "category_id": 5,
+        "category_name": "Фрукты",
+        "current_quantity": 300,
+        "min_quantity": 100,
+        "unit": "кг",
+        "price": 110.00,
+        "description": "Сладкие яблоки"
+    },
+    {
+        "id": 6,
+        "name": "Сахар 1кг",
+        "category_id": 6,
+        "category_name": "Бакалея",
+        "current_quantity": 120,
+        "min_quantity": 40,
+        "unit": "шт",
+        "price": 75.00,
+        "description": "Сахарный песок"
+    },
+    {
+        "id": 7,
+        "name": "Масло подсолнечное",
+        "category_id": 6,
+        "category_name": "Бакалея",
+        "current_quantity": 90,
+        "min_quantity": 30,
+        "unit": "шт",
+        "price": 140.00,
+        "description": "Рафинированное масло 1л"
+    },
+    {
+        "id": 8,
+        "name": "Курица охлажденная",
+        "category_id": 7,
+        "category_name": "Мясо и птица",
+        "current_quantity": 70,
+        "min_quantity": 25,
+        "unit": "кг",
+        "price": 250.00,
+        "description": "Куриные тушки"
+    }
+]
+
+@products_router.get("", response_model=List[ProductResponse])
+def get_products(
+    category_id: Optional[int] = Query(None, description="Фильтр по категории"),
+    low_stock: Optional[bool] = Query(None, description="Только товары с низким запасом")
+):
+    filtered_products = PRODUCTS_DATA.copy()
+    
+    if category_id:
+        filtered_products = [p for p in filtered_products if p["category_id"] == category_id]
+    
+    if low_stock:
+        filtered_products = [p for p in filtered_products if p["current_quantity"] <= p["min_quantity"]]
+    
+    return filtered_products
+
+@products_router.get("/{product_id}", response_model=ProductResponse)
+def get_product(product_id: int):
+    product = next((p for p in PRODUCTS_DATA if p["id"] == product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    return product
+
+@products_router.post("", response_model=ProductResponse)
+def create_product(product: ProductCreate):
+    new_id = max(p["id"] for p in PRODUCTS_DATA) + 1
+    new_product = {
+        "id": new_id,
+        **product.dict(),
+        "category_name": "Новая категория"  # В реальности получаем из БД
+    }
+    PRODUCTS_DATA.append(new_product)
+    return new_product
+
+@products_router.put("/{product_id}", response_model=ProductResponse)
+def update_product(product_id: int, product_update: ProductCreate):
+    product = next((p for p in PRODUCTS_DATA if p["id"] == product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    for key, value in product_update.dict().items():
+        if value is not None:
+            product[key] = value
+    
+    return product
+
+@products_router.delete("/{product_id}", response_model=dict)
+def delete_product(product_id: int):
+    global PRODUCTS_DATA
+    product = next((p for p in PRODUCTS_DATA if p["id"] == product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    PRODUCTS_DATA = [p for p in PRODUCTS_DATA if p["id"] != product_id]
+    
+    return {
+        "message": "Товар удален",
+        "deleted_id": product_id,
+        "product_name": product["name"]
+    }
+
+# ===== СТЕЛЛАЖИ =====
+shelves_router = APIRouter(prefix="/shelves", tags=["Стеллажи"])
+
+# Тестовые данные стеллажей
+SHELVES_DATA = [
+    {
+        "id": 1,
+        "name": "Стеллаж А1",
+        "max_capacity": 200,
+        "current_quantity": 150,
+        "location": "Зона А, Ряд 1",
+        "description": "Для молочных продуктов",
+        "free_space": 50
+    },
+    {
+        "id": 2,
+        "name": "Стеллаж А2",
+        "max_capacity": 150,
+        "current_quantity": 80,
+        "location": "Зона А, Ряд 2",
+        "description": "Для хлебобулочных изделий",
+        "free_space": 70
+    },
+    {
+        "id": 3,
+        "name": "Стеллаж Б1",
+        "max_capacity": 300,
+        "current_quantity": 200,
+        "location": "Зона Б, Ряд 1",
+        "description": "Для овощей и фруктов",
+        "free_space": 100
+    },
+    {
+        "id": 4,
+        "name": "Стеллаж Б2",
+        "max_capacity": 250,
+        "current_quantity": 120,
+        "location": "Зона Б, Ряд 2",
+        "description": "Для бакалеи",
+        "free_space": 130
+    },
+    {
+        "id": 5,
+        "name": "Стеллаж В1",
+        "max_capacity": 100,
+        "current_quantity": 70,
+        "location": "Зона В, Ряд 1",
+        "description": "Для мяса и птицы",
+        "free_space": 30
+    }
+]
+
+@shelves_router.get("", response_model=List[ShelfResponse])
+def get_shelves():
+    return SHELVES_DATA
+
+@shelves_router.get("/{shelf_id}", response_model=ShelfResponse)
+def get_shelf(shelf_id: int):
+    shelf = next((s for s in SHELVES_DATA if s["id"] == shelf_id), None)
+    if not shelf:
+        raise HTTPException(status_code=404, detail="Стеллаж не найден")
+    return shelf
+
+@shelves_router.post("", response_model=ShelfResponse)
+def create_shelf(shelf: ShelfCreate):
+    new_id = max(s["id"] for s in SHELVES_DATA) + 1 if SHELVES_DATA else 1
+    new_shelf = {
+        "id": new_id,
+        **shelf.dict(),
+        "free_space": shelf.max_capacity - shelf.current_quantity
+    }
+    SHELVES_DATA.append(new_shelf)
+    return new_shelf
+
+@shelves_router.put("/{shelf_id}", response_model=ShelfResponse)
+def update_shelf(shelf_id: int, shelf_update: ShelfCreate):
+    shelf = next((s for s in SHELVES_DATA if s["id"] == shelf_id), None)
+    if not shelf:
+        raise HTTPException(status_code=404, detail="Стеллаж не найден")
+    
+    for key, value in shelf_update.dict().items():
+        if value is not None:
+            shelf[key] = value
+    
+    # Обновляем свободное место
+    shelf["free_space"] = shelf["max_capacity"] - shelf["current_quantity"]
+    
+    return shelf
+
+@shelves_router.delete("/{shelf_id}", response_model=dict)
+def delete_shelf(shelf_id: int):
+    global SHELVES_DATA
+    shelf = next((s for s in SHELVES_DATA if s["id"] == shelf_id), None)
+    if not shelf:
+        raise HTTPException(status_code=404, detail="Стеллаж не найден")
+    
+    SHELVES_DATA = [s for s in SHELVES_DATA if s["id"] != shelf_id]
+    
+    return {
+        "message": "Стеллаж удален",
+        "deleted_id": shelf_id,
+        "shelf_name": shelf["name"]
+    }
+
+# ===== РАЗМЕЩЕНИЕ ТОВАРОВ =====
+product_placements_router = APIRouter(prefix="/product-placements", tags=["Размещение товаров"])
+
+# Тестовые данные размещения товаров
+PRODUCT_PLACEMENTS_DATA = [
+    {
+        "id": 1,
+        "product_id": 1,
+        "product_name": "Молоко 3.2% 1л",
+        "shelf_id": 1,
+        "shelf_name": "Стеллаж А1",
+        "overflow_id": None,
+        "quantity": 100,
+        "placement_date": "2024-01-12T11:30:00",
+        "notes": "Основное размещение"
+    },
+    {
+        "id": 2,
+        "product_id": 2,
+        "product_name": "Хлеб Бородинский",
+        "shelf_id": 2,
+        "shelf_name": "Стеллаж А2",
+        "overflow_id": None,
+        "quantity": 50,
+        "placement_date": "2024-01-13T08:45:00",
+        "notes": "Ежедневная поставка"
+    },
+    {
+        "id": 3,
+        "product_id": 3,
+        "product_name": "Яйца куриные С0",
+        "shelf_id": 4,
+        "shelf_name": "Стеллаж Б2",
+        "overflow_id": None,
+        "quantity": 150,
+        "placement_date": "2024-01-14T10:15:00",
+        "notes": "Новая поставка"
+    },
+    {
+        "id": 4,
+        "product_id": 6,
+        "product_name": "Сахар 1кг",
+        "shelf_id": None,
+        "shelf_name": None,
+        "overflow_id": 1,
+        "quantity": 20,
+        "placement_date": "2024-01-15T14:20:00",
+        "notes": "Временное хранение в отстойнике"
+    }
+]
+
+@product_placements_router.get("", response_model=List[ProductPlacementResponse])
+def get_product_placements(
+    product_id: Optional[int] = Query(None, description="Фильтр по товару"),
+    shelf_id: Optional[int] = Query(None, description="Фильтр по стеллажу"),
+    overflow_id: Optional[int] = Query(None, description="Фильтр по отстойнику")
+):
+    filtered_placements = PRODUCT_PLACEMENTS_DATA.copy()
+    
+    if product_id:
+        filtered_placements = [p for p in filtered_placements if p["product_id"] == product_id]
+    
+    if shelf_id:
+        filtered_placements = [p for p in filtered_placements if p["shelf_id"] == shelf_id]
+    
+    if overflow_id:
+        filtered_placements = [p for p in filtered_placements if p["overflow_id"] == overflow_id]
+    
+    return filtered_placements
+
+@product_placements_router.get("/{placement_id}", response_model=ProductPlacementResponse)
+def get_product_placement(placement_id: int):
+    placement = next((p for p in PRODUCT_PLACEMENTS_DATA if p["id"] == placement_id), None)
+    if not placement:
+        raise HTTPException(status_code=404, detail="Размещение не найдено")
+    return placement
+
+@product_placements_router.post("", response_model=ProductPlacementResponse)
+def create_product_placement(placement: ProductPlacementCreate):
+    # Проверяем существование товара
+    product = next((p for p in PRODUCTS_DATA if p["id"] == placement.product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    # Проверяем доступное количество товара
+    if placement.quantity > product["current_quantity"]:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Недостаточно товара. Доступно: {product['current_quantity']}, запрошено: {placement.quantity}"
+        )
+    
+    # Если размещение на стеллаж, проверяем свободное место
+    if placement.shelf_id:
+        shelf = next((s for s in SHELVES_DATA if s["id"] == placement.shelf_id), None)
+        if not shelf:
+            raise HTTPException(status_code=404, detail="Стеллаж не найден")
+        
+        if placement.quantity > shelf["free_space"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно места на стеллаже. Свободно: {shelf['free_space']}, требуется: {placement.quantity}"
+            )
+        
+        # Обновляем занятое место на стеллаже
+        shelf["current_quantity"] += placement.quantity
+        shelf["free_space"] = shelf["max_capacity"] - shelf["current_quantity"]
+        shelf_name = shelf["name"]
+    else:
+        shelf_name = None
+    
+    # Если размещение в отстойник (пока используем тестовый отстойник)
+    if placement.overflow_id:
+        shelf_name = None
+    
+    new_id = max(p["id"] for p in PRODUCT_PLACEMENTS_DATA) + 1 if PRODUCT_PLACEMENTS_DATA else 1
+    new_placement = {
+        "id": new_id,
+        **placement.dict(),
+        "product_name": product["name"],
+        "shelf_name": shelf_name,
+        "placement_date": datetime.now()
+    }
+    PRODUCT_PLACEMENTS_DATA.append(new_placement)
+    
+    # Уменьшаем количество товара на складе
+    product["current_quantity"] -= placement.quantity
+    
+    return new_placement
+
+@product_placements_router.put("/{placement_id}", response_model=ProductPlacementResponse)
+def update_product_placement(placement_id: int, placement_update: ProductPlacementCreate):
+    placement = next((p for p in PRODUCT_PLACEMENTS_DATA if p["id"] == placement_id), None)
+    if not placement:
+        raise HTTPException(status_code=404, detail="Размещение не найдено")
+    
+    # Сохраняем старое количество для корректировки
+    old_quantity = placement["quantity"]
+    
+    # Обновляем данные размещения
+    for key, value in placement_update.dict().items():
+        if value is not None:
+            placement[key] = value
+    
+    # Обновляем количество товара на складе
+    product = next((p for p in PRODUCTS_DATA if p["id"] == placement["product_id"]), None)
+    if product:
+        quantity_difference = old_quantity - placement_update.quantity
+        product["current_quantity"] += quantity_difference
+    
+    return placement
+
+@product_placements_router.delete("/{placement_id}", response_model=dict)
+def delete_product_placement(placement_id: int):
+    global PRODUCT_PLACEMENTS_DATA
+    placement = next((p for p in PRODUCT_PLACEMENTS_DATA if p["id"] == placement_id), None)
+    if not placement:
+        raise HTTPException(status_code=404, detail="Размещение не найдено")
+    
+    # Возвращаем товар на склад
+    product = next((p for p in PRODUCTS_DATA if p["id"] == placement["product_id"]), None)
+    if product:
+        product["current_quantity"] += placement["quantity"]
+    
+    # Освобождаем место на стеллаже
+    if placement["shelf_id"]:
+        shelf = next((s for s in SHELVES_DATA if s["id"] == placement["shelf_id"]), None)
+        if shelf:
+            shelf["current_quantity"] = max(0, shelf["current_quantity"] - placement["quantity"])
+            shelf["free_space"] = shelf["max_capacity"] - shelf["current_quantity"]
+    
+    PRODUCT_PLACEMENTS_DATA = [p for p in PRODUCT_PLACEMENTS_DATA if p["id"] != placement_id]
+    
+    return {
+        "message": "Размещение удалено",
+        "deleted_id": placement_id,
+        "product_id": placement["product_id"],
+        "quantity_returned": placement["quantity"]
+    }
+
+# ===== ОТСТОЙНИКИ (товары в отстойнике) =====
+overflow_bins_router = APIRouter(prefix="/overflow-bins", tags=["Отстойники"])
+
+# Тестовые данные товаров в отстойнике (согласно модели OverflowBinORM)
+OVERFLOW_ITEMS_DATA = [
+    {
+        "id": 1,
+        "product_id": 6,
+        "product_name": "Сахар 1кг",
+        "quantity": 20,
+        "date_added": "2024-01-15T14:20:00",
+        "notes": "Временное хранение"
+    },
+    {
+        "id": 2,
+        "product_id": 7,
+        "product_name": "Масло подсолнечное",
+        "quantity": 15,
+        "date_added": "2024-01-16T10:30:00",
+        "notes": "Ждет размещения"
+    },
+    {
+        "id": 3,
+        "product_id": 5,
+        "product_name": "Яблоки Голден",
+        "quantity": 50,
+        "date_added": "2024-01-17T09:15:00",
+        "notes": "Сезонное переполнение"
+    }
+]
+
+@overflow_bins_router.get("", response_model=List[dict])
+def get_overflow_items():
+    """Получить все товары в отстойнике"""
+    return OVERFLOW_ITEMS_DATA
+
+@overflow_bins_router.get("/{item_id}", response_model=dict)
+def get_overflow_item(item_id: int):
+    """Получить товар в отстойнике по ID"""
+    item = next((b for b in OVERFLOW_ITEMS_DATA if b["id"] == item_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
+    return item
+
+@overflow_bins_router.post("", response_model=dict)
+def add_to_overflow(item: dict):
+    """Добавить товар в отстойник"""
+    # Проверяем существование товара
+    product = next((p for p in PRODUCTS_DATA if p["id"] == item.get("product_id")), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    # Проверяем доступное количество
+    if item.get("quantity", 0) > product["current_quantity"]:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Недостаточно товара. Доступно: {product['current_quantity']}, запрошено: {item.get('quantity', 0)}"
+        )
+    
+    new_id = max(b["id"] for b in OVERFLOW_ITEMS_DATA) + 1 if OVERFLOW_ITEMS_DATA else 1
+    new_item = {
+        "id": new_id,
+        "product_id": item["product_id"],
+        "product_name": product["name"],
+        "quantity": item["quantity"],
+        "date_added": datetime.now().isoformat(),
+        "notes": item.get("notes", "")
+    }
+    OVERFLOW_ITEMS_DATA.append(new_item)
+    
+    # Уменьшаем количество товара на складе
+    product["current_quantity"] -= item["quantity"]
+    
+    return new_item
+
+@overflow_bins_router.put("/{item_id}", response_model=dict)
+def update_overflow_item(item_id: int, item_update: dict):
+    """Обновить товар в отстойнике"""
+    item = next((b for b in OVERFLOW_ITEMS_DATA if b["id"] == item_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
+    
+    # Если меняем количество, корректируем остатки
+    if "quantity" in item_update and item_update["quantity"] != item["quantity"]:
+        product = next((p for p in PRODUCTS_DATA if p["id"] == item["product_id"]), None)
+        if product:
+            difference = item_update["quantity"] - item["quantity"]
+            product["current_quantity"] -= difference
+    
+    # Обновляем данные
+    for key, value in item_update.items():
+        if value is not None:
+            item[key] = value
+    
+    return item
+
+@overflow_bins_router.delete("/{item_id}", response_model=dict)
+def delete_overflow_item(item_id: int):
+    """Удалить товар из отстойника"""
+    global OVERFLOW_ITEMS_DATA 
+    
+    item = next((b for b in OVERFLOW_ITEMS_DATA if b["id"] == item_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
+    
+    # Возвращаем товар на склад
+    product = next((p for p in PRODUCTS_DATA if p["id"] == item["product_id"]), None)
+    if product:
+        product["current_quantity"] += item["quantity"]
+    
+    OVERFLOW_ITEMS_DATA = [b for b in OVERFLOW_ITEMS_DATA if b["id"] != item_id]
+    
+    return {
+        "message": "Товар удален из отстойника",
+        "deleted_id": item_id,
+        "product_id": item["product_id"],
+        "product_name": item["product_name"],
+        "quantity_returned": item["quantity"]
+    }
+
+@overflow_bins_router.post("/{item_id}/move-to-shelf")
+def move_from_overflow_to_shelf(
+    
+    item_id: int,
+    shelf_id: int,
+    quantity: Optional[int] = None,
+    notes: Optional[str] = None
+):
+    global OVERFLOW_ITEMS_DATA
+    """Переместить товар из отстойника на стеллаж"""
+    item = next((b for b in OVERFLOW_ITEMS_DATA if b["id"] == item_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
+    
+    shelf = next((s for s in SHELVES_DATA if s["id"] == shelf_id), None)
+    if not shelf:
+        raise HTTPException(status_code=404, detail="Стеллаж не найден")
+    
+    # Определяем количество для перемещения
+    move_quantity = quantity if quantity is not None else item["quantity"]
+    
+    if move_quantity > item["quantity"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Недостаточно товара в отстойнике. Доступно: {item['quantity']}, запрошено: {move_quantity}"
+        )
+    
+    # Проверяем место на стеллаже
+    if move_quantity > shelf["free_space"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Недостаточно места на стеллаже '{shelf['name']}'. Свободно: {shelf['free_space']}, требуется: {move_quantity}"
+        )
+    
+    # Обновляем стеллаж
+    shelf["current_quantity"] += move_quantity
+    shelf["free_space"] = shelf["max_capacity"] - shelf["current_quantity"]
+    
+    # Обновляем отстойник
+    if move_quantity == item["quantity"]:
+        # Если весь товар перемещен, удаляем запись
+        OVERFLOW_ITEMS_DATA = [b for b in OVERFLOW_ITEMS_DATA if b["id"] != item_id]
+        overflow_removed = True
+    else:
+        # Если часть товара, уменьшаем количество
+        item["quantity"] -= move_quantity
+        overflow_removed = False
+    
+    # Создаем размещение
+    new_placement_id = max(p["id"] for p in PRODUCT_PLACEMENTS_DATA) + 1 if PRODUCT_PLACEMENTS_DATA else 1
+    placement = {
+        "id": new_placement_id,
+        "product_id": item["product_id"],
+        "product_name": item["product_name"],
+        "shelf_id": shelf_id,
+        "shelf_name": shelf["name"],
+        "overflow_id": None,
+        "quantity": move_quantity,
+        "placement_date": datetime.now().isoformat(),
+        "notes": notes or f"Перемещено из отстойника (ID: {item_id})"
+    }
+    PRODUCT_PLACEMENTS_DATA.append(placement)
+    
+    return {
+        "success": True,
+        "message": f"Товар '{item['product_name']}' перемещен из отстойника на стеллаж '{shelf['name']}'",
+        "quantity_moved": move_quantity,
+        "overflow_removed": overflow_removed,
+        "overflow_remaining": 0 if overflow_removed else item.get("quantity", 0),
+        "placement": placement
+    }
+
+@overflow_bins_router.delete("/{item_id}/return-to-stock")
+def return_overflow_to_stock(item_id: int):
+    global OVERFLOW_ITEMS_DATA
+    """Вернуть товар из отстойника на склад"""
+    item = next((b for b in OVERFLOW_ITEMS_DATA if b["id"] == item_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
+    
+    # Возвращаем товар на склад
+    product = next((p for p in PRODUCTS_DATA if p["id"] == item["product_id"]), None)
+    if product:
+        product["current_quantity"] += item["quantity"]
+    
+    # Удаляем из отстойника
+    OVERFLOW_ITEMS_DATA = [b for b in OVERFLOW_ITEMS_DATA if b["id"] != item_id]
+    
+    return {
+        "success": True,
+        "message": f"Товар '{item['product_name']}' возвращен на склад",
+        "quantity_returned": item["quantity"],
+        "product": {
+            "id": product["id"],
+            "name": product["name"],
+            "new_quantity": product["current_quantity"]
+        }
+    }
+
+@overflow_bins_router.get("/product/{product_id}")
+def get_product_overflow(product_id: int):
+    """Получить информацию о товаре в отстойнике по ID товара"""
+    items = [b for b in OVERFLOW_ITEMS_DATA if b["product_id"] == product_id]
+    if not items:
+        return {"found": False, "message": "Товар не найден в отстойнике"}
+    
+    return {
+        "found": True,
+        "items": items,
+        "total_quantity": sum(item["quantity"] for item in items)
+    }
+
+@overflow_bins_router.get("/with-details/")
+def get_overflow_with_details():
+    """Получить все товары в отстойнике с деталями"""
+    result = []
+    for item in OVERFLOW_ITEMS_DATA:
+        product = next((p for p in PRODUCTS_DATA if p["id"] == item["product_id"]), None)
+        if product:
+            result.append({
+                **item,
+                "category_id": product["category_id"],
+                "category_name": product["category_name"],
+                "unit": product["unit"],
+                "price": product["price"],
+                "description": product["description"],
+                "product_current_quantity": product["current_quantity"],
+                "product_min_quantity": product["min_quantity"]
+            })
+    
+    return result
+
+# ===== ЗАКАЗЫ НА ЗАКУПКУ =====
+purchase_orders_router = APIRouter(prefix="/purchase-orders", tags=["Заказы на закупку"])
+
+# Тестовые данные заказов
+PURCHASE_ORDERS_DATA = [
+    {
+        "id": 1,
+        "product_id": 1,
+        "product_name": "Молоко 3.2% 1л",
+        "quantity": 100,
+        "supplier": "Молочный комбинат",
+        "order_date": "2024-01-10T09:00:00",
+        "expected_delivery_date": "2024-01-12",
+        "status": "delivered",
+        "notes": "Срочный заказ",
+        "created_date": "2024-01-10T09:00:00"
+    },
+    {
+        "id": 2,
+        "product_id": 2,
+        "product_name": "Хлеб Бородинский",
+        "quantity": 50,
+        "supplier": "Хлебозавод №1",
+        "order_date": "2024-01-11T10:30:00",
+        "expected_delivery_date": "2024-01-13",
+        "status": "in_progress",
+        "notes": "Ежедневная поставка",
+        "created_date": "2024-01-11T10:30:00"
+    },
+    {
+        "id": 3,
+        "product_id": 3,
+        "product_name": "Яйца куриные С0",
+        "quantity": 150,
+        "supplier": "Птицефабрика",
+        "order_date": "2024-01-12T14:15:00",
+        "expected_delivery_date": "2024-01-15",
+        "status": "pending",
+        "notes": None,
+        "created_date": "2024-01-12T14:15:00"
+    }
+]
+@purchase_orders_router.patch("/{order_id}", response_model=PurchaseOrderResponse)
+def partial_update_purchase_order(
+    order_id: int,
+    order_update: PurchaseOrderBase
+):
+    """Частичное обновление заказа"""
+    order = next((o for o in PURCHASE_ORDERS_DATA if o["id"] == order_id), None)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ на закупку не найден")
+    
+    # Обновляем только переданные поля
+    update_data = order_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        if value is not None:
+            order[key] = value
+    
+    # Если обновлен product_id, обновляем имя товара
+    if 'product_id' in update_data:
+        product = next((p for p in PRODUCTS_DATA if p["id"] == order_update.product_id), None)
+        if product:
+            order["product_name"] = product["name"]
+    
+    return order
+
+@purchase_orders_router.get("", response_model=List[PurchaseOrderResponse])
+def get_purchase_orders(
+    status: Optional[str] = Query(None, description="Фильтр по статусу"),
+    product_id: Optional[int] = Query(None, description="Фильтр по товару")
+):
+    filtered_orders = PURCHASE_ORDERS_DATA.copy()
+    
+    if status:
+        filtered_orders = [o for o in filtered_orders if o["status"] == status]
+    
+    if product_id:
+        filtered_orders = [o for o in filtered_orders if o["product_id"] == product_id]
+    
+    return filtered_orders
+
+@purchase_orders_router.get("/{order_id}", response_model=PurchaseOrderResponse)
+def get_purchase_order(order_id: int):
+    order = next((o for o in PURCHASE_ORDERS_DATA if o["id"] == order_id), None)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ на закупку не найден")
+    return order
+
+@purchase_orders_router.post("", response_model=PurchaseOrderResponse)
+def create_purchase_order(order: PurchaseOrderCreate):
+    # Находим товар
+    product = next((p for p in PRODUCTS_DATA if p["id"] == order.product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    new_id = max(o["id"] for o in PURCHASE_ORDERS_DATA) + 1
+    new_order = {
+        "id": new_id,
+        **order.dict(),
+        "product_name": product["name"],
+        "order_date": datetime.now(),
+        "created_date": datetime.now(),
+        "status": "pending"
+    }
+    PURCHASE_ORDERS_DATA.append(new_order)
+    
+    # Создаем уведомление о низком запасе, если нужно
+    if product["current_quantity"] <= product["min_quantity"]:
+        print(f"⚠️ Создан заказ на товар с низким запасом: {product['name']}")
+    
+    return new_order
+
+@purchase_orders_router.put("/{order_id}/status", response_model=PurchaseOrderResponse)
+def update_order_status(
+    order_id: int,
+    status: str = Query(..., description="Новый статус заказа")
+):
+    order = next((o for o in PURCHASE_ORDERS_DATA if o["id"] == order_id), None)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ на закупку не найден")
+    
+    order["status"] = status
+    return order
+
+# ===== ПОСТАВКИ =====
+supplies_router = APIRouter(prefix="/supplies", tags=["Поставки"])
+
+# Тестовые данные поставок
+SUPPLIES_DATA = [
+    {
+        "id": 1,
+        "purchase_order_id": 1,
+        "product_id": 1,
+        "product_name": "Молоко 3.2% 1л",
+        "quantity": 100,
+        "supplier": "Молочный комбинат",
+        "supply_date": "2024-01-12T11:30:00",
+        "delivery_date": "2024-01-12",
+        "status": "delivered",
+        "invoice_number": "INV-2024-001",
+        "notes": "Поставка выполнена вовремя",
+        "purchase_order_status": "delivered"
+    },
+    {
+        "id": 2,
+        "purchase_order_id": 2,
+        "product_id": 2,
+        "product_name": "Хлеб Бородинский",
+        "quantity": 50,
+        "supplier": "Хлебозавод №1",
+        "supply_date": "2024-01-13T08:45:00",
+        "delivery_date": "2024-01-13",
+        "status": "in_transit",
+        "invoice_number": "INV-2024-002",
+        "notes": "В пути",
+        "purchase_order_status": "in_progress"
+    }
+]
+
+# ===== ЗАКАЗЫ НА ЗАКУПКУ =====
+
+@purchase_orders_router.put("/{order_id}", response_model=PurchaseOrderResponse)
+def update_purchase_order(order_id: int, order_update: PurchaseOrderBase):
+    """Обновление заказа на закупку"""
+    order = next((o for o in PURCHASE_ORDERS_DATA if o["id"] == order_id), None)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ на закупку не найден")
+    
+    # Проверяем существование товара
+    product = next((p for p in PRODUCTS_DATA if p["id"] == order_update.product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    # Обновляем данные заказа
+    for key, value in order_update.dict(exclude_unset=True).items():
+        if value is not None:
+            order[key] = value
+    
+    # Обновляем имя товара
+    order["product_name"] = product["name"]
+    
+    return order
+
+# Обновление только статуса
+@purchase_orders_router.put("/{order_id}/status", response_model=PurchaseOrderResponse)
+def update_order_status(
+    order_id: int,
+    status: str = Query(..., description="Новый статус заказа")
+):
+    """Обновление статуса заказа"""
+    order = next((o for o in PURCHASE_ORDERS_DATA if o["id"] == order_id), None)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ на закупку не найден")
+    
+    order["status"] = status
+    return order
+
+# Удаление заказа
+@purchase_orders_router.delete("/{order_id}", response_model=dict)
+def delete_purchase_order(order_id: int):
+    """Удаление заказа на закупку"""
+    global PURCHASE_ORDERS_DATA
+    order = next((o for o in PURCHASE_ORDERS_DATA if o["id"] == order_id), None)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ на закупку не найден")
+    
+    PURCHASE_ORDERS_DATA = [o for o in PURCHASE_ORDERS_DATA if o["id"] != order_id]
+    
+    return {
+        "message": "Заказ удален",
+        "deleted_id": order_id,
+        "product_name": order.get("product_name", "")
+    }
+
+@supplies_router.get("", response_model=List[SupplyResponse])
+def get_supplies(
+    purchase_order_id: Optional[int] = Query(None, description="Фильтр по заказу на закупку"),
+    status: Optional[str] = Query(None, description="Фильтр по статусу"),
+    start_date: Optional[date] = Query(None, description="Начальная дата"),
+    end_date: Optional[date] = Query(None, description="Конечная дата")
+):
+    filtered_supplies = SUPPLIES_DATA.copy()
+    
+    if purchase_order_id:
+        filtered_supplies = [s for s in filtered_supplies if s.get("purchase_order_id") == purchase_order_id]
+    
+    if status:
+        filtered_supplies = [s for s in filtered_supplies if s["status"] == status]
+    
+    if start_date:
+        filtered_supplies = [s for s in filtered_supplies if datetime.fromisoformat(s["supply_date"].replace("Z", "")).date() >= start_date]
+    
+    if end_date:
+        filtered_supplies = [s for s in filtered_supplies if datetime.fromisoformat(s["supply_date"].replace("Z", "")).date() <= end_date]
+    
+    return filtered_supplies
+
+@supplies_router.get("/{supply_id}", response_model=SupplyResponse)
+def get_supply(supply_id: int):
+    supply = next((s for s in SUPPLIES_DATA if s["id"] == supply_id), None)
+    if not supply:
+        raise HTTPException(status_code=404, detail="Поставка не найдена")
+    return supply
+
+@supplies_router.post("", response_model=SupplyResponse)
+def create_supply(supply: SupplyCreate):
+    # Находим товар
+    product = next((p for p in PRODUCTS_DATA if p["id"] == supply.product_id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    # Если указан purchase_order_id, проверяем заказ
+    purchase_order_status = None
+    if supply.purchase_order_id:
+        order = next((o for o in PURCHASE_ORDERS_DATA if o["id"] == supply.purchase_order_id), None)
+        if order:
+            purchase_order_status = order["status"]
+            # Обновляем статус заказа
+            order["status"] = "delivered"
+    
+    new_id = max(s["id"] for s in SUPPLIES_DATA) + 1 if SUPPLIES_DATA else 1
+    new_supply = {
+        "id": new_id,
+        **supply.dict(),
+        "product_name": product["name"],
+        "supply_date": datetime.now(),
+        "status": "delivered",
+        "purchase_order_status": purchase_order_status
+    }
+    SUPPLIES_DATA.append(new_supply)
+    
+    # Обновляем количество товара на складе
+    product["current_quantity"] += supply.quantity
+    
+    # Проверяем, был ли низкий запас
+    was_low_stock = product["current_quantity"] - supply.quantity <= product["min_quantity"]
+    now_adequate = product["current_quantity"] > product["min_quantity"]
+    
+    if was_low_stock and now_adequate:
+        print(f"✅ Запас товара '{product['name']}' восстановлен до нормального уровня")
+    
+    return new_supply
+
+@supplies_router.put("/{supply_id}", response_model=SupplyResponse)
+def update_supply(supply_id: int, supply_update: SupplyBase):
+    """Обновление поставки"""
+    supply = next((s for s in SUPPLIES_DATA if s["id"] == supply_id), None)
+    if not supply:
+        raise HTTPException(status_code=404, detail="Поставка не найдена")
+    
+    # Обновляем данные
+    for key, value in supply_update.dict(exclude_unset=True).items():
+        if value is not None:
+            supply[key] = value
+    
+    return supply
+
+@supplies_router.delete("/{supply_id}", response_model=dict)
+def delete_supply(supply_id: int):
+    global SUPPLIES_DATA
+    supply = next((s for s in SUPPLIES_DATA if s["id"] == supply_id), None)
+    if not supply:
+        raise HTTPException(status_code=404, detail="Поставка не найдена")
+    
+    # Уменьшаем количество товара на складе
+    product = next((p for p in PRODUCTS_DATA if p["id"] == supply["product_id"]), None)
+    if product:
+        product["current_quantity"] = max(0, product["current_quantity"] - supply["quantity"])
+    
+    SUPPLIES_DATA = [s for s in SUPPLIES_DATA if s["id"] != supply_id]
+    
+    return {
+        "message": "Поставка удалена",
+        "deleted_id": supply_id,
+        "product_id": supply["product_id"],
+        "quantity_returned": supply["quantity"]
+    }
+
+# ===== ОТЧЕТЫ =====
+reports_router = APIRouter(prefix="/reports", tags=["Отчеты"])
+
+@reports_router.get("/stock-summary")
+def get_stock_summary():
+    total_products = len(PRODUCTS_DATA)
+    total_quantity = sum(p["current_quantity"] for p in PRODUCTS_DATA)
+    total_value = sum(p["current_quantity"] * (p["price"] or 0) for p in PRODUCTS_DATA)
+    
+    low_stock_products = [
+        {
+            "product_id": p["id"],
+            "product_name": p["name"],
+            "current_quantity": p["current_quantity"],
+            "min_quantity": p["min_quantity"],
+            "deficit": p["min_quantity"] - p["current_quantity"],
+            "unit": p["unit"],
+            "is_critical": p["current_quantity"] <= p["min_quantity"] * 0.5
+        }
+        for p in PRODUCTS_DATA if p["current_quantity"] <= p["min_quantity"]
+    ]
+    
+    # Товары в отстойнике
+    overflow_summary = [
+        {
+            "product_id": item["product_id"],
+            "product_name": item["product_name"],
+            "quantity": item["quantity"],
+            "date_added": item["date_added"]
+        }
+        for item in OVERFLOW_ITEMS_DATA
+    ]
+    
+    return {
+        "total_products": total_products,
+        "total_quantity": total_quantity,
+        "total_value": round(total_value, 2),
+        "low_stock_count": len(low_stock_products),
+        "critical_stock_count": len([p for p in low_stock_products if p["is_critical"]]),
+        "overflow_count": len(OVERFLOW_ITEMS_DATA),
+        "overflow_total_quantity": sum(item["quantity"] for item in OVERFLOW_ITEMS_DATA),
+        "low_stock_products": low_stock_products,
+        "overflow_items": overflow_summary
+    }
+
+@reports_router.get("/supply-statistics")
+def get_supply_statistics():
+    total_supplies = len(SUPPLIES_DATA)
+    total_quantity = sum(s["quantity"] for s in SUPPLIES_DATA)
+    
+    # Группировка по товарам
+    product_stats = {}
+    for supply in SUPPLIES_DATA:
+        product_id = supply["product_id"]
+        if product_id not in product_stats:
+            product = next((p for p in PRODUCTS_DATA if p["id"] == product_id), None)
+            product_stats[product_id] = {
+                "product_id": product_id,
+                "product_name": product["name"] if product else "Неизвестный товар",
+                "total_supplied": 0,
+                "supply_count": 0
+            }
+        product_stats[product_id]["total_supplied"] += supply["quantity"]
+        product_stats[product_id]["supply_count"] += 1
+    
+    return {
+        "total_supplies": total_supplies,
+        "total_quantity_supplied": total_quantity,
+        "average_supply_quantity": round(total_quantity / max(total_supplies, 1), 2),
+        "by_product": list(product_stats.values())
+    }
+
+@reports_router.get("/overflow-report")
+def get_overflow_report():
+    """Отчет по отстойнику"""
+    overflow_items = []
+    for item in OVERFLOW_ITEMS_DATA:
+        product = next((p for p in PRODUCTS_DATA if p["id"] == item["product_id"]), None)
+        if product:
+            overflow_items.append({
+                **item,
+                "category_name": product["category_name"],
+                "unit": product["unit"],
+                "days_in_overflow": (datetime.now() - datetime.fromisoformat(item["date_added"].replace("Z", ""))).days
+            })
+    
+    return {
+        "total_items": len(OVERFLOW_ITEMS_DATA),
+        "total_quantity": sum(item["quantity"] for item in OVERFLOW_ITEMS_DATA),
+        "items": sorted(overflow_items, key=lambda x: x["days_in_overflow"], reverse=True),
+        "oldest_item": min(OVERFLOW_ITEMS_DATA, key=lambda x: x["date_added"]) if OVERFLOW_ITEMS_DATA else None,
+        "largest_quantity_item": max(OVERFLOW_ITEMS_DATA, key=lambda x: x["quantity"]) if OVERFLOW_ITEMS_DATA else None
+    }
+
+# Подключаем ВСЕ роутеры
+app.include_router(products_router)
+app.include_router(shelves_router)
+app.include_router(product_placements_router)
+app.include_router(overflow_bins_router)
+app.include_router(purchase_orders_router)
+app.include_router(supplies_router)
 app.include_router(reports_router)
-app.include_router(system_notifications_router)
 
-# ===== ЗАПУСК ПРИЛОЖЕНИЯ =====
-if __name__ == '__main__':
+if __name__ == "__main__":
     uvicorn.run(app)
