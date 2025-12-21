@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey, String, Text, Boolean, Float, CheckConstraint
 from datetime import datetime, timezone
 from typing import Any, List, Optional, Set, Type, Union
 
+
 class Base(DeclarativeBase):
     __abstract__ = True
 
@@ -125,7 +126,8 @@ class OverflowBinORM(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
     quantity: Mapped[int] = mapped_column(default=0)
-    date_added: Mapped[datetime] = mapped_column(default= lambda: datetime.now(timezone.utc))
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    date_added: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
     product: Mapped['ProductORM'] = relationship()
     
@@ -158,7 +160,9 @@ class ShelfORM(Base):
     category_id: Mapped[Optional[int]] = mapped_column(ForeignKey('categories.id'), nullable=True)
     max_capacity: Mapped[int] = mapped_column()
     current_quantity: Mapped[int] = mapped_column(default=0)
-
+    location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True) 
+    
     category: Mapped[Optional['CategoryORM']] = relationship()
     
     __table_args__ = (
@@ -209,8 +213,9 @@ class ProductPlacementORM(Base):
     shelf_id: Mapped[Optional[int]] = mapped_column(ForeignKey('shelves.id'), nullable=True)
     overflow_id: Mapped[Optional[int]] = mapped_column(ForeignKey('overflow_bins.id'), nullable=True)
     quantity: Mapped[int] = mapped_column(default=0)
-    placement_date: Mapped[datetime] = mapped_column(default=lambda:datetime.now(timezone.utc))
-    last_updated: Mapped[datetime] = mapped_column(default=lambda:datetime.now(timezone.utc), onupdate=lambda:datetime.now(timezone.utc))
+    placement_date: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
+    last_updated: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     product: Mapped['ProductORM'] = relationship()
     shelf: Mapped[Optional['ShelfORM']] = relationship()
@@ -219,8 +224,7 @@ class ProductPlacementORM(Base):
     __table_args__ = (
         CheckConstraint('quantity >= 0', name='check_placement_quantity_non_negative'),
     )
-
-
+    
 class SupplyORM(Base):
     __tablename__ = 'supplies'
     

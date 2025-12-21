@@ -438,11 +438,11 @@
             </table>
         </div>
 
-        <!-- Модальное окно для добавления товара в отстойник -->
+        <!-- Модальное окно для добавления/редактирования товара в отстойнике -->
         <div class="modal" id="addToOverflowModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Добавить товар в отстойник</h2>
+                    <h2 class="modal-title" id="modalTitle">Добавить товар в отстойник</h2>
                     <button class="close-btn" onclick="closeAddToOverflowModal()">&times;</button>
                 </div>
                 
@@ -466,7 +466,7 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="submit-btn">Добавить в отстойник</button>
+                        <button type="submit" class="submit-btn" id="submitBtn">Добавить в отстойник</button>
                         <button type="button" class="submit-btn" onclick="closeAddToOverflowModal()" style="background: #95a5a6;">Отмена</button>
                     </div>
                 </form>
@@ -521,6 +521,8 @@
         let currentProducts = [];
         let currentOverflowItems = [];
         let currentShelves = [];
+        let isEditMode = false;
+        let currentEditId = null;
 
         // ==================== УТИЛИТЫ ====================
 
@@ -679,16 +681,71 @@
 
         // Показать модальное окно добавления в отстойник
         async function showAddToOverflowModal() {
+            isEditMode = false;
+            currentEditId = null;
+            
             await loadProductsForSelect();
-            document.getElementById('productSelect').addEventListener('change', updateProductInfo);
+            
+            // Сброс формы и включение полей
+            document.getElementById('addToOverflowForm').reset();
+            document.getElementById('productSelect').disabled = false;
+            document.getElementById('overflowQuantity').disabled = false;
+            document.getElementById('productInfo').innerHTML = '';
+            document.getElementById('modalTitle').textContent = 'Добавить товар в отстойник';
+            document.getElementById('submitBtn').textContent = 'Добавить в отстойник';
+            
             document.getElementById('addToOverflowModal').style.display = 'flex';
         }
 
-        // Закрыть модальное окно добавления в отстойник
+        // Редактировать элемент отстойника
+        async function editOverflowItem(overflowId) {
+            const item = currentOverflowItems.find(i => i.id === overflowId);
+            if (!item) {
+                showMessage('Элемент отстойника не найден', 'error');
+                return;
+            }
+            
+            isEditMode = true;
+            currentEditId = overflowId;
+            
+            // Загружаем товары для выбора
+            await loadProductsForSelect();
+            
+            // Устанавливаем значения из элемента
+            document.getElementById('productSelect').value = item.product_id;
+            document.getElementById('overflowQuantity').value = item.quantity;
+            document.getElementById('overflowReason').value = item.notes || '';
+            
+            // Блокируем выбор товара при редактировании
+            document.getElementById('productSelect').disabled = true;
+            
+            // Показываем информацию о товаре
+            const product = currentProducts.find(p => p.id === item.product_id);
+            if (product) {
+                const totalAvailable = product.current_quantity + item.quantity;
+                document.getElementById('productInfo').innerHTML = 
+                    `Текущее количество в отстойнике: ${item.quantity}<br>
+                     Доступно на складе: ${product.current_quantity} ${product.unit}<br>
+                     Всего доступно: ${totalAvailable} ${product.unit}`;
+            }
+            
+            // Меняем заголовок и текст кнопки
+            document.getElementById('modalTitle').textContent = 'Редактировать товар в отстойнике';
+            document.getElementById('submitBtn').textContent = 'Сохранить изменения';
+            
+            document.getElementById('addToOverflowModal').style.display = 'flex';
+        }
+
+        // Закрыть модальное окно добавления/редактирования
         function closeAddToOverflowModal() {
             document.getElementById('addToOverflowModal').style.display = 'none';
             document.getElementById('addToOverflowForm').reset();
             document.getElementById('productInfo').innerHTML = '';
+            document.getElementById('productSelect').disabled = false;
+            document.getElementById('overflowQuantity').disabled = false;
+            
+            isEditMode = false;
+            currentEditId = null;
         }
 
         // Переместить из отстойника на стеллаж
@@ -703,10 +760,11 @@
             document.getElementById('overflowItemId').value = overflowId;
             document.getElementById('currentOverflowItem').innerHTML = 
                 `<strong>${product?.name || 'Неизвестный товар'}</strong><br>
-                 Количество: ${item.quantity}`;
+                 Текущее количество: ${item.quantity} ${product?.unit || 'шт'}`;
             
             document.getElementById('moveQuantity').value = item.quantity;
             document.getElementById('moveQuantity').max = item.quantity;
+            document.getElementById('moveQuantity').min = 1;
             
             // Загружаем стеллажи для выбора
             await loadShelvesForMovement();
@@ -720,28 +778,6 @@
             document.getElementById('moveFromOverflowForm').reset();
         }
 
-        // Редактировать элемент отстойника
-        async function editOverflowItem(overflowId) {
-            const item = currentOverflowItems.find(i => i.id === overflowId);
-            if (!item) {
-                showMessage('Элемент отстойника не найден', 'error');
-                return;
-            }
-            
-            // Для простоты используем то же модальное окно что и для добавления
-            await loadProductsForSelect();
-            document.getElementById('productSelect').value = item.product_id;
-            document.getElementById('overflowQuantity').value = item.quantity;
-            document.getElementById('productSelect').disabled = true;
-            
-            const product = currentProducts.find(p => p.id === item.product_id);
-            document.getElementById('productInfo').innerHTML = 
-                `Доступно на складе: ${product?.current_quantity || 0}`;
-            
-            document.getElementById('addToOverflowModal').style.display = 'flex';
-            // Можно добавить логику для обновления вместо создания
-        }
-
         // Удалить из отстойника
         async function deleteFromOverflow(overflowId) {
             const item = currentOverflowItems.find(i => i.id === overflowId);
@@ -751,14 +787,15 @@
             }
             
             const product = currentProducts.find(p => p.id === item.product_id);
-            const confirmed = confirm(`Вы уверены, что хотите удалить "${product?.name || 'товар'}" из отстойника?`);
+            const confirmed = confirm(`Вы уверены, что хотите удалить "${product?.name || 'товар'}" из отстойника?\n\nКоличество: ${item.quantity} ${product?.unit || 'шт'}\n\nПримечание: Товар вернется на склад.`);
             
             if (!confirmed) return;
             
             try {
                 await fetchAPI(`/overflow-bins/${overflowId}`, 'DELETE');
-                showMessage('Товар удален из отстойника', 'success');
+                showMessage('Товар удален из отстойника и возвращен на склад', 'success');
                 await loadOverflowItems();
+                await loadProducts(); // Обновляем список товаров
             } catch (error) {
                 showMessage(`Ошибка удаления: ${error.message}`, 'error');
             }
@@ -777,6 +814,9 @@
                 option.textContent = `${product.name} (доступно: ${product.current_quantity} ${product.unit})`;
                 select.appendChild(option);
             });
+            
+            // Добавляем обработчик изменения для обновления информации
+            select.addEventListener('change', updateProductInfo);
         }
 
         // Обновление информации о товаре при выборе
@@ -785,9 +825,21 @@
             const product = currentProducts.find(p => p.id == productId);
             
             if (product) {
-                document.getElementById('productInfo').innerHTML = 
-                    `Доступно на складе: ${product.current_quantity} ${product.unit}`;
-                document.getElementById('overflowQuantity').max = product.current_quantity;
+                let infoText = `Доступно на складе: ${product.current_quantity} ${product.unit}`;
+                
+                // Если в режиме редактирования, показываем дополнительную информацию
+                if (isEditMode && currentEditId) {
+                    const item = currentOverflowItems.find(i => i.id == currentEditId);
+                    if (item && item.product_id == productId) {
+                        const totalAvailable = product.current_quantity + item.quantity;
+                        infoText = `Текущее количество в отстойнике: ${item.quantity}<br>
+                                    Доступно на складе: ${product.current_quantity} ${product.unit}<br>
+                                    Всего доступно: ${totalAvailable} ${product.unit}`;
+                    }
+                }
+                
+                document.getElementById('productInfo').innerHTML = infoText;
+                document.getElementById('overflowQuantity').max = product.current_quantity + (isEditMode ? item?.quantity || 0 : 0);
             } else {
                 document.getElementById('productInfo').innerHTML = '';
             }
@@ -814,14 +866,14 @@
                 if (shelf) {
                     const freeSpace = shelf.max_capacity - shelf.current_quantity;
                     document.getElementById('shelfCapacityInfo').innerHTML = 
-                        `Свободно: ${freeSpace} мест`;
+                        `Свободно мест: ${freeSpace}`;
                 } else {
                     document.getElementById('shelfCapacityInfo').innerHTML = '';
                 }
             });
         }
 
-        // Обработка добавления в отстойник
+        // Обработка добавления/редактирования в отстойник
         async function handleAddToOverflow(e) {
             e.preventDefault();
             
@@ -829,12 +881,28 @@
             const quantity = parseInt(document.getElementById('overflowQuantity').value);
             const reason = document.getElementById('overflowReason').value;
             
-            if (!productId || !quantity) {
-                showMessage('Заполните все обязательные поля', 'error');
+            if (!productId || !quantity || quantity <= 0) {
+                showMessage('Заполните все обязательные поля корректно', 'error');
                 return;
             }
             
             const product = currentProducts.find(p => p.id == productId);
+            if (!product) {
+                showMessage('Товар не найден', 'error');
+                return;
+            }
+            
+            if (isEditMode && currentEditId) {
+                // Режим редактирования
+                await handleEditOverflow(productId, quantity, reason, product);
+            } else {
+                // Режим добавления
+                await handleCreateOverflow(productId, quantity, reason, product);
+            }
+        }
+
+        // Обработка создания нового элемента отстойника
+        async function handleCreateOverflow(productId, quantity, reason, product) {
             if (quantity > product.current_quantity) {
                 showMessage(`Превышает доступное количество (${product.current_quantity})`, 'error');
                 return;
@@ -861,61 +929,113 @@
             }
         }
 
-        // Обработка перемещения из отстойника на стеллаж
-        async function handleMoveFromOverflow(e) {
-            e.preventDefault();
-            
-            const overflowId = document.getElementById('overflowItemId').value;
-            const shelfId = document.getElementById('moveToShelf').value;
-            const quantity = parseInt(document.getElementById('moveQuantity').value);
-            const notes = document.getElementById('moveNotes').value;
-            
-            const item = currentOverflowItems.find(i => i.id == overflowId);
-            if (!item) {
-                showMessage('Элемент отстойника не найден', 'error');
-                return;
-            }
-            
-            if (quantity > item.quantity) {
-                showMessage(`Нельзя переместить больше чем есть в отстойнике (${item.quantity})`, 'error');
-                return;
-            }
-            
-            try {
-                // Сначала создаем размещение на стеллаже
-                const placementData = {
-                    product_id: item.product_id,
-                    shelf_id: parseInt(shelfId),
-                    quantity: quantity,
-                    notes: notes || `Перемещено из отстойника`
-                };
-                
-                await fetchAPI('/product-placements', 'POST', placementData);
-                
-                // Если перемещаем не все количество, обновляем отстойник
-                if (quantity < item.quantity) {
-                    const updateData = {
-                        quantity: item.quantity - quantity
-                    };
-                    await fetchAPI(`/overflow-bins/${overflowId}`, 'PUT', updateData);
-                } else {
-                    // Если перемещаем все, удаляем из отстойника
-                    await fetchAPI(`/overflow-bins/${overflowId}`, 'DELETE');
-                }
-                
-                showMessage('Товар перемещен на стеллаж', 'success');
-                closeMoveFromOverflowModal();
-                
-                await Promise.all([
-                    loadOverflowItems(),
-                    loadProducts(),
-                    loadShelves()
-                ]);
-                
-            } catch (error) {
-                showMessage(`Ошибка перемещения: ${error.message}`, 'error');
-            }
+        // Обработка редактирования существующего элемента отстойника
+async function handleEditOverflow(productId, quantity, reason, product) {
+    const item = currentOverflowItems.find(i => i.id == currentEditId);
+    if (!item) {
+        showMessage('Элемент для редактирования не найден', 'error');
+        return;
+    }
+
+    const totalAvailable = product.current_quantity + item.quantity;
+    if (quantity > totalAvailable) {
+        showMessage(`Недостаточно товара. Максимально доступно: ${totalAvailable}`, 'error');
+        return;
+    }
+
+    try {
+        const updateData = {
+            product_id: parseInt(productId),   // обязательно
+            quantity: quantity,
+            notes: reason || null
+        };
+
+        await fetchAPI(`/overflow-bins/${currentEditId}`, 'PUT', updateData);
+        showMessage('Товар обновлен в отстойнике', 'success');
+        closeAddToOverflowModal();
+
+        await Promise.all([
+            loadOverflowItems(),
+            loadProducts()
+        ]);
+    } catch (error) {
+        showMessage(`Ошибка редактирования: ${error.message}`, 'error');
+    }
+}
+
+// Обработка перемещения из отстойника на стеллаж
+async function handleMoveFromOverflow(e) {
+    e.preventDefault();
+
+    const overflowId = document.getElementById('overflowItemId').value;
+    const shelfId = document.getElementById('moveToShelf').value;
+    const quantity = parseInt(document.getElementById('moveQuantity').value);
+    const notes = document.getElementById('moveNotes').value;
+
+    const item = currentOverflowItems.find(i => i.id == overflowId);
+    if (!item) {
+        showMessage('Элемент отстойника не найден', 'error');
+        return;
+    }
+
+    if (!shelfId || !quantity || quantity <= 0) {
+        showMessage('Заполните все обязательные поля', 'error');
+        return;
+    }
+
+    if (quantity > item.quantity) {
+        showMessage(`Нельзя переместить больше чем есть в отстойнике (${item.quantity})`, 'error');
+        return;
+    }
+
+    const shelf = currentShelves.find(s => s.id == shelfId);
+    if (!shelf) {
+        showMessage('Выбранный стеллаж не найден', 'error');
+        return;
+    }
+
+    const freeSpace = shelf.max_capacity - shelf.current_quantity;
+    if (quantity > freeSpace) {
+        showMessage(`Недостаточно места на стеллаже. Свободно: ${freeSpace}`, 'error');
+        return;
+    }
+
+    try {
+        // Создаем размещение на стеллаже
+        const placementData = {
+            product_id: item.product_id,
+            shelf_id: parseInt(shelfId),
+            quantity: quantity,
+            notes: notes || `Перемещено из отстойника (ID: ${overflowId})`
+        };
+        await fetchAPI('/product-placements', 'POST', placementData);
+
+        if (quantity < item.quantity) {
+            // Обновляем отстойник — обязательно передаем product_id
+            const updateData = {
+                product_id: item.product_id,
+                quantity: item.quantity - quantity,
+                notes: item.notes || null
+            };
+            await fetchAPI(`/overflow-bins/${overflowId}`, 'PUT', updateData);
+            showMessage(`Товар частично перемещен на стеллаж (${quantity} из ${item.quantity})`, 'success');
+        } else {
+            await fetchAPI(`/overflow-bins/${overflowId}`, 'DELETE');
+            showMessage('Товар полностью перемещен на стеллаж', 'success');
         }
+
+        closeMoveFromOverflowModal();
+
+        await Promise.all([
+            loadOverflowItems(),
+            loadProducts(),
+            loadShelves()
+        ]);
+    } catch (error) {
+        showMessage(`Ошибка перемещения: ${error.message}`, 'error');
+    }
+}
+
 
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 

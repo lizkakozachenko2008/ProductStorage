@@ -390,22 +390,22 @@
             <div class="panel-header">
                 <h2 class="panel-title">Текущее размещение товаров</h2>
             </div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th class="id-column">ID товара</th>
-                        <th class="name-column">Товар</th>
-                        <th class="placement-column">Место размещения</th>
-                        <th class="quantity-column">Кол-во</th>
-                        <th class="date-column">Дата размещения</th>
-                        <th class="actions-column">Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="placementsTableBody">
-                    <tr><td colspan="6" class="empty-message">Загрузка размещений...</td></tr>
-                </tbody>
-            </table>
+
+        <!-- Таблица товаров -->
+        <table>
+        <thead>
+            <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Размещение</th>
+            <th>Количество</th>
+            <th>Статус</th>
+            <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody id="productsTableBody"></tbody>
+        </table>
+
         </div>
 
         <!-- Модальное окно для размещения товара -->
@@ -435,13 +435,6 @@
                         <div id="shelfInfo" class="form-text"></div>
                     </div>
                     
-                    <div class="form-group" id="overflowFieldGroup" style="display: none;">
-                        <label for="placeOverflowId">Отстойник *</label>
-                        <select id="placeOverflowId">
-                            <option value="">Выберите отстойник</option>
-                        </select>
-                    </div>
-                    
                     <div class="form-group">
                         <label for="placeQuantity">Количество *</label>
                         <input type="number" id="placeQuantity" min="1" required>
@@ -461,63 +454,38 @@
             </div>
         </div>
 
-        <!-- Модальное окно для перемещения товара -->
-        <div class="modal" id="moveProductModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title">Переместить товар</h2>
-                    <button class="close-btn" onclick="closeMoveModal()">&times;</button>
-                </div>
-                
-                <form id="moveProductForm">
-                    <input type="hidden" id="moveProductId">
-                    <input type="hidden" id="movePlacementId">
-                    
-                    <div class="form-group">
-                        <label>Текущее размещение</label>
-                        <div id="currentPlacement" class="form-text"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="moveType">Куда переместить *</label>
-                        <select id="moveType" onchange="toggleMoveFields()">
-                            <option value="shelf">На стеллаж</option>
-                            <option value="overflow">В отстойник</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" id="moveShelfFieldGroup">
-                        <label for="moveShelfId">Новый стеллаж *</label>
-                        <select id="moveShelfId">
-                            <option value="">Выберите стеллаж</option>
-                        </select>
-                        <div id="moveShelfInfo" class="form-text"></div>
-                    </div>
-                    
-                    <div class="form-group" id="moveOverflowFieldGroup" style="display: none;">
-                        <label for="moveOverflowId">Новый отстойник *</label>
-                        <select id="moveOverflowId">
-                            <option value="">Выберите отстойник</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="moveQuantity">Количество *</label>
-                        <input type="number" id="moveQuantity" min="1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="moveReason">Причина перемещения</label>
-                        <textarea id="moveReason" rows="3" placeholder="Причина перемещения товара"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Переместить</button>
-                        <button type="button" class="submit-btn" onclick="closeMoveModal()" style="background: #95a5a6;">Отмена</button>
-                    </div>
-                </form>
+            <!-- Модальное окно перемещения товара -->
+        <div id="moveProductModal" style="display:none;">
+        <form id="moveProductForm">
+            <input type="hidden" id="moveProductId">
+            <input type="hidden" id="movePlacementId">
+
+            <div id="currentPlacement"></div>
+
+            <label for="moveQuantity">Количество:</label>
+            <input type="number" id="moveQuantity" min="1">
+
+            <label for="moveType">Куда переместить:</label>
+            <select id="moveType" onchange="toggleMoveFields()">
+            <option value="shelf">На стеллаж</option>
+            <option value="overflow">В отстойник</option>
+            </select>
+
+            <div id="moveShelfFieldGroup">
+            <label for="moveShelfId">Стеллаж:</label>
+            <select id="moveShelfId"></select>
+            <div id="shelfCapacityInfo"></div>
             </div>
+
+            
+            <label for="moveReason">Примечание:</label>
+            <input type="text" id="moveReason">
+
+            <button type="submit">Переместить</button>
+            <button type="button" onclick="closeMoveModal()">Отмена</button>
+        </form>
         </div>
+
     </main>
 
     <script>
@@ -630,7 +598,6 @@
             try {
                 const placements = await fetchAPI('/product-placements');
                 currentPlacements = placements || [];
-                renderPlacementsTable(placements);
             } catch (error) {
                 showMessage('Ошибка загрузки размещений', 'error');
                 console.error('Load placements error:', error);
@@ -659,139 +626,104 @@
             }
         }
 
-        // ==================== ОТОБРАЖЕНИЕ ТАБЛИЦ ====================
+// Отображение таблицы товаров
+function renderProductsTable(products) {
+    const tbody = document.getElementById('productsTableBody');
+    if (!tbody) {
+        console.error('Element #productsTableBody not found');
+        return;
+    }
 
-        // Отображение таблицы товаров
-        function renderProductsTable(products) {
-            const tbody = document.getElementById('productsTableBody');
-            if (!tbody) {
-                console.error('Element #productsTableBody not found');
-                return;
-            }
-            
-            if (!products || products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Товары не найдены</td></tr>';
-                return;
-            }
+    if (!products || products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Товары не найдены</td></tr>';
+        return;
+    }
 
-            tbody.innerHTML = products.map(product => {
-                // Проверяем статус запаса
-                const isLowStock = product.current_quantity <= product.min_quantity;
-                
-                return `
-                <tr>
-                    <td class="id-column">${product.id}</td>
-                    <td class="name-column">
-                        <strong>${product.name}</strong><br>
-                        <small>${product.description || ''}</small>
-                    </td>
-                    <td class="placement-column">
-                        ${getPlacementStatus(product.id)}
-                    </td>
-                    <td class="quantity-column">
-                        ${product.current_quantity} ${product.unit}
-                    </td>
-                    <td class="status-column">
-                        <span class="${isLowStock ? 'status-in-overflow' : 'status-on-shelf'}">
-                            ${isLowStock ? 'Низкий запас' : 'В норме'}
-                        </span>
-                    </td>
-                    <td class="actions-column">
-                        <div class="action-btns">
-                            <button class="btn-place" onclick="placeProduct(${product.id})">Разместить</button>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            }).join('');
-        }
+    tbody.innerHTML = products.map(product => {
+        const isLowStock = product.current_quantity <= product.min_quantity;
+        return `
+        <tr>
+            <td class="id-column">${product.id}</td>
+            <td class="name-column">
+                <strong>${product.name}</strong><br>
+                <small>${product.description || ''}</small>
+            </td>
+            <td class="placement-column">
+                ${getPlacementStatus(product.id)}
+            </td>
+            <td class="quantity-column">
+                ${product.current_quantity} ${product.unit}
+            </td>
+            <td class="status-column">
+                <span class="${isLowStock ? 'status-in-overflow' : 'status-on-shelf'}">
+                    ${isLowStock ? 'Низкий запас' : 'В норме'}
+                </span>
+            </td>
+            <td class="actions-column">
+                <div class="action-btns">
+                    <button class="btn-place" onclick="placeProduct(${product.id})">Разместить</button>
+                </div>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
 
-        // Отображение таблицы размещений
-        function renderPlacementsTable(placements) {
-            const tbody = document.getElementById('placementsTableBody');
-            if (!tbody) {
-                console.error('Element #placementsTableBody not found');
-                return;
-            }
-            
-            if (!placements || placements.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Размещения не найдены</td></tr>';
-                return;
-            }
+// Размещение товара
+async function placeProduct(productId) {
+    const product = currentProducts.find(p => p.id === productId);
+    if (!product) {
+        showMessage('Товар не найден', 'error');
+        return;
+    }
 
-            tbody.innerHTML = placements.map(placement => {
-                const product = currentProducts.find(p => p.id === placement.product_id);
-                let placementText = '<span class="placement-status status-not-placed">Неизвестно</span>';
-                
-                if (placement.shelf_id && placement.shelf_name) {
-                    placementText = `<span class="placement-status status-on-shelf">${placement.shelf_name}</span>`;
-                } else if (placement.overflow_id) {
-                    placementText = '<span class="placement-status status-in-overflow">Отстойник</span>';
-                }
-                
-                return `
-                <tr>
-                    <td class="id-column">${product?.id || placement.product_id}</td>
-                    <td class="name-column">
-                        <strong>${product?.name || 'Неизвестный товар'}</strong>
-                    </td>
-                    <td class="placement-column">
-                        ${placementText}
-                    </td>
-                    <td class="quantity-column">
-                        ${placement.quantity}
-                    </td>
-                    <td class="date-column">
-                        ${formatDate(placement.placement_date)}
-                    </td>
-                    <td class="actions-column">
-                        <div class="action-btns">
-                            <button class="btn-move" onclick="moveProduct(${placement.product_id}, ${placement.id})">Переместить</button>
-                            <button class="btn-place" onclick="deletePlacement(${placement.id})" style="background: #e74c3c;">Удалить</button>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            }).join('');
-        }
+    // Показываем модальное окно выбора стеллажа
+    document.getElementById('placeProductId').value = productId;
+    document.getElementById('placeQuantity').max = product.current_quantity;
+    document.getElementById('placeQuantity').value = Math.min(product.current_quantity, 1);
+    document.getElementById('availableQuantity').innerHTML =
+        `Доступно: ${product.current_quantity} ${product.unit}`;
 
-        // ==================== ФУНКЦИИ ДЛЯ КНОПОК ====================
+    await loadShelvesForPlacement();
 
-        // Размещение товара
-        async function placeProduct(productId) {
-            const product = currentProducts.find(p => p.id === productId);
-            if (!product) {
-                showMessage('Товар не найден', 'error');
-                return;
-            }
-            
-            // Проверяем, есть ли уже размещение для этого товара
-            const existingPlacement = currentPlacements.find(p => p.product_id === productId);
-            if (existingPlacement) {
-                const confirmMove = confirm(`Товар уже размещен. Хотите переместить его?`);
-                if (confirmMove) {
-                    await moveProduct(productId, existingPlacement.id);
-                }
-                return;
-            }
-            
-            // Заполняем данные в модальном окне
-            document.getElementById('placeProductId').value = productId;
-            document.getElementById('placeQuantity').max = product.current_quantity;
-            document.getElementById('placeQuantity').value = Math.min(product.current_quantity, 1);
-            document.getElementById('availableQuantity').innerHTML = 
-                `Доступно: ${product.current_quantity} ${product.unit}`;
-            
-            // Загружаем стеллажи и отстойники для выбора
-            await loadShelvesForPlacement();
-            
-            // Сбрасываем форму к значениям по умолчанию
-            document.getElementById('placeType').value = 'shelf';
-            togglePlacementFields();
-            
-            // Показываем модальное окно
-            document.getElementById('placeProductModal').style.display = 'flex';
-        }
+    document.getElementById('placeProductModal').style.display = 'flex';
+}
+
+// Обработка размещения товара
+async function handlePlaceProduct(e) {
+    e.preventDefault();
+
+    const productId = parseInt(document.getElementById('placeProductId').value);
+    const shelfId = parseInt(document.getElementById('placeShelfId').value);
+    const quantity = parseInt(document.getElementById('placeQuantity').value);
+    const notes = document.getElementById('placeNotes').value;
+
+    if (!shelfId || !quantity || quantity <= 0) {
+        showMessage('Заполните все обязательные поля', 'error');
+        return;
+    }
+
+    const placementData = {
+        product_id: productId,
+        shelf_id: shelfId,
+        quantity: quantity,
+        notes: notes || null
+    };
+
+    try {
+        await fetchAPI('/product-placements', 'POST', placementData);
+        showMessage('Товар успешно размещен', 'success');
+        closePlaceModal();
+
+        await Promise.all([
+            loadProducts(),
+            loadShelves()
+        ]);
+    } catch (error) {
+        showMessage(`Ошибка размещения: ${error.message}`, 'error');
+    }
+}
+
 
         // Перемещение товара
         async function moveProduct(productId, placementId) {
@@ -888,14 +820,11 @@
         function toggleMoveFields() {
             const moveType = document.getElementById('moveType').value;
             const shelfGroup = document.getElementById('moveShelfFieldGroup');
-            const overflowGroup = document.getElementById('moveOverflowFieldGroup');
             
             if (moveType === 'shelf') {
                 shelfGroup.style.display = 'block';
-                overflowGroup.style.display = 'none';
             } else {
                 shelfGroup.style.display = 'none';
-                overflowGroup.style.display = 'block';
             }
         }
 
@@ -952,14 +881,7 @@
                     return;
                 }
                 placementData.shelf_id = parseInt(shelfId);
-            } else {
-                const overflowId = document.getElementById('placeOverflowId').value;
-                if (!overflowId) {
-                    showMessage('Выберите отстойник', 'error');
-                    return;
-                }
-                placementData.overflow_id = parseInt(overflowId);
-            }
+            } 
             
             try {
                 const result = await fetchAPI('/product-placements', 'POST', placementData);
@@ -976,65 +898,60 @@
             }
         }
 
-        // Обработка перемещения товара
-        async function handleMoveProduct(e) {
-            e.preventDefault();
-            
-            const productId = document.getElementById('moveProductId').value;
-            const placementId = document.getElementById('movePlacementId').value;
-            const moveType = document.getElementById('moveType').value;
-            const quantity = parseInt(document.getElementById('moveQuantity').value);
-            const reason = document.getElementById('moveReason').value;
-            
-            const moveData = {
-                product_id: parseInt(productId),
-                quantity: quantity,
-                reason: reason || 'Перемещение'
-            };
-            
-            if (moveType === 'shelf') {
-                const shelfId = document.getElementById('moveShelfId').value;
-                if (!shelfId) {
-                    showMessage('Выберите стеллаж', 'error');
-                    return;
-                }
-                moveData.shelf_id = parseInt(shelfId);
-            } else {
-                const overflowId = document.getElementById('moveOverflowId').value;
-                if (!overflowId) {
-                    showMessage('Выберите отстойник', 'error');
-                    return;
-                }
-                moveData.overflow_id = parseInt(overflowId);
-            }
-            
-            try {
-                // Сначала удаляем старое размещение
-                await fetchAPI(`/product-placements/${placementId}`, 'DELETE');
-                
-                // Создаем новое размещение
-                const result = await fetchAPI('/product-placements', 'POST', moveData);
-                showMessage('Товар успешно перемещен', 'success');
-                closeMoveModal();
-                
-                // Обновляем данные
-                await loadPlacements();
-                await loadProducts();
-                await loadShelves();
-                
-            } catch (error) {
-                showMessage(`Ошибка перемещения: ${error.message}`, 'error');
-            }
+// Обработка перемещения товара
+async function handleMoveProduct(e) {
+    e.preventDefault();
+
+    const productId = parseInt(document.getElementById('moveProductId').value);
+    const placementId = parseInt(document.getElementById('movePlacementId').value);
+    const moveType = document.getElementById('moveType').value;
+    const quantity = parseInt(document.getElementById('moveQuantity').value);
+    const notes = document.getElementById('moveReason').value;
+
+    let moveData = {
+        product_id: productId,
+        quantity: quantity,
+        notes: notes || 'Перемещение'
+    };
+
+    if (moveType === 'shelf') {
+        const shelfId = parseInt(document.getElementById('moveShelfId').value);
+        if (!shelfId) {
+            showMessage('Выберите стеллаж', 'error');
+            return;
         }
+        moveData.shelf_id = shelfId;
+    } else if (moveType === 'overflow') {
+        moveData.overflow_id = 1;
+    }
+
+    try {
+        // Удаляем старое размещение
+        await fetchAPI(`/product-placements/${placementId}`, 'DELETE');
+
+        // Создаём новое размещение
+        await fetchAPI('/product-placements', 'POST', moveData);
+
+        showMessage('Товар успешно перемещен', 'success');
+        closeMoveModal();
+
+        await Promise.all([
+            loadPlacements(),
+            loadProducts(),
+            loadShelves(),
+            loadOverflow()
+        ]);
+    } catch (error) {
+        showMessage(`Ошибка перемещения: ${error.message}`, 'error');
+    }
+}
+
 
         // Загрузка стеллажей для размещения
         async function loadShelvesForPlacement() {
-            const shelfSelect = document.getElementById('placeShelfId');
-            const overflowSelect = document.getElementById('placeOverflowId');
-            
+            const shelfSelect = document.getElementById('placeShelfId');            
             // Очищаем опции
             shelfSelect.innerHTML = '<option value="">Выберите стеллаж</option>';
-            overflowSelect.innerHTML = '<option value="">Выберите отстойник</option>';
             
             // Загружаем стеллажи с свободным местом
             currentShelves.forEach(shelf => {
@@ -1062,11 +979,9 @@
         // Загрузка стеллажей для перемещения
         async function loadShelvesForMovement() {
             const shelfSelect = document.getElementById('moveShelfId');
-            const overflowSelect = document.getElementById('moveOverflowId');
             
             // Очищаем опции
             shelfSelect.innerHTML = '<option value="">Выберите стеллаж</option>';
-            overflowSelect.innerHTML = '<option value="">Выберите отстойник</option>';
             
             // Загружаем все стеллажи с свободным местом
             currentShelves.forEach(shelf => {
