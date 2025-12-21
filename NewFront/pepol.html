@@ -523,12 +523,31 @@
 
         // Получить всех пользователей
         async function getUsers() {
-            const response = await fetch(`${API_BASE_URL}/users`);
-            if (!response.ok) {
-                throw new Error('Ошибка при получении пользователей');
+    try {
+        const response = await fetch(`${API_BASE_URL}/users`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-            return await response.json();
+        });
+        
+        if (!response.ok) {
+            // Проверяем, что ошибка именно 405
+            if (response.status === 405) {
+                console.error('Endpoint /users не поддерживает GET метод');
+                console.log('Проверьте, есть ли в backend GET /users endpoint');
+                throw new Error('Сервер не поддерживает получение пользователей. Проверьте конфигурацию бэкенда.');
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка при получении пользователей:', error);
+        throw new Error('Ошибка при получении пользователей');
+    }
+}
 
         // Создать пользователя
         async function createUser(userData) {

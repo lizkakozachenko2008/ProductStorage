@@ -454,328 +454,423 @@
         </div>
     </main>
 
-   <script>
-    const API_BASE_URL = 'http://localhost:8000';
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
 
-    // Элементы DOM
-    const shelvesTableBody = document.getElementById('shelvesTableBody');
-    const addForm = document.getElementById('addForm');
-    const showAddFormBtn = document.getElementById('showAddForm');
-    const hideAddFormBtn = document.getElementById('hideAddForm');
-    const addShelfBtn = document.getElementById('addShelfBtn');
-    const messageContainer = document.getElementById('messageContainer');
-    const lowStockWarnings = document.getElementById('lowStockWarnings');
+        // Элементы DOM
+        const shelvesTableBody = document.getElementById('shelvesTableBody');
+        const addForm = document.getElementById('addForm');
+        const showAddFormBtn = document.getElementById('showAddForm');
+        const hideAddFormBtn = document.getElementById('hideAddForm');
+        const addShelfBtn = document.getElementById('addShelfBtn');
+        const messageContainer = document.getElementById('messageContainer');
+        const lowStockWarnings = document.getElementById('lowStockWarnings');
 
-    // Загрузка стеллажей при загрузке страницы
-    document.addEventListener('DOMContentLoaded', loadShelves);
+        // Загрузка стеллажей при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Загрузка страницы...');
+            loadShelves();
+        });
 
-    // Показать/скрыть форму добавления
-    showAddFormBtn.addEventListener('click', () => {
-        addForm.style.display = 'block';
-        document.getElementById('newShelfName').focus();
-    });
+        // Показать/скрыть форму добавления
+        showAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'block';
+            document.getElementById('newShelfName').focus();
+        });
 
-    hideAddFormBtn.addEventListener('click', () => {
-        addForm.style.display = 'none';
-        resetAddForm();
-    });
-
-    // Обработка добавления стеллажа
-    addShelfBtn.addEventListener('click', async () => {
-        const name = document.getElementById('newShelfName').value.trim();
-        const max_capacity = parseInt(document.getElementById('newCapacity').value);
-        const current_quantity = parseInt(document.getElementById('newUsed').value);
-
-        if (!name || isNaN(max_capacity) || isNaN(current_quantity)) {
-            showMessage('Пожалуйста, заполните все поля корректно', 'error');
-            return;
-        }
-
-        if (current_quantity > max_capacity) {
-            showMessage('Текущее количество не может превышать вместимость', 'error');
-            return;
-        }
-
-        try {
-            const shelfData = { 
-                name, 
-                max_capacity: max_capacity, 
-                current_quantity: current_quantity 
-            };
-            await createShelf(shelfData);
-            showMessage('Стеллаж успешно создан', 'success');
-
-            // Перезагружаем список стеллажей
-            await loadShelves();
-            
-            // Скрываем форму и сбрасываем
+        hideAddFormBtn.addEventListener('click', () => {
             addForm.style.display = 'none';
             resetAddForm();
+        });
 
-        } catch (error) {
-            console.error('Ошибка при создании стеллажа:', error);
-            showMessage('Ошибка при создании стеллажа: ' + error.message, 'error');
-        }
-    });
+        // Обработка добавления стеллажа
+        addShelfBtn.addEventListener('click', async () => {
+            const name = document.getElementById('newShelfName').value.trim();
+            const max_capacity = parseInt(document.getElementById('newCapacity').value);
+            const current_quantity = parseInt(document.getElementById('newUsed').value);
 
-    // Функция загрузки стеллажей
-    async function loadShelves() {
-        try {
-            shelvesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
-            
-            const shelves = await getShelves();
-            
-            if (shelves.length === 0) {
-                shelvesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Стеллажи не найдены</td></tr>';
+            if (!name || isNaN(max_capacity) || isNaN(current_quantity)) {
+                showMessage('Пожалуйста, заполните все поля корректно', 'error');
                 return;
             }
 
-            shelvesTableBody.innerHTML = '';
-            shelves.forEach(shelf => {
-                const row = createShelfRow(shelf);
-                shelvesTableBody.appendChild(row);
-            });
+            if (current_quantity > max_capacity) {
+                showMessage('Текущее количество не может превышать вместимость', 'error');
+                return;
+            }
 
-            // Проверяем остатки товаров
-            checkLowStock(shelves);
+            try {
+                const shelfData = { 
+                    name, 
+                    max_capacity, 
+                    current_quantity,
+                    location: "",
+                    description: "",
+                    category_id: null
+                };
+                
+                console.log('Отправка данных:', shelfData);
+                
+                await createShelf(shelfData);
+                showMessage('Стеллаж успешно создан', 'success');
 
-        } catch (error) {
-            console.error('Ошибка при загрузке стеллажей:', error);
-            shelvesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Ошибка при загрузке стеллажей</td></tr>';
-        }
-    }
+                // Перезагружаем список стеллажей
+                await loadShelves();
+                
+                // Скрываем форму и сбрасываем
+                addForm.style.display = 'none';
+                resetAddForm();
 
-    // Проверка низких остатков товаров
-    function checkLowStock(shelves) {
-        lowStockWarnings.innerHTML = '';
-        const LOW_STOCK_THRESHOLD = 0.1; // 10% от вместимости
-
-        shelves.forEach(shelf => {
-            const remainingSpace = shelf.max_capacity - shelf.current_quantity;
-            const recommendedMin = Math.floor(shelf.max_capacity * LOW_STOCK_THRESHOLD);
-            
-            if (remainingSpace <= recommendedMin && remainingSpace > 0) {
-                const warning = document.createElement('div');
-                warning.className = 'low-stock-warning';
-                warning.innerHTML = `
-                    <div class="icon">⚠️</div>
-                    <div class="message-text">
-                        <strong>${shelf.name}</strong>: осталось мало места! Свободно ${remainingSpace} из ${shelf.max_capacity} мест (меньше 10% от вместимости)
-                    </div>
-                `;
-                lowStockWarnings.appendChild(warning);
+            } catch (error) {
+                console.error('Ошибка при создании стеллажа:', error);
+                showMessage('Ошибка при создании стеллажа: ' + error.message, 'error');
             }
         });
-    }
 
-    // Создание строки стеллажа
-    function createShelfRow(shelf) {
-        const percentage = shelf.max_capacity > 0 ? Math.min((shelf.current_quantity / shelf.max_capacity) * 100, 100) : 0;
-        let progressClass = 'progress-low';
-        if (percentage >= 90) progressClass = 'progress-high';
-        else if (percentage >= 50) progressClass = 'progress-medium';
+        // Функция загрузки стеллажей
+        async function loadShelves() {
+            try {
+                shelvesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
+                
+                console.log('Запрос стеллажей...');
+                const shelves = await getShelves();
+                
+                if (!shelves || shelves.length === 0) {
+                    shelvesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Стеллажи не найдены</td></tr>';
+                    return;
+                }
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td class="id-column">${shelf.id}</td>
-            <td class="name-column">
-                <input type="text" class="editable-input" value="${shelf.name || ''}" data-field="name">
-            </td>
-            <td class="capacity-column">
-                <input type="number" class="capacity-input" value="${shelf.max_capacity || 0}" min="1" max="1000" data-field="max_capacity">
-            </td>
-            <td class="used-column">
-                <div>
-                    <input type="number" class="capacity-input" value="${shelf.current_quantity || 0}" min="0" max="1000" data-field="current_quantity">
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill ${progressClass}" style="width: ${percentage}%"></div>
-                </div>
-            </td>
-            <td class="actions-column">
-                <div class="action-btns">
-                    <button class="btn-save" onclick="saveShelf(${shelf.id}, this)">Сохранить</button>
-                    <button class="btn-delete" onclick="deleteShelf(${shelf.id})">Удалить</button>
-                </div>
-            </td>
-        `;
-        return row;
-    }
+                console.log('Получено стеллажей:', shelves.length);
+                
+                shelvesTableBody.innerHTML = '';
+                shelves.forEach(shelf => {
+                    const row = createShelfRow(shelf);
+                    shelvesTableBody.appendChild(row);
+                });
 
-    // Сохранение стеллажа (редактирование)
-    async function saveShelf(shelfId, button) {
-        const row = button.closest('tr');
-        const nameInput = row.querySelector('input[data-field="name"]');
-        const capacityInput = row.querySelector('input[data-field="max_capacity"]');
-        const quantityInput = row.querySelector('input[data-field="current_quantity"]');
-        
-        const shelfData = {
-            name: nameInput.value.trim(),
-            max_capacity: parseInt(capacityInput.value),
-            current_quantity: parseInt(quantityInput.value)
-        };
+                // Проверяем остатки товаров
+                checkLowStock(shelves);
 
-        // Валидация
-        if (!shelfData.name || isNaN(shelfData.max_capacity) || isNaN(shelfData.current_quantity)) {
-            showMessage('Пожалуйста, заполните все поля корректно', 'error');
-            return;
+            } catch (error) {
+                console.error('Ошибка при загрузке стеллажей:', error);
+                shelvesTableBody.innerHTML = '<tr><td colspan="5" class="empty-message">Ошибка при загрузке стеллажей: ' + error.message + '</td></tr>';
+            }
         }
 
-        if (shelfData.current_quantity > shelfData.max_capacity) {
-            showMessage('Текущее количество не может превышать вместимость', 'error');
-            return;
+        // Проверка низких остатков товаров
+        function checkLowStock(shelves) {
+            lowStockWarnings.innerHTML = '';
+            const LOW_STOCK_THRESHOLD = 0.1; // 10% от вместимости
+
+            shelves.forEach(shelf => {
+                const remainingSpace = shelf.max_capacity - shelf.current_quantity;
+                const recommendedMin = Math.floor(shelf.max_capacity * LOW_STOCK_THRESHOLD);
+                
+                if (remainingSpace <= recommendedMin && remainingSpace > 0) {
+                    const warning = document.createElement('div');
+                    warning.className = 'low-stock-warning';
+                    warning.innerHTML = `
+                        <div class="icon">⚠️</div>
+                        <div class="message-text">
+                            <strong>${shelf.name}</strong>: осталось мало места! Свободно ${remainingSpace} из ${shelf.max_capacity} мест (меньше 10% от вместимости)
+                        </div>
+                    `;
+                    lowStockWarnings.appendChild(warning);
+                }
+            });
         }
 
-        try {
-            button.textContent = 'Сохранение...';
-            button.disabled = true;
+        // Создание строки стеллажа
+        function createShelfRow(shelf) {
+            const percentage = shelf.max_capacity > 0 ? Math.min((shelf.current_quantity / shelf.max_capacity) * 100, 100) : 0;
+            let progressClass = 'progress-low';
+            if (percentage >= 90) progressClass = 'progress-high';
+            else if (percentage >= 50) progressClass = 'progress-medium';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="id-column">${shelf.id}</td>
+                <td class="name-column">
+                    <input type="text" class="editable-input" value="${shelf.name || ''}" data-field="name">
+                </td>
+                <td class="capacity-column">
+                    <input type="number" class="capacity-input" value="${shelf.max_capacity || 0}" min="1" max="1000" data-field="max_capacity">
+                </td>
+                <td class="used-column">
+                    <div>
+                        <input type="number" class="capacity-input" value="${shelf.current_quantity || 0}" min="0" max="1000" data-field="current_quantity">
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${progressClass}" style="width: ${percentage}%"></div>
+                    </div>
+                </td>
+                <td class="actions-column">
+                    <div class="action-btns">
+                        <button class="btn-save" onclick="saveShelf(${shelf.id}, this)">Сохранить</button>
+                        <button class="btn-delete" onclick="deleteShelf(${shelf.id})">Удалить</button>
+                    </div>
+                </td>
+            `;
+            return row;
+        }
+
+        // Сохранение стеллажа (редактирование)
+        async function saveShelf(shelfId, button) {
+            const row = button.closest('tr');
+            const nameInput = row.querySelector('input[data-field="name"]');
+            const capacityInput = row.querySelector('input[data-field="max_capacity"]');
+            const quantityInput = row.querySelector('input[data-field="current_quantity"]');
             
-            await updateShelf(shelfId, shelfData);
-            showMessage('Стеллаж успешно обновлен', 'success');
+            const shelfData = {
+                name: nameInput.value.trim(),
+                max_capacity: parseInt(capacityInput.value),
+                current_quantity: parseInt(quantityInput.value),
+                location: "",
+                description: "",
+                category_id: null
+            };
+
+            // Валидация
+            if (!shelfData.name || isNaN(shelfData.max_capacity) || isNaN(shelfData.current_quantity)) {
+                showMessage('Пожалуйста, заполните все поля корректно', 'error');
+                return;
+            }
+
+            if (shelfData.current_quantity > shelfData.max_capacity) {
+                showMessage('Текущее количество не может превышать вместимость', 'error');
+                return;
+            }
+
+            try {
+                button.textContent = 'Сохранение...';
+                button.disabled = true;
+                
+                await updateShelf(shelfId, shelfData);
+                showMessage('Стеллаж успешно обновлен', 'success');
+                
+                // Обновляем прогресс-бар
+                updateProgressBar(row, shelfData.current_quantity, shelfData.max_capacity);
+                
+                // Перезагружаем список для проверки остатков
+                await loadShelves();
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении стеллажа:', error);
+                showMessage('Ошибка при обновлении стеллажа: ' + error.message, 'error');
+            } finally {
+                button.textContent = 'Сохранить';
+                button.disabled = false;
+            }
+        }
+
+        // Обновление прогресс-бара
+        function updateProgressBar(row, current_quantity, max_capacity) {
+            const percentage = max_capacity > 0 ? Math.min((current_quantity / max_capacity) * 100, 100) : 0;
+            let progressClass = 'progress-low';
+            if (percentage >= 90) progressClass = 'progress-high';
+            else if (percentage >= 50) progressClass = 'progress-medium';
+
+            const progressFill = row.querySelector('.progress-fill');
+            progressFill.className = `progress-fill ${progressClass}`;
+            progressFill.style.width = `${percentage}%`;
+        }
+
+        // Удаление стеллажа
+        async function deleteShelf(shelfId) {
+            if (!confirm('Вы уверены, что хотите удалить этот стеллаж?')) {
+                return;
+            }
+
+            try {
+                await deleteShelfRequest(shelfId);
+                showMessage('Стеллаж успешно удален', 'success');
+                await loadShelves(); // Перезагружаем список
+            } catch (error) {
+                console.error('Ошибка при удалении стеллажа:', error);
+                showMessage('Ошибка при удалении стеллажа: ' + error.message, 'error');
+            }
+        }
+
+        // Сброс формы добавления
+        function resetAddForm() {
+            document.getElementById('newShelfName').value = '';
+            document.getElementById('newCapacity').value = '100';
+            document.getElementById('newUsed').value = '0';
+        }
+
+        // API функции с улучшенной обработкой ошибок
+
+        // Получить все стеллажи
+        async function getShelves() {
+            try {
+                console.log(`Запрос на ${API_BASE_URL}/shelves`);
+                
+                const response = await fetch(`${API_BASE_URL}/shelves`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                console.log('Статус ответа:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    let errorText = await response.text();
+                    console.error('Текст ошибки:', errorText);
+                    
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorText = errorJson.detail || errorText;
+                    } catch (e) {
+                        // Не JSON ответ
+                    }
+                    
+                    throw new Error(`HTTP ${response.status}: ${errorText || 'Ошибка при получении стеллажей'}`);
+                }
+                
+                const data = await response.json();
+                console.log('Получены данные:', data);
+                return data;
+                
+            } catch (error) {
+                console.error('Сетевая ошибка при получении стеллажей:', error);
+                throw new Error(`Сетевая ошибка: ${error.message}`);
+            }
+        }
+
+        // Создать стеллаж
+        async function createShelf(shelfData) {
+            try {
+                console.log('Отправка POST запроса:', shelfData);
+                
+                const response = await fetch(`${API_BASE_URL}/shelves`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(shelfData),
+                    mode: 'cors'
+                });
+                
+                console.log('Статус ответа:', response.status);
+                
+                if (!response.ok) {
+                    let errorDetail = 'Ошибка при создании стеллажа';
+                    try {
+                        const errorData = await response.json();
+                        errorDetail = errorData.detail || errorDetail;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        console.error('Текст ошибки:', errorText);
+                        errorDetail = errorText || errorDetail;
+                    }
+                    throw new Error(errorDetail);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Сетевая ошибка при создании стеллажа:', error);
+                throw error;
+            }
+        }
+
+        // Обновить стеллаж
+        async function updateShelf(shelfId, shelfData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/shelves/${shelfId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(shelfData),
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    let errorDetail = 'Ошибка при обновлении стеллажа';
+                    try {
+                        const errorData = await response.json();
+                        errorDetail = errorData.detail || errorDetail;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorDetail = errorText || errorDetail;
+                    }
+                    throw new Error(errorDetail);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Сетевая ошибка при обновлении стеллажа:', error);
+                throw error;
+            }
+        }
+
+        // Удалить стеллаж
+        async function deleteShelfRequest(shelfId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/shelves/${shelfId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    let errorDetail = 'Ошибка при удалении стеллажа';
+                    try {
+                        const errorData = await response.json();
+                        errorDetail = errorData.detail || errorDetail;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorDetail = errorText || errorDetail;
+                    }
+                    throw new Error(errorDetail);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Сетевая ошибка при удалении стеллажа:', error);
+                throw error;
+            }
+        }
+
+        // Функция для показа сообщений
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
             
-            // Обновляем прогресс-бар
-            updateProgressBar(row, shelfData.current_quantity, shelfData.max_capacity);
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageDiv);
             
-            // Перезагружаем список для проверки остатков
-            await loadShelves();
-            
-        } catch (error) {
-            console.error('Ошибка при обновлении стеллажа:', error);
-            showMessage('Ошибка при обновлении стеллажа: ' + error.message, 'error');
-        } finally {
-            button.textContent = 'Сохранить';
-            button.disabled = false;
-        }
-    }
-
-    // Обновление прогресс-бара
-    function updateProgressBar(row, current_quantity, max_capacity) {
-        const percentage = max_capacity > 0 ? Math.min((current_quantity / max_capacity) * 100, 100) : 0;
-        let progressClass = 'progress-low';
-        if (percentage >= 90) progressClass = 'progress-high';
-        else if (percentage >= 50) progressClass = 'progress-medium';
-
-        const progressFill = row.querySelector('.progress-fill');
-        progressFill.className = `progress-fill ${progressClass}`;
-        progressFill.style.width = `${percentage}%`;
-    }
-
-    // Удаление стеллажа
-    async function deleteShelf(shelfId) {
-        if (!confirm('Вы уверены, что хотите удалить этот стеллаж?')) {
-            return;
+            // Автоматически скрыть сообщение через 5 секунд
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
         }
 
-        try {
-            await deleteShelfRequest(shelfId);
-            showMessage('Стеллаж успешно удален', 'success');
-            await loadShelves(); // Перезагружаем список
-        } catch (error) {
-            console.error('Ошибка при удалении стеллажа:', error);
-            showMessage('Ошибка при удалении стеллажа: ' + error.message, 'error');
+        // Проверка авторизации администратора
+        function checkAdminAuth() {
+            const adminData = localStorage.getItem('admin');
+            if (!adminData) {
+                window.location.href = 'admin.html';
+                return null;
+            }
+            return JSON.parse(adminData);
         }
-    }
 
-    // Сброс формы добавления
-    function resetAddForm() {
-        document.getElementById('newShelfName').value = '';
-        document.getElementById('newCapacity').value = '100';
-        document.getElementById('newUsed').value = '0';
-    }
-
-    // API функции
-
-    // Получить все стеллажи
-    async function getShelves() {
-        const response = await fetch(`${API_BASE_URL}/shelves`);
-        if (!response.ok) {
-            throw new Error('Ошибка при получении стеллажей');
-        }
-        return await response.json();
-    }
-
-    // Создать стеллаж
-    async function createShelf(shelfData) {
-        const response = await fetch(`${API_BASE_URL}/shelves`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(shelfData)
+        // Проверяем авторизацию при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            const admin = checkAdminAuth();
+            if (!admin) {
+                return;
+            }
         });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Ошибка при создании стеллажа');
-        }
-        
-        return await response.json();
-    }
-
-    // Обновить стеллаж
-    async function updateShelf(shelfId, shelfData) {
-        const response = await fetch(`${API_BASE_URL}/shelves/${shelfId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(shelfData)
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Ошибка при обновлении стеллажа');
-        }
-        
-        return await response.json();
-    }
-
-    // Удалить стеллаж
-    async function deleteShelfRequest(shelfId) {
-        const response = await fetch(`${API_BASE_URL}/shelves/${shelfId}`, {
-            method: 'DELETE'
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Ошибка при удалении стеллажа');
-        }
-        
-        return await response.json();
-    }
-
-    // Функция для показа сообщений
-    function showMessage(message, type) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}-message`;
-        messageDiv.textContent = message;
-        
-        messageContainer.innerHTML = '';
-        messageContainer.appendChild(messageDiv);
-        
-        // Автоматически скрыть сообщение через 5 секунд
-        setTimeout(() => {
-            messageDiv.remove();
-        }, 5000);
-    }
-
-    // Проверка авторизации администратора
-    function checkAdminAuth() {
-        const adminData = localStorage.getItem('admin');
-        if (!adminData) {
-            window.location.href = 'admin.html';
-            return null;
-        }
-        return JSON.parse(adminData);
-    }
-
-    // Проверяем авторизацию при загрузке
-    document.addEventListener('DOMContentLoaded', () => {
-        const admin = checkAdminAuth();
-        if (!admin) {
-            return;
-        }
-    });
-</script>
+    </script>
 </body>
 </html>

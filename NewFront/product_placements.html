@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Размещение товаров - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Таблица размещения товаров */
+        .content-panel {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        /* Таблицы */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 80px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .name-column {
+            width: 200px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .placement-column {
+            width: 150px;
+        }
+
+        .quantity-column {
+            width: 120px;
+        }
+
+        .date-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .status-column {
+            width: 150px;
+        }
+
+        .actions-column {
+            width: 250px;
+            text-align: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-place, .btn-move {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-place {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .btn-place:hover {
+            background: #8e44ad;
+            transform: translateY(-1px);
+        }
+
+        .btn-move {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-move:hover {
+            background: #d68910;
+            transform: translateY(-1px);
+        }
+
+        /* Формы */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        /* Сообщения */
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        /* Статусы размещения */
+        .placement-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-on-shelf {
+            background: rgba(52, 152, 219, 0.2);
+            color: #2980b9;
+        }
+
+        .status-in-overflow {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+
+        .status-not-placed {
+            background: rgba(149, 165, 166, 0.2);
+            color: #7f8c8d;
+        }
+
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7a6a52;
+        }
+
+        @media (max-width: 1200px) {
+            .admin-content {
+                max-width: 100%;
+                padding: 30px 15px;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+
+            .panel-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="adminok.html" class="logo">StoreMarket</a>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Размещение товаров на складе</h1>
+            <p class="admin-subtitle">Управление размещением товаров на стеллажах и в отстойниках</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <!-- Основная панель размещения товаров -->
+        <div class="content-panel" id="placements-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Текущее размещение товаров</h2>
+            </div>
+
+        <!-- Таблица товаров -->
+        <table>
+        <thead>
+            <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Размещение</th>
+            <th>Количество</th>
+            <th>Статус</th>
+            <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody id="productsTableBody"></tbody>
+        </table>
+
+        </div>
+
+        <!-- Модальное окно для размещения товара -->
+        <div class="modal" id="placeProductModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Разместить товар</h2>
+                    <button class="close-btn" onclick="closePlaceModal()">&times;</button>
+                </div>
+                
+                <form id="placeProductForm">
+                    <input type="hidden" id="placeProductId">
+                    
+                    <div class="form-group">
+                        <label for="placeType">Тип размещения *</label>
+                        <select id="placeType" onchange="togglePlacementFields()">
+                            <option value="shelf">На стеллаж</option>
+                            <option value="overflow">В отстойник</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="shelfFieldGroup">
+                        <label for="placeShelfId">Стеллаж *</label>
+                        <select id="placeShelfId">
+                            <option value="">Выберите стеллаж</option>
+                        </select>
+                        <div id="shelfInfo" class="form-text"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="placeQuantity">Количество *</label>
+                        <input type="number" id="placeQuantity" min="1" required>
+                        <div class="form-text" id="availableQuantity"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="placeNotes">Примечания</label>
+                        <textarea id="placeNotes" rows="3" placeholder="Дополнительная информация"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Разместить</button>
+                        <button type="button" class="submit-btn" onclick="closePlaceModal()" style="background: #95a5a6;">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+            <!-- Модальное окно перемещения товара -->
+        <div id="moveProductModal" style="display:none;">
+        <form id="moveProductForm">
+            <input type="hidden" id="moveProductId">
+            <input type="hidden" id="movePlacementId">
+
+            <div id="currentPlacement"></div>
+
+            <label for="moveQuantity">Количество:</label>
+            <input type="number" id="moveQuantity" min="1">
+
+            <label for="moveType">Куда переместить:</label>
+            <select id="moveType" onchange="toggleMoveFields()">
+            <option value="shelf">На стеллаж</option>
+            <option value="overflow">В отстойник</option>
+            </select>
+
+            <div id="moveShelfFieldGroup">
+            <label for="moveShelfId">Стеллаж:</label>
+            <select id="moveShelfId"></select>
+            <div id="shelfCapacityInfo"></div>
+            </div>
+
+            
+            <label for="moveReason">Примечание:</label>
+            <input type="text" id="moveReason">
+
+            <button type="submit">Переместить</button>
+            <button type="button" onclick="closeMoveModal()">Отмена</button>
+        </form>
+        </div>
+
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let currentProducts = [];
+        let currentPlacements = [];
+        let currentShelves = [];
+        let currentOverflow = [];
+
+        // ==================== УТИЛИТЫ ====================
+
+        // Универсальная функция для API запросов
+        async function fetchAPI(endpoint, method = 'GET', data = null) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            };
+            
+            if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(url, options);
+                
+                if (response.status === 204) { // No Content
+                    return null;
+                }
+                
+                const responseData = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(responseData.detail || `HTTP ${response.status}`);
+                }
+                
+                return responseData;
+            } catch (error) {
+                console.error(`API Error [${method} ${endpoint}]:`, error);
+                throw error;
+            }
+        }
+
+        // Функция для показа сообщений
+        function showMessage(text, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const message = document.createElement('div');
+            message.className = `message ${type}-message`;
+            message.textContent = text;
+            
+            container.innerHTML = '';
+            container.appendChild(message);
+            
+            // Автоудаление через 5 секунд
+            setTimeout(() => {
+                if (message.parentNode === container) {
+                    message.remove();
+                }
+            }, 5000);
+        }
+
+        // Форматирование даты
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('ru-RU');
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        // Получить статус размещения
+        function getPlacementStatus(productId) {
+            const placement = currentPlacements.find(p => p.product_id === productId);
+            if (!placement) {
+                return '<span class="placement-status status-not-placed">Не размещен</span>';
+            }
+            
+            if (placement.shelf_id && placement.shelf_name) {
+                return `<span class="placement-status status-on-shelf">${placement.shelf_name}</span>`;
+            }
+            
+            if (placement.overflow_id) {
+                return `<span class="placement-status status-in-overflow">Отстойник</span>`;
+            }
+            
+            return '<span class="placement-status status-not-placed">Неизвестно</span>';
+        }
+
+        // ==================== ЗАГРУЗКА ДАННЫХ ====================
+
+        // Загрузка товаров
+        async function loadProducts() {
+            try {
+                const products = await fetchAPI('/products');
+                currentProducts = products || [];
+                renderProductsTable(products);
+            } catch (error) {
+                showMessage('Ошибка загрузки товаров', 'error');
+                console.error('Load products error:', error);
+            }
+        }
+
+        // Загрузка размещений
+        async function loadPlacements() {
+            try {
+                const placements = await fetchAPI('/product-placements');
+                currentPlacements = placements || [];
+            } catch (error) {
+                showMessage('Ошибка загрузки размещений', 'error');
+                console.error('Load placements error:', error);
+            }
+        }
+
+        // Загрузка стеллажей
+        async function loadShelves() {
+            try {
+                const shelves = await fetchAPI('/shelves');
+                currentShelves = shelves || [];
+            } catch (error) {
+                showMessage('Ошибка загрузки стеллажей', 'error');
+                console.error('Load shelves error:', error);
+            }
+        }
+
+        // Загрузка отстойника
+        async function loadOverflow() {
+            try {
+                const overflow = await fetchAPI('/overflow-bins');
+                currentOverflow = overflow || [];
+            } catch (error) {
+                showMessage('Ошибка загрузки отстойника', 'error');
+                console.error('Load overflow error:', error);
+            }
+        }
+
+// Отображение таблицы товаров
+function renderProductsTable(products) {
+    const tbody = document.getElementById('productsTableBody');
+    if (!tbody) {
+        console.error('Element #productsTableBody not found');
+        return;
+    }
+
+    if (!products || products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Товары не найдены</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = products.map(product => {
+        const isLowStock = product.current_quantity <= product.min_quantity;
+        return `
+        <tr>
+            <td class="id-column">${product.id}</td>
+            <td class="name-column">
+                <strong>${product.name}</strong><br>
+                <small>${product.description || ''}</small>
+            </td>
+            <td class="placement-column">
+                ${getPlacementStatus(product.id)}
+            </td>
+            <td class="quantity-column">
+                ${product.current_quantity} ${product.unit}
+            </td>
+            <td class="status-column">
+                <span class="${isLowStock ? 'status-in-overflow' : 'status-on-shelf'}">
+                    ${isLowStock ? 'Низкий запас' : 'В норме'}
+                </span>
+            </td>
+            <td class="actions-column">
+                <div class="action-btns">
+                    <button class="btn-place" onclick="placeProduct(${product.id})">Разместить</button>
+                </div>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+// Размещение товара
+async function placeProduct(productId) {
+    const product = currentProducts.find(p => p.id === productId);
+    if (!product) {
+        showMessage('Товар не найден', 'error');
+        return;
+    }
+
+    // Показываем модальное окно выбора стеллажа
+    document.getElementById('placeProductId').value = productId;
+    document.getElementById('placeQuantity').max = product.current_quantity;
+    document.getElementById('placeQuantity').value = Math.min(product.current_quantity, 1);
+    document.getElementById('availableQuantity').innerHTML =
+        `Доступно: ${product.current_quantity} ${product.unit}`;
+
+    await loadShelvesForPlacement();
+
+    document.getElementById('placeProductModal').style.display = 'flex';
+}
+
+// Обработка размещения товара
+async function handlePlaceProduct(e) {
+    e.preventDefault();
+
+    const productId = parseInt(document.getElementById('placeProductId').value);
+    const shelfId = parseInt(document.getElementById('placeShelfId').value);
+    const quantity = parseInt(document.getElementById('placeQuantity').value);
+    const notes = document.getElementById('placeNotes').value;
+
+    if (!shelfId || !quantity || quantity <= 0) {
+        showMessage('Заполните все обязательные поля', 'error');
+        return;
+    }
+
+    const placementData = {
+        product_id: productId,
+        shelf_id: shelfId,
+        quantity: quantity,
+        notes: notes || null
+    };
+
+    try {
+        await fetchAPI('/product-placements', 'POST', placementData);
+        showMessage('Товар успешно размещен', 'success');
+        closePlaceModal();
+
+        await Promise.all([
+            loadProducts(),
+            loadShelves()
+        ]);
+    } catch (error) {
+        showMessage(`Ошибка размещения: ${error.message}`, 'error');
+    }
+}
+
+
+        // Перемещение товара
+        async function moveProduct(productId, placementId) {
+            const product = currentProducts.find(p => p.id === productId);
+            const placement = currentPlacements.find(p => p.id === placementId);
+            
+            if (!product || !placement) {
+                showMessage('Товар или размещение не найдены', 'error');
+                return;
+            }
+            
+            // Заполняем данные в модальном окне
+            document.getElementById('moveProductId').value = productId;
+            document.getElementById('movePlacementId').value = placementId;
+            
+            // Показываем текущее размещение
+            let currentPlacementText = 'Неизвестно';
+            if (placement.shelf_id && placement.shelf_name) {
+                currentPlacementText = `На стеллаже: ${placement.shelf_name}`;
+            } else if (placement.overflow_id) {
+                currentPlacementText = 'В отстойнике';
+            }
+            
+            document.getElementById('currentPlacement').innerHTML = currentPlacementText;
+            
+            // Загружаем стеллажи и отстойники для выбора
+            await loadShelvesForMovement();
+            
+            // Устанавливаем количество по умолчанию
+            document.getElementById('moveQuantity').value = placement.quantity;
+            document.getElementById('moveQuantity').max = placement.quantity;
+            
+            // Сбрасываем форму к значениям по умолчанию
+            if (placement.shelf_id) {
+                document.getElementById('moveType').value = 'shelf';
+            } else if (placement.overflow_id) {
+                document.getElementById('moveType').value = 'overflow';
+            }
+            toggleMoveFields();
+            
+            // Показываем модальное окно
+            document.getElementById('moveProductModal').style.display = 'flex';
+        }
+
+        // Удаление размещения
+        async function deletePlacement(placementId) {
+            const placement = currentPlacements.find(p => p.id === placementId);
+            if (!placement) {
+                showMessage('Размещение не найдено', 'error');
+                return;
+            }
+            
+            const product = currentProducts.find(p => p.id === placement.product_id);
+            const productName = product ? product.name : `ID: ${placement.product_id}`;
+            
+            const confirmed = confirm(`Вы уверены, что хотите удалить размещение товара "${productName}" (количество: ${placement.quantity})?`);
+            if (!confirmed) return;
+            
+            try {
+                await fetchAPI(`/product-placements/${placementId}`, 'DELETE');
+                showMessage('Размещение удалено. Товар возвращен на склад.', 'success');
+                
+                // Обновляем все данные
+                await Promise.all([
+                    loadProducts(),
+                    loadPlacements(),
+                    loadShelves(),
+                    loadOverflow()
+                ]);
+                
+            } catch (error) {
+                showMessage(`Ошибка удаления: ${error.message}`, 'error');
+            }
+        }
+
+        // ==================== ОБРАБОТКА ФОРМ ====================
+
+        // Переключение полей в форме размещения
+        function togglePlacementFields() {
+            const placeType = document.getElementById('placeType').value;
+            const shelfGroup = document.getElementById('shelfFieldGroup');
+            const overflowGroup = document.getElementById('overflowFieldGroup');
+            
+            if (placeType === 'shelf') {
+                shelfGroup.style.display = 'block';
+                overflowGroup.style.display = 'none';
+            } else {
+                shelfGroup.style.display = 'none';
+                overflowGroup.style.display = 'block';
+            }
+        }
+
+        // Переключение полей в форме перемещения
+        function toggleMoveFields() {
+            const moveType = document.getElementById('moveType').value;
+            const shelfGroup = document.getElementById('moveShelfFieldGroup');
+            
+            if (moveType === 'shelf') {
+                shelfGroup.style.display = 'block';
+            } else {
+                shelfGroup.style.display = 'none';
+            }
+        }
+
+        // Обновление информации о стеллаже
+        function updateShelfInfo() {
+            const shelfId = document.getElementById('placeShelfId').value;
+            const shelf = currentShelves.find(s => s.id == shelfId);
+            
+            if (shelf) {
+                const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                document.getElementById('shelfInfo').innerHTML = 
+                    `Свободно: ${freeSpace} мест, занято: ${shelf.current_quantity}/${shelf.max_capacity}`;
+            } else {
+                document.getElementById('shelfInfo').innerHTML = '';
+            }
+        }
+
+        // Обновление информации о доступном количестве
+        function updateAvailableInfo() {
+            const productId = document.getElementById('placeProductId').value;
+            const product = currentProducts.find(p => p.id == productId);
+            const requestedQuantity = document.getElementById('placeQuantity').value;
+            
+            if (product && requestedQuantity) {
+                if (parseInt(requestedQuantity) > product.current_quantity) {
+                    document.getElementById('availableQuantity').innerHTML = 
+                        `<span style="color: #e74c3c;">Превышает доступное количество (${product.current_quantity})</span>`;
+                } else {
+                    document.getElementById('availableQuantity').innerHTML = 
+                        `Доступно: ${product.current_quantity} ${product.unit}`;
+                }
+            }
+        }
+
+        // Обработка размещения товара
+        async function handlePlaceProduct(e) {
+            e.preventDefault();
+            
+            const productId = document.getElementById('placeProductId').value;
+            const placeType = document.getElementById('placeType').value;
+            const quantity = parseInt(document.getElementById('placeQuantity').value);
+            const notes = document.getElementById('placeNotes').value;
+            
+            const placementData = {
+                product_id: parseInt(productId),
+                quantity: quantity,
+                notes: notes || null
+            };
+            
+            if (placeType === 'shelf') {
+                const shelfId = document.getElementById('placeShelfId').value;
+                if (!shelfId) {
+                    showMessage('Выберите стеллаж', 'error');
+                    return;
+                }
+                placementData.shelf_id = parseInt(shelfId);
+            } 
+            
+            try {
+                const result = await fetchAPI('/product-placements', 'POST', placementData);
+                showMessage('Товар успешно размещен', 'success');
+                closePlaceModal();
+                
+                // Обновляем данные
+                await loadPlacements();
+                await loadProducts();
+                await loadShelves();
+                
+            } catch (error) {
+                showMessage(`Ошибка размещения: ${error.message}`, 'error');
+            }
+        }
+
+// Обработка перемещения товара
+async function handleMoveProduct(e) {
+    e.preventDefault();
+
+    const productId = parseInt(document.getElementById('moveProductId').value);
+    const placementId = parseInt(document.getElementById('movePlacementId').value);
+    const moveType = document.getElementById('moveType').value;
+    const quantity = parseInt(document.getElementById('moveQuantity').value);
+    const notes = document.getElementById('moveReason').value;
+
+    let moveData = {
+        product_id: productId,
+        quantity: quantity,
+        notes: notes || 'Перемещение'
+    };
+
+    if (moveType === 'shelf') {
+        const shelfId = parseInt(document.getElementById('moveShelfId').value);
+        if (!shelfId) {
+            showMessage('Выберите стеллаж', 'error');
+            return;
+        }
+        moveData.shelf_id = shelfId;
+    } else if (moveType === 'overflow') {
+        moveData.overflow_id = 1;
+    }
+
+    try {
+        // Удаляем старое размещение
+        await fetchAPI(`/product-placements/${placementId}`, 'DELETE');
+
+        // Создаём новое размещение
+        await fetchAPI('/product-placements', 'POST', moveData);
+
+        showMessage('Товар успешно перемещен', 'success');
+        closeMoveModal();
+
+        await Promise.all([
+            loadPlacements(),
+            loadProducts(),
+            loadShelves(),
+            loadOverflow()
+        ]);
+    } catch (error) {
+        showMessage(`Ошибка перемещения: ${error.message}`, 'error');
+    }
+}
+
+
+        // Загрузка стеллажей для размещения
+        async function loadShelvesForPlacement() {
+            const shelfSelect = document.getElementById('placeShelfId');            
+            // Очищаем опции
+            shelfSelect.innerHTML = '<option value="">Выберите стеллаж</option>';
+            
+            // Загружаем стеллажи с свободным местом
+            currentShelves.forEach(shelf => {
+                const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                if (freeSpace > 0) {
+                    const option = document.createElement('option');
+                    option.value = shelf.id;
+                    option.textContent = `${shelf.name} (свободно: ${freeSpace})`;
+                    shelfSelect.appendChild(option);
+                }
+            });
+            
+            // Загружаем отстойники
+            currentOverflow.forEach(bin => {
+                const freeSpace = bin.max_capacity - bin.current_quantity;
+                if (freeSpace > 0) {
+                    const option = document.createElement('option');
+                    option.value = bin.id;
+                    option.textContent = `${bin.name} (свободно: ${freeSpace})`;
+                    overflowSelect.appendChild(option);
+                }
+            });
+        }
+
+        // Загрузка стеллажей для перемещения
+        async function loadShelvesForMovement() {
+            const shelfSelect = document.getElementById('moveShelfId');
+            
+            // Очищаем опции
+            shelfSelect.innerHTML = '<option value="">Выберите стеллаж</option>';
+            
+            // Загружаем все стеллажи с свободным местом
+            currentShelves.forEach(shelf => {
+                const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                const option = document.createElement('option');
+                option.value = shelf.id;
+                option.textContent = `${shelf.name} (свободно: ${freeSpace})`;
+                shelfSelect.appendChild(option);
+            });
+            
+            // Загружаем все отстойники с свободным местом
+            currentOverflow.forEach(bin => {
+                const freeSpace = bin.max_capacity - bin.current_quantity;
+                const option = document.createElement('option');
+                option.value = bin.id;
+                option.textContent = `${bin.name} (свободно: ${freeSpace})`;
+                overflowSelect.appendChild(option);
+            });
+        }
+
+        // Закрытие модального окна размещения
+        function closePlaceModal() {
+            document.getElementById('placeProductModal').style.display = 'none';
+            document.getElementById('placeProductForm').reset();
+        }
+
+        // Закрытие модального окна перемещения
+        function closeMoveModal() {
+            document.getElementById('moveProductModal').style.display = 'none';
+            document.getElementById('moveProductForm').reset();
+        }
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            // Форма размещения товара
+            document.getElementById('placeProductForm').addEventListener('submit', handlePlaceProduct);
+            
+            // Форма перемещения товара
+            document.getElementById('moveProductForm').addEventListener('submit', handleMoveProduct);
+            
+            // Изменение стеллажа в форме размещения
+            document.getElementById('placeShelfId').addEventListener('change', updateShelfInfo);
+            
+            // Изменение количества в форме размещения
+            document.getElementById('placeQuantity').addEventListener('input', updateAvailableInfo);
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOM Content Loaded');
+            
+            // Проверяем наличие необходимых элементов
+            if (!document.getElementById('productsTableBody')) {
+                console.warn('Элемент #productsTableBody не найден - возможно, на странице нет таблицы товаров');
+            }
+            
+            // Загружаем все данные параллельно
+            await Promise.all([
+                loadProducts(),
+                loadPlacements(),
+                loadShelves(),
+                loadOverflow()
+            ]);
+            
+            setupEventListeners();
+            
+            showMessage('Система размещения товаров загружена', 'success');
+        });
+    </script>
+</body>
+</html>
