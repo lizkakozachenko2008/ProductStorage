@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Складские отчеты</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+      min-height: 100vh;
+      color: #5a4a42;
+    }
+
+    .container {
+      width: 100%;
+      height: 80px;
+      background: #F7C48F;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 30px;
+      border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+      box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: #5a4a42;
+      text-decoration: none;
+    }
+
+    .admin-content {
+      padding: 50px 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .admin-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .admin-title {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #5a4a42;
+      margin-bottom: 15px;
+    }
+
+    .admin-subtitle {
+      font-size: 1.2rem;
+      color: #7a6a52;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .shelves-table-container {
+      background: rgba(255, 253, 248, 0.95);
+      border-radius: 15px;
+      padding: 30px;
+      border: 1px solid rgba(247, 196, 143, 0.3);
+      box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+      margin-top: 30px;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .table-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #5a4a42;
+    }
+
+    .add-shelf-btn {
+      background: #F7C48F;
+      color: #5a4a42;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(222, 193, 150, 0.5);
+    }
+
+    .add-shelf-btn:hover {
+      background: #e8b47a;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+    }
+
+    th, td {
+      padding: 15px 20px;
+      text-align: left;
+      border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+    }
+
+    th {
+      background: #F7C48F;
+      color: #5a4a42;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    tr:hover { background: rgba(247, 196, 143, 0.1); }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: #7a6a52;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .admin-title { font-size: 2.2rem; }
+      th, td { padding: 10px 15px; }
+      .table-header { flex-direction: column; gap: 15px; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="adminok.html" class="logo">StoreMarket</a>
+  </div>
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1 class="admin-title">Складские отчеты</h1>
+      <p class="admin-subtitle">Аналитика по наличию, размещению, поставкам и отгрузкам</p>
+    </div>
+
+    <!-- Отчет по размещениям -->
+    <div class="shelves-table-container">
+      <div class="table-header">
+        <h2 class="table-title">Отчет по размещениям</h2>
+        <button class="add-shelf-btn" id="refreshPlacement">Обновить</button>
+      </div>
+      <table id="placementTable">
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Стеллаж</th>
+            <th>Отстойник</th>
+            <th>Размещено</th>
+            <th>Всего на складе</th>
+            <th>Ед. изм.</th>
+            <th>Низкий запас</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="7" class="empty-message">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Месячный отчет -->
+    <div class="shelves-table-container">
+      <div class="table-header">
+        <h2 class="table-title">Поставки и отгрузки за месяц</h2>
+        <div class="form-row">
+          <input type="month" id="monthPicker" class="add-shelf-btn">
+          <button class="add-shelf-btn" id="refreshMonthly">Показать</button>
+        </div>
+      </div>
+      <table id="monthlyTable">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Тип</th>
+            <th>Товар</th>
+            <th>Количество</th>
+            <th>Детали</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5" class="empty-message">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Инвентаризация -->
+    <div class="shelves-table-container">
+      <div class="table-header">
+        <h2 class="table-title">Отчет по наличию товаров</h2>
+        <button class="add-shelf-btn" id="refreshInventory">Обновить</button>
+      </div>
+      <table id="inventoryTable">
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Категория</th>
+            <th>На складе</th>
+            <th>Мин. запас</th>
+            <th>Ед. изм.</th>
+            <th>В отстойнике</th>
+            <th>Размещений</th>
+            <th>Стоимость</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="8" class="empty-message">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:8000';
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    
+
+    // Отчет по размещениям
+    async function loadPlacementReport() {
+      const tbody = document.querySelector('#placementTable tbody');
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-message">Загрузка...</td></tr>';
+      try {
+        const data = await fetchJson(`${API_BASE_URL}/reports/placement`);
+
+        tbody.innerHTML = '';
+        if (!data.items || data.items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="empty-message">Нет данных</td></tr>';
+          return;
+        }
+        data.items.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.product_name}</td>
+            <td>${item.shelf_name || '-'}</td>
+            <td>${item.overflow_id ?? '-'}</td>
+            <td>${item.quantity}</td>
+            <td>${item.total_quantity}</td>
+            <td>${item.unit}</td>
+            <td>${item.is_low_stock ? 'Да' : 'Нет'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-message">Ошибка: ${e.message}</td></tr>`;
+      }
+    }
+
+    // Месячный отчет
+    async function loadMonthlyReport(year, month) {
+      const tbody = document.querySelector('#monthlyTable tbody');
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
+      try {
+        const data = await fetchJson(`${API_BASE_URL}/reports/supply-statistics`);
+        tbody.innerHTML = '';
+        if (!data.items || data.items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Нет данных</td></tr>';
+          return;
+        }
+        data.items.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${new Date(item.date).toLocaleDateString('ru-RU')}</td>
+            <td>${item.type === 'supply' ? 'Поставка' : 'Отгрузка'}</td>
+            <td>${item.product_name}</td>
+            <td>${item.quantity}</td>
+            <td>${item.details || '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-message">Ошибка: ${e.message}</td></tr>`;
+      }
+    }
+
+    // Инвентаризация
+    async function loadInventoryReport() {
+      const tbody = document.querySelector('#inventoryTable tbody');
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-message">Загрузка...</td></tr>';
+      try {
+        const data = await fetchJson(`${API_BASE_URL}/reports/stock-summary`);
+        tbody.innerHTML = '';
+        if (!data.products || data.products.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="empty-message">Нет данных</td></tr>';
+          return;
+        }
+        data.products.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.product_name}</td>
+            <td>${item.category_name}</td>
+            <td>${item.current_quantity}</td>
+            <td>${item.min_quantity}</td>
+            <td>${item.unit}</td>
+            <td>${item.in_overflow ? 'Да' : 'Нет'}</td>
+            <td>${item.placement_count}</td>
+            <td>${item.total_value != null ? Number(item.total_value).toFixed(2) : '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-message">Ошибка: ${e.message}</td></tr>`;
+      }
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+      // Размещения
+      loadPlacementReport();
+      document.getElementById('refreshPlacement').addEventListener('click', loadPlacementReport);
+
+      // Месячный отчет
+      const now = new Date();
+      const monthPicker = document.getElementById('monthPicker');
+      monthPicker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const refreshMonthly = () => {
+        const [year, month] = monthPicker.value.split('-').map(Number);
+        loadMonthlyReport(year, month);
+      };
+      refreshMonthly();
+      document.getElementById('refreshMonthly').addEventListener('click', refreshMonthly);
+
+      // Инвентаризация
+      loadInventoryReport();
+      document.getElementById('refreshInventory').addEventListener('click', loadInventoryReport);
+    });
+  </script>
+</body>
+</html>

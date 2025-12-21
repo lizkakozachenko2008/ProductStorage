@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пользователи - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .users-section {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .add-user-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .add-user-btn:hover {
+            background: #e8b47a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .users-table th {
+            background: #F7C48F;
+            color: #5a4a42;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e8b47a;
+        }
+
+        .users-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        .users-table tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn, .delete-btn, .save-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn, .save-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .edit-btn:hover, .save-btn:hover {
+            background: #e8b47a;
+        }
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #ff5252;
+        }
+
+        .editable {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+        }
+
+        .editable:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        /* Форма добавления/редактирования пользователя */
+        .user-form-section {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            display: none;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        .cancel-btn {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .cancel-btn:hover {
+            background: #7f8c8d;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .admin-title {
+                font-size: 2rem;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .users-table {
+                font-size: 0.9rem;
+            }
+
+            .user-actions {
+                flex-direction: column;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <a href="adminok.html" class="logo">StoreMarket</a>
+        </div>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление пользователями</h1>
+            <p class="admin-subtitle">Добавление, редактирование и управление учетными записями сотрудников</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <!-- Секция списка пользователей -->
+        <div class="users-section">
+            <div class="section-header">
+                <h2 class="section-title">Список пользователей</h2>
+                <button class="add-user-btn" id="showAddForm">+ Добавить пользователя</button>
+            </div>
+
+            <table class="users-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Логин</th>
+                        <th>Email</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Данные будут загружены через JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Форма добавления нового пользователя -->
+        <div class="user-form-section" id="userFormSection">
+            <h2 class="form-title">Добавить нового пользователя</h2>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label for="login">Логин</label>
+                    <input type="text" id="login" placeholder="Введите логин" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Введите email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" placeholder="Введите пароль" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Добавить пользователя</button>
+                    <button type="button" class="cancel-btn" id="hideAddForm">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Элементы DOM
+        const usersTableBody = document.getElementById('usersTableBody');
+        const userFormSection = document.getElementById('userFormSection');
+        const addUserForm = document.getElementById('addUserForm');
+        const showAddFormBtn = document.getElementById('showAddForm');
+        const hideAddFormBtn = document.getElementById('hideAddForm');
+        const messageContainer = document.getElementById('messageContainer');
+
+        // Загрузка пользователей при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadUsers);
+
+        // Показать/скрыть форму добавления
+        showAddFormBtn.addEventListener('click', () => {
+            userFormSection.style.display = 'block';
+            addUserForm.reset();
+        });
+
+        hideAddFormBtn.addEventListener('click', () => {
+            userFormSection.style.display = 'none';
+            addUserForm.reset();
+        });
+
+        // Обработка формы добавления пользователя
+        addUserForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const login = document.getElementById('login').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!login || !email || !password) {
+                showMessage('Пожалуйста, заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                const userData = { login, email, password };
+                await createUser(userData);
+                showMessage('Пользователь успешно создан', 'success');
+
+                // Перезагружаем список пользователей
+                await loadUsers();
+                
+                // Скрываем форму и сбрасываем
+                userFormSection.style.display = 'none';
+                addUserForm.reset();
+
+            } catch (error) {
+                console.error('Ошибка при создании пользователя:', error);
+                showMessage('Ошибка при создании пользователя: ' + error.message, 'error');
+            }
+        });
+
+        // Функция загрузки пользователей
+        async function loadUsers() {
+            try {
+                usersTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Загрузка...</td></tr>';
+                
+                const users = await getUsers();
+                
+                if (users.length === 0) {
+                    usersTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Пользователи не найдены</td></tr>';
+                    return;
+                }
+
+                usersTableBody.innerHTML = '';
+                users.forEach(user => {
+                    const row = createUserRow(user);
+                    usersTableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Ошибка при загрузке пользователей:', error);
+                usersTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Ошибка при загрузке пользователей</td></tr>';
+            }
+        }
+
+        // Создание строки пользователя
+        function createUserRow(user) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${user.id}</td>
+                <td><input type="text" class="editable" value="${user.login || ''}" data-field="login"></td>
+                <td><input type="email" class="editable" value="${user.email || ''}" data-field="email"></td>
+                <td class="user-actions">
+                    <button class="save-btn" onclick="saveUser(${user.id}, this)">Сохранить</button>
+                    <button class="delete-btn" onclick="deleteUser(${user.id})">Удалить</button>
+                </td>
+            `;
+            return row;
+        }
+
+        // Сохранение пользователя (редактирование)
+        async function saveUser(userId, button) {
+            const row = button.closest('tr');
+            const inputs = row.querySelectorAll('.editable');
+            
+            const userData = {};
+            inputs.forEach(input => {
+                userData[input.dataset.field] = input.value.trim();
+            });
+
+            // Проверяем, что есть изменения
+            if (Object.keys(userData).length === 0) {
+                showMessage('Нет изменений для сохранения', 'error');
+                return;
+            }
+
+            try {
+                button.textContent = 'Сохранение...';
+                button.disabled = true;
+                
+                await updateUser(userId, userData);
+                showMessage('Пользователь успешно обновлен', 'success');
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении пользователя:', error);
+                showMessage('Ошибка при обновлении пользователя: ' + error.message, 'error');
+            } finally {
+                button.textContent = 'Сохранить';
+                button.disabled = false;
+            }
+        }
+
+        // Удаление пользователя
+        async function deleteUser(userId) {
+            if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+                return;
+            }
+
+            try {
+                await deleteUserRequest(userId);
+                showMessage('Пользователь успешно удален', 'success');
+                await loadUsers(); // Перезагружаем список
+            } catch (error) {
+                console.error('Ошибка при удалении пользователя:', error);
+                showMessage('Ошибка при удалении пользователя: ' + error.message, 'error');
+            }
+        }
+
+        // API функции
+
+        // Получить всех пользователей
+        async function getUsers() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            // Проверяем, что ошибка именно 405
+            if (response.status === 405) {
+                console.error('Endpoint /users не поддерживает GET метод');
+                console.log('Проверьте, есть ли в backend GET /users endpoint');
+                throw new Error('Сервер не поддерживает получение пользователей. Проверьте конфигурацию бэкенда.');
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка при получении пользователей:', error);
+        throw new Error('Ошибка при получении пользователей');
+    }
+}
+
+        // Создать пользователя
+        async function createUser(userData) {
+            const response = await fetch(`${API_BASE_URL}/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при создании пользователя');
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить пользователя
+        async function updateUser(userId, userData) {
+            const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при обновлении пользователя');
+            }
+            
+            return await response.json();
+        }
+
+        // Удалить пользователя
+        async function deleteUserRequest(userId) {
+            const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при удалении пользователя');
+            }
+            
+            return await response.json();
+        }
+
+        // Функция для показа сообщений
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageDiv);
+            
+            // Автоматически скрыть сообщение через 5 секунд
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Проверка авторизации администратора
+        function checkAdminAuth() {
+            const adminData = localStorage.getItem('admin');
+            if (!adminData) {
+                window.location.href = 'admin.html';
+                return null;
+            }
+            return JSON.parse(adminData);
+        }
+
+        // Проверяем авторизацию при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            const admin = checkAdminAuth();
+            if (!admin) {
+                return;
+            }
+        });
+    </script>
+</body>
+</html>

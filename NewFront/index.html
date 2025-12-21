@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Склад товаров</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+        }
+
+        .container {
+            width: 100%;
+            height: 70px;
+            background-color: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .left-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .site-icon {
+            width: 80px; 
+            height: 80px; 
+            object-fit: contain;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .right-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Общие стили для всех кнопок */
+        .buttonn, .vxod, .admin {
+            border: 0;
+            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .buttonn:hover, .vxod:hover, .admin:hover {
+            background: linear-gradient(135deg, #F7C48F 0%, #8B7355 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 115, 85, 0.3);
+        }
+
+        /* Анимация корзины */
+        .corzina-icon {
+            width: 50px;
+            height: 50px;
+            margin-left: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .corzina-icon:hover {
+            transform: scale(1.1) translateY(-2px);
+        }
+
+        /* Счетчик товаров в корзине с анимацией */
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1); 
+            }
+            50% { 
+                transform: scale(1.1); 
+            }
+        }
+
+        /* Стили для основного контента */
+        .main-content {
+            min-height: calc(100vh - 70px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 35px 0 35px 75px;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            color: #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section {
+            width: 100%;
+        }
+
+        .hero-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 40px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .text-content {
+            flex: 0 0 45%;
+            max-width: 500px;
+            margin-top: 40px;
+        }
+
+        .main-title {
+            font-size: 3.2rem;
+            font-weight: bold;
+            margin-bottom: 50px;
+            line-height: 1.1;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: pre-line;
+        }
+
+        .supplier-text {
+            color: #ff6b6b;
+        }
+
+        .shop-button-container {
+            margin: 40px 0;
+        }
+
+        .shop-button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 22px 70px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .shop-button:hover {
+            background: #ff5252;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+        }
+
+        /* Стили для изображения пакета с анимацией */
+        .image-content {
+            flex: 0 0 55%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+            margin-top: -30px;
+            margin-right: 0;
+        }
+
+        .hero-image {
+            max-width: 750px;
+            width: 130%;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.15));
+            transform: scale(1.15);
+            margin-right: -50px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: scale(1.15) translateY(0px) rotate(0deg); 
+            }
+            50% { 
+                transform: scale(1.15) translateY(-20px) rotate(2deg); 
+            }
+        }
+
+        .contact-info {
+            position: absolute;
+            left: 80px;
+            bottom: 40px;
+            text-align: left;
+            color: #333;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        .hotline {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .work-schedule {
+            font-weight: 500;
+        }
+
+        .hotline strong,
+        .work-schedule strong {
+            color: #D4AF37;
+            font-weight: 600;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 1200px) {
+            .hero-content {
+                gap: 30px;
+            }
+            
+            .main-title {
+                font-size: 2.8rem;
+            }
+            
+            .text-content {
+                flex: 0 0 50%;
+            }
+            
+            .image-content {
+                flex: 0 0 50%;
+                margin-top: -20px;
+            }
+            
+            .hero-image {
+                max-width: 650px;
+                width: 120%;
+                transform: scale(1.1);
+                margin-right: -30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 40px 30px;
+                overflow: visible;
+            }
+            
+            .hero-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .text-content {
+                flex: 1;
+                max-width: 100%;
+                margin-top: 0;
+            }
+            
+            .main-title {
+                font-size: 2.2rem;
+                margin-bottom: 30px;
+            }
+            
+            .shop-button {
+                padding: 18px 50px;
+                font-size: 1.3rem;
+            }
+            
+            .image-content {
+                flex: 1;
+                justify-content: center;
+                margin-top: 0;
+            }
+            
+            .hero-image {
+                max-width: 450px;
+                width: 100%;
+                transform: scale(1);
+                margin-right: 0;
+            }
+            
+            .contact-info {
+                left: 30px;
+                bottom: 25px;
+                font-size: 1rem;
+            }
+            
+            .right-section {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 5px;
+            }
+            
+            .buttonn, .vxod, .admin {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 30px 20px;
+            }
+            
+            .main-title {
+                font-size: 1.8rem;
+            }
+            
+            .shop-button {
+                padding: 15px 40px;
+                font-size: 1.1rem;
+                letter-spacing: 2px;
+            }
+            
+            .hero-image {
+                max-width: 350px;
+            }
+            
+            .contact-info {
+                left: 20px;
+                bottom: 20px;
+                font-size: 0.9rem;
+            }
+            
+            .right-section {
+                gap: 3px;
+            }
+            
+            .buttonn, .vxod, .admin {
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+            
+            .corzina-icon {
+                width: 40px;
+                height: 40px;
+                margin-left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <div class="logo-container">
+                <a href="#" class="logo">StoreMarket</a>
+            </div>
+        </div>
+        <div class="right-section">
+            <a href="reg.html" class="buttonn">Зарегистрироваться</a>
+            <a href="vxod.html" class="vxod">Войти</a>
+            <a href="admin.html" class="admin">Администратор</a>
+            <img class="corzina-icon" src="../photoPNG/тележка.png" alt="Корзина">
+        </div>
+    </div>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="text-content">
+                    <h1 class="main-title">
+                        ВАШ НАДЁЖНЫЙ
+                        <span class="supplier-text">ПОСТАВЩИК</span> ПРОДУКТОВ!
+                    </h1>
+                    <div class="shop-button-container">
+                        <a href="shop.html" class="shop-button">SHOP</a>
+                    </div>
+                </div>
+                <div class="image-content">
+                    <img src="../photoPNG/Пакет.png" alt="Пакет с продуктами" class="hero-image">
+                </div>
+            </div>
+        </section>
+
+        <footer class="contact-info">
+            <div class="hotline">
+                <strong>Горячая линия</strong> +375 (25) SPH 57 66
+            </div>
+            <div class="work-schedule">
+                <strong>График работы:</strong> с 10:00 до 17:00 (в будние)
+            </div>
+        </footer>
+    </main>
+</body>
+</html>

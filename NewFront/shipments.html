@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отгрузки - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .shipments-table-container {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .table-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .add-shipment-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .add-shipment-btn:hover {
+            background: #e8b47a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 80px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .product-id-column {
+            width: 200px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .quantity-column {
+            width: 120px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .date-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .destination-column {
+            width: 200px;
+            color: #7a6a52;
+        }
+
+        .customer-column {
+            width: 180px;
+            color: #7a6a52;
+        }
+
+        .order-number-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .status-column {
+            width: 150px;
+        }
+
+        .actions-column {
+            width: 180px;
+            text-align: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+        }
+
+        .editable {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .editable-select {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+            cursor: pointer;
+        }
+
+        .editable:focus, .editable-select:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        .add-form {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+            display: none;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .status-completed {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .status-shipped {
+            background: rgba(52, 152, 219, 0.2);
+            color: #2980b9;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .status-cancelled {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .status-delivered {
+            background: rgba(155, 89, 182, 0.2);
+            color: #8e44ad;
+            border: 1px solid rgba(155, 89, 182, 0.3);
+        }
+
+        .status-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .status-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .status-option input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Стили для автодополнения продуктов */
+        .product-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: calc(100% - 30px);
+        }
+
+        .product-suggestion {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-id {
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .suggestion-name {
+            color: #7a6a52;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 1200px) {
+            .admin-content {
+                max-width: 100%;
+                padding: 30px 15px;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .status-badge {
+                min-width: 100px;
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+            
+            .status-options {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <a href="adminok.html" class="logo">StoreMarket</a>
+        </div>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление отгрузками</h1>
+            <p class="admin-subtitle">Просмотр и управление отгрузками товаров со склада</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <div class="shipments-table-container">
+            <div class="table-header">
+                <h2 class="table-title">Список отгрузок</h2>
+                <button class="add-shipment-btn" id="showAddForm">+ Добавить отгрузку</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th class="id-column">ID</th>
+                        <th class="product-id-column">Продукт</th>
+                        <th class="quantity-column">Количество</th>
+                        <th class="date-column">Дата отгрузки</th>
+                        <th class="destination-column">Пункт назначения</th>
+                        <th class="customer-column">Заказчик</th>
+                        <th class="order-number-column">Номер заказа</th>
+                        <th class="status-column">Статус</th>
+                        <th class="actions-column">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="shipmentsTableBody">
+                    <tr><td colspan="9" class="empty-message">Загрузка отгрузок...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Форма добавления новой отгрузки -->
+        <div class="add-form" id="addForm">
+            <h2 class="form-title">Добавить новую отгрузку</h2>
+            <form id="addShipmentForm">
+                <div class="form-group">
+                    <label for="shipmentProductId">Продукт *</label>
+                    <input type="text" id="shipmentProductId" placeholder="Начните вводить название или ID продукта" required autocomplete="off">
+                    <div id="productSuggestions" class="product-suggestions" style="display: none;"></div>
+                    <div class="form-text" id="stockInfo" style="margin-top: 5px; font-size: 0.9rem; color: #666;"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="shipmentQuantity">Количество *</label>
+                        <input type="number" id="shipmentQuantity" placeholder="Введите количество" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="shipmentDate">Дата отгрузки</label>
+                        <input type="date" id="shipmentDate">
+                        <small class="form-text">Оставьте пустым для текущей даты</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="shipmentDestination">Пункт назначения *</label>
+                        <input type="text" id="shipmentDestination" placeholder="Введите адрес доставки" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="shipmentCustomer">Заказчик / Клиент</label>
+                        <input type="text" id="shipmentCustomer" placeholder="Введите имя заказчика">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="shipmentOrderNumber">Номер заказа</label>
+                        <input type="text" id="shipmentOrderNumber" placeholder="Введите номер заказа">
+                    </div>
+                    <div class="form-group">
+                        <label>Статус отгрузки *</label>
+                        <div class="status-options">
+                            <label class="status-option">
+                                <input type="radio" name="shipmentStatus" value="completed" checked>
+                                <span class="status-badge status-completed">Завершено</span>
+                            </label>
+                            <label class="status-option">
+                                <input type="radio" name="shipmentStatus" value="pending">
+                                <span class="status-badge status-pending">В обработке</span>
+                            </label>
+                            <label class="status-option">
+                                <input type="radio" name="shipmentStatus" value="shipped">
+                                <span class="status-badge status-shipped">Отправлено</span>
+                            </label>
+                            <label class="status-option">
+                                <input type="radio" name="shipmentStatus" value="cancelled">
+                                <span class="status-badge status-cancelled">Отменено</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Добавить отгрузку</button>
+                    <button type="button" class="btn-cancel" id="hideAddForm">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Элементы DOM
+        const shipmentsTableBody = document.getElementById('shipmentsTableBody');
+        const addForm = document.getElementById('addForm');
+        const addShipmentForm = document.getElementById('addShipmentForm');
+        const showAddFormBtn = document.getElementById('showAddForm');
+        const hideAddFormBtn = document.getElementById('hideAddForm');
+        const messageContainer = document.getElementById('messageContainer');
+        const shipmentProductIdInput = document.getElementById('shipmentProductId');
+        const productSuggestions = document.getElementById('productSuggestions');
+        const stockInfo = document.getElementById('stockInfo');
+        const shipmentQuantityInput = document.getElementById('shipmentQuantity');
+        const shipmentDateInput = document.getElementById('shipmentDate');
+
+        // Устанавливаем текущую дату по умолчанию
+        const today = new Date().toISOString().split('T')[0];
+        shipmentDateInput.value = today;
+
+        // Переменные для хранения данных
+        let allProducts = [];
+        let selectedProductId = null;
+        let selectedProductStock = 0;
+
+        // Загрузка отгрузок при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadShipments();
+        });
+
+        // Показать/скрыть форму добавления
+        showAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'block';
+            shipmentProductIdInput.focus();
+            loadProductsForSuggestions();
+        });
+
+        hideAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'none';
+            addShipmentForm.reset();
+            shipmentDateInput.value = today;
+            productSuggestions.style.display = 'none';
+            selectedProductId = null;
+            stockInfo.textContent = '';
+        });
+
+        // Загрузка продуктов для автодополнения
+        async function loadProductsForSuggestions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки продуктов');
+                }
+                
+                allProducts = await response.json();
+                console.log('Загружено продуктов:', allProducts.length);
+            } catch (error) {
+                console.error('Ошибка при загрузке продуктов:', error);
+                showMessage('Ошибка при загрузке списка продуктов', 'error');
+            }
+        }
+
+        // Автодополнение для выбора продукта
+        shipmentProductIdInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.trim();
+            
+            if (searchTerm.length < 2) {
+                productSuggestions.style.display = 'none';
+                return;
+            }
+
+            // Фильтруем продукты по поисковому запросу
+            const filteredProducts = allProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.id.toString().includes(searchTerm)
+            );
+
+            if (filteredProducts.length > 0) {
+                productSuggestions.innerHTML = filteredProducts.map(product => `
+                    <div class="product-suggestion" 
+                         data-product-id="${product.id}" 
+                         data-product-name="${product.name}"
+                         data-stock="${product.current_quantity || 0}">
+                        <div class="suggestion-id">ID: ${product.id}</div>
+                        <div class="suggestion-name">${product.name}</div>
+                        <div class="suggestion-name" style="font-size: 0.8rem; color: #95a5a6;">
+                            В наличии: ${product.current_quantity || 0} ${product.unit || 'шт'}
+                        </div>
+                    </div>
+                `).join('');
+                productSuggestions.style.display = 'block';
+            } else {
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Обработка выбора продукта из списка
+        productSuggestions.addEventListener('click', (e) => {
+            const suggestion = e.target.closest('.product-suggestion');
+            if (suggestion) {
+                const productId = suggestion.dataset.productId;
+                const productName = suggestion.dataset.productName;
+                const productStock = suggestion.dataset.stock;
+                
+                selectedProductId = productId;
+                selectedProductStock = parseInt(productStock);
+                shipmentProductIdInput.value = `${productName} (ID: ${productId})`;
+                productSuggestions.style.display = 'none';
+                
+                // Показать информацию о запасах
+                stockInfo.textContent = `В наличии: ${productStock} шт.`;
+                stockInfo.style.color = selectedProductStock > 0 ? '#27ae60' : '#e74c3c';
+            }
+        });
+
+        // Скрыть подсказки при клике вне поля
+        document.addEventListener('click', (e) => {
+            if (!shipmentProductIdInput.contains(e.target) && !productSuggestions.contains(e.target)) {
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Проверка количества при вводе
+        shipmentQuantityInput.addEventListener('input', () => {
+            if (selectedProductId && selectedProductStock > 0) {
+                const quantity = parseInt(shipmentQuantityInput.value) || 0;
+                if (quantity > selectedProductStock) {
+                    stockInfo.textContent = `Внимание: запрашивается ${quantity} шт., но в наличии только ${selectedProductStock} шт.`;
+                    stockInfo.style.color = '#e74c3c';
+                } else if (quantity > 0) {
+                    stockInfo.textContent = `В наличии: ${selectedProductStock} шт.`;
+                    stockInfo.style.color = '#27ae60';
+                }
+            }
+        });
+
+        // Обработка формы добавления отгрузки
+        addShipmentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const quantity = parseInt(document.getElementById('shipmentQuantity').value);
+            const shipmentDate = document.getElementById('shipmentDate').value;
+            const destination = document.getElementById('shipmentDestination').value.trim();
+            const customer = document.getElementById('shipmentCustomer').value.trim();
+            const orderNumber = document.getElementById('shipmentOrderNumber').value.trim();
+            const status = document.querySelector('input[name="shipmentStatus"]:checked').value;
+
+            if (!selectedProductId) {
+                showMessage('Пожалуйста, выберите продукт из списка', 'error');
+                return;
+            }
+
+            if (!quantity || quantity < 1) {
+                showMessage('Пожалуйста, введите корректное количество', 'error');
+                return;
+            }
+
+            if (!destination) {
+                showMessage('Пожалуйста, введите пункт назначения', 'error');
+                return;
+            }
+
+            try {
+                const shipmentData = {
+                    product_id: parseInt(selectedProductId),
+                    quantity: quantity,
+                    destination: destination,
+                    status: status
+                };
+
+                // Добавляем опциональные поля
+                if (customer) shipmentData.customer = customer;
+                if (orderNumber) shipmentData.order_number = orderNumber;
+
+                console.log('Создание отгрузки с данными:', shipmentData);
+
+                const result = await createShipment(shipmentData);
+                console.log('Отгрузка создана:', result);
+                
+                showMessage('Отгрузка успешно создана', 'success');
+
+                // Перезагружаем список отгрузок
+                await loadShipments();
+                
+                // Скрываем форму и сбрасываем
+                addForm.style.display = 'none';
+                addShipmentForm.reset();
+                shipmentDateInput.value = today;
+                selectedProductId = null;
+                selectedProductStock = 0;
+                productSuggestions.style.display = 'none';
+                stockInfo.textContent = '';
+
+            } catch (error) {
+                console.error('Ошибка при создании отгрузки:', error);
+                showMessage('Ошибка при создании отгрузки: ' + error.message, 'error');
+            }
+        });
+
+        // Функция загрузки отгрузок
+        async function loadShipments() {
+            try {
+                shipmentsTableBody.innerHTML = '<tr><td colspan="9" class="empty-message">Загрузка...</td></tr>';
+                
+                const shipments = await getShipments();
+                
+                if (shipments.length === 0) {
+                    shipmentsTableBody.innerHTML = '<tr><td colspan="9" class="empty-message">Отгрузки не найдены</td></tr>';
+                    return;
+                }
+
+                shipmentsTableBody.innerHTML = '';
+                shipments.forEach(shipment => {
+                    const row = createShipmentRow(shipment);
+                    shipmentsTableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Ошибка при загрузке отгрузок:', error);
+                shipmentsTableBody.innerHTML = '<tr><td colspan="9" class="empty-message">Ошибка при загрузке отгрузок</td></tr>';
+            }
+        }
+
+        // Создание строки отгрузки
+        function createShipmentRow(shipment) {
+            const row = document.createElement('tr');
+            
+            // Определяем класс статуса
+            let statusClass = '';
+            let statusText = '';
+            switch(shipment.status) {
+                case 'pending':
+                    statusClass = 'status-pending';
+                    statusText = 'В обработке';
+                    break;
+                case 'shipped':
+                    statusClass = 'status-shipped';
+                    statusText = 'Отправлено';
+                    break;
+                case 'delivered':
+                    statusClass = 'status-delivered';
+                    statusText = 'Доставлено';
+                    break;
+                case 'completed':
+                    statusClass = 'status-completed';
+                    statusText = 'Завершено';
+                    break;
+                case 'cancelled':
+                    statusClass = 'status-cancelled';
+                    statusText = 'Отменено';
+                    break;
+                default:
+                    statusClass = 'status-pending';
+                    statusText = shipment.status || 'В обработке';
+            }
+
+            row.innerHTML = `
+                <td class="id-column">${shipment.id}</td>
+                <td class="product-id-column">
+                    <select class="editable-select" data-field="product_id">
+                        <option value="">Загрузка...</option>
+                    </select>
+                </td>
+                <td class="quantity-column">
+                    <input type="number" class="editable" value="${shipment.quantity || ''}" data-field="quantity" min="1">
+                </td>
+                <td class="date-column">
+                    ${shipment.shipment_date ? 
+                        new Date(shipment.shipment_date).toLocaleDateString('ru-RU') : 
+                        'Не указана'}
+                </td>
+                <td class="destination-column">
+                    <input type="text" class="editable" value="${shipment.destination || ''}" data-field="destination" placeholder="Пункт назначения">
+                </td>
+                <td class="customer-column">
+                    <input type="text" class="editable" value="${shipment.customer || ''}" data-field="customer" placeholder="Заказчик">
+                </td>
+                <td class="order-number-column">
+                    <input type="text" class="editable" value="${shipment.order_number || ''}" data-field="order_number" placeholder="Номер заказа">
+                </td>
+                <td class="status-column">
+                    <select class="editable-select" data-field="status">
+                        <option value="pending" ${shipment.status === 'pending' ? 'selected' : ''}>В обработке</option>
+                        <option value="shipped" ${shipment.status === 'shipped' ? 'selected' : ''}>Отправлено</option>
+                        <option value="delivered" ${shipment.status === 'delivered' ? 'selected' : ''}>Доставлено</option>
+                        <option value="completed" ${shipment.status === 'completed' ? 'selected' : ''}>Завершено</option>
+                        <option value="cancelled" ${shipment.status === 'cancelled' ? 'selected' : ''}>Отменено</option>
+                    </select>
+                </td>
+                <td class="actions-column">
+                    <div class="action-btns">
+                        <button class="btn-save" onclick="saveShipment(${shipment.id}, this)">Сохранить</button>
+                        <button class="btn-delete" onclick="deleteShipment(${shipment.id})">Удалить</button>
+                    </div>
+                </td>
+            `;
+
+            // Асинхронно загружаем продукты для select
+            populateProductSelect(row.querySelector('select[data-field="product_id"]'), shipment.product_id);
+            
+            return row;
+        }
+
+        // Заполнение select продуктами
+        async function populateProductSelect(selectElement, selectedProductId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products`);
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки продуктов');
+                }
+                const products = await response.json();
+                
+                selectElement.innerHTML = '<option value="">Выберите продукт</option>';
+                
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (ID: ${product.id})`;
+                    option.selected = product.id === selectedProductId;
+                    selectElement.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Ошибка при загрузке продуктов для select:', error);
+                selectElement.innerHTML = '<option value="">Ошибка загрузки</option>';
+            }
+        }
+
+        // Сохранение отгрузки (редактирование)
+        async function saveShipment(shipmentId, button) {
+            const row = button.closest('tr');
+            const productIdSelect = row.querySelector('select[data-field="product_id"]');
+            const quantityInput = row.querySelector('input[data-field="quantity"]');
+            const destinationInput = row.querySelector('input[data-field="destination"]');
+            const customerInput = row.querySelector('input[data-field="customer"]');
+            const orderNumberInput = row.querySelector('input[data-field="order_number"]');
+            const statusSelect = row.querySelector('select[data-field="status"]');
+            
+            const shipmentData = {
+                product_id: parseInt(productIdSelect.value),
+                quantity: parseInt(quantityInput.value),
+                destination: destinationInput.value.trim(),
+                customer: customerInput.value.trim() || null,
+                order_number: orderNumberInput.value.trim() || null,
+                status: statusSelect.value
+            };
+
+            // Проверяем, что обязательные поля заполнены
+            if (!shipmentData.product_id || !shipmentData.quantity || !shipmentData.destination) {
+                showMessage('Пожалуйста, заполните все обязательные поля', 'error');
+                return;
+            }
+
+            try {
+                button.textContent = 'Сохранение...';
+                button.disabled = true;
+                
+                await updateShipment(shipmentId, shipmentData);
+                showMessage('Отгрузка успешно обновлена', 'success');
+                
+                // Обновляем отображение
+                await loadShipments();
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении отгрузки:', error);
+                showMessage('Ошибка при обновлении отгрузки: ' + error.message, 'error');
+            } finally {
+                button.textContent = 'Сохранить';
+                button.disabled = false;
+            }
+        }
+
+        // Удаление отгрузки
+        async function deleteShipment(shipmentId) {
+            const shouldDelete = confirm('Вы уверены, что хотите удалить эту отгрузку?');
+            
+            if (!shouldDelete) {
+                return;
+            }
+
+            try {
+                await deleteShipmentRequest(shipmentId);
+                showMessage('Отгрузка успешно удалена', 'success');
+                await loadShipments(); // Перезагружаем список
+                
+            } catch (error) {
+                console.error('Ошибка при удалении отгрузки:', error);
+                showMessage('Ошибка при удалении отгрузки: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== API функции ====================
+
+        // Получить все отгрузки
+        async function getShipments() {
+            const response = await fetch(`${API_BASE_URL}/shipments`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Ошибка получения отгрузок:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Создать отгрузку
+        async function createShipment(shipmentData) {
+            console.log('Отправка запроса на создание отгрузки:', shipmentData);
+            
+            const response = await fetch(`${API_BASE_URL}/shipments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(shipmentData)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при создании отгрузки';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить отгрузку
+        async function updateShipment(shipmentId, shipmentData) {
+            console.log('Обновление отгрузки:', shipmentId, shipmentData);
+            
+            const response = await fetch(`${API_BASE_URL}/shipments/${shipmentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(shipmentData)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при обновлении отгрузки';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Удалить отгрузку
+        async function deleteShipmentRequest(shipmentId) {
+            const response = await fetch(`${API_BASE_URL}/shipments/${shipmentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при удалении отгрузки';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Функция для показа сообщений
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageDiv);
+            
+            // Автоматически скрыть сообщение через 5 секунд
+            setTimeout(() => {
+                if (messageDiv.parentNode === messageContainer) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Функция для проверки CORS
+        async function checkCORS() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/shipments`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET'
+                    }
+                });
+                console.log('CORS проверка:', response.status, response.headers);
+                return response.ok;
+            } catch (error) {
+                console.error('CORS ошибка:', error);
+                return false;
+            }
+        }
+
+        // Проверка при загрузке
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Проверка CORS...');
+            const corsOk = await checkCORS();
+            if (!corsOk) {
+                showMessage('Внимание: возможны проблемы с CORS. Проверьте настройки сервера.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
