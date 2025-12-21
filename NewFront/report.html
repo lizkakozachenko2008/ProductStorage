@@ -98,6 +98,12 @@
       box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
     }
 
+    .form-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -122,6 +128,10 @@
 
     tr:hover { background: rgba(247, 196, 143, 0.1); }
 
+    .status-critical { color: #e74c3c; font-weight: 600; }
+    .status-normal { color: #27ae60; }
+    .status-warning { color: #f39c12; }
+
     .empty-message {
       text-align: center;
       padding: 40px;
@@ -129,10 +139,53 @@
       font-style: italic;
     }
 
+    .message {
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .success-message {
+      background: rgba(46, 204, 113, 0.2);
+      color: #27ae60;
+      border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .error-message {
+      background: rgba(231, 76, 60, 0.2);
+      color: #c0392b;
+      border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .total-row {
+      background-color: rgba(247, 196, 143, 0.2) !important;
+      font-weight: 600;
+    }
+
+    .month-selector {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .month-selector input[type="month"] {
+      padding: 8px 12px;
+      border: 1px solid rgba(247, 196, 143, 0.5);
+      border-radius: 6px;
+      background: white;
+      color: #5a4a42;
+      font-family: inherit;
+    }
+
     @media (max-width: 768px) {
       .admin-title { font-size: 2.2rem; }
       th, td { padding: 10px 15px; }
       .table-header { flex-direction: column; gap: 15px; align-items: flex-start; }
+      .form-row { flex-direction: column; width: 100%; }
+      .form-row input, .form-row button { width: 100%; }
+      .month-selector { flex-direction: column; width: 100%; }
     }
   </style>
 </head>
@@ -147,22 +200,48 @@
       <p class="admin-subtitle">Аналитика по наличию, размещению, поставкам и отгрузкам</p>
     </div>
 
+    <!-- Сообщения -->
+    <div id="messageContainer"></div>
+
     <!-- Отчет по размещениям -->
     <div class="shelves-table-container">
       <div class="table-header">
-        <h2 class="table-title">Отчет по размещениям</h2>
+        <h2 class="table-title">Отчет по размещениям товаров</h2>
         <button class="add-shelf-btn" id="refreshPlacement">Обновить</button>
       </div>
       <table id="placementTable">
         <thead>
           <tr>
             <th>Товар</th>
+            <th>Категория</th>
             <th>Стеллаж</th>
-            <th>Отстойник</th>
-            <th>Размещено</th>
+            <th>Количество</th>
             <th>Всего на складе</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="empty-message">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Инвентаризация -->
+    <div class="shelves-table-container">
+      <div class="table-header">
+        <h2 class="table-title">Сводка по запасам</h2>
+        <button class="add-shelf-btn" id="refreshInventory">Обновить</button>
+      </div>
+      <table id="inventoryTable">
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Категория</th>
+            <th>На складе</th>
+            <th>Мин. запас</th>
             <th>Ед. изм.</th>
-            <th>Низкий запас</th>
+            <th>Статус</th>
+            <th>Стоимость</th>
           </tr>
         </thead>
         <tbody>
@@ -171,12 +250,33 @@
       </table>
     </div>
 
-    <!-- Месячный отчет -->
+    <!-- Статистика по поставкам -->
+    <div class="shelves-table-container">
+      <div class="table-header">
+        <h2 class="table-title">Статистика по поставкам</h2>
+        <button class="add-shelf-btn" id="refreshSupplies">Обновить</button>
+      </div>
+      <table id="suppliesTable">
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Количество поставок</th>
+            <th>Всего поставлено</th>
+            <th>Средняя поставка</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="4" class="empty-message">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Поставки и отгрузки за указанный месяц -->
     <div class="shelves-table-container">
       <div class="table-header">
         <h2 class="table-title">Поставки и отгрузки за месяц</h2>
-        <div class="form-row">
-          <input type="month" id="monthPicker" class="add-shelf-btn">
+        <div class="month-selector">
+          <input type="month" id="monthSelector" value="">
           <button class="add-shelf-btn" id="refreshMonthly">Показать</button>
         </div>
       </div>
@@ -191,32 +291,51 @@
           </tr>
         </thead>
         <tbody>
+          <tr><td colspan="5" class="empty-message">Выберите месяц и нажмите "Показать"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Поставки и отгрузки -->
+    <div class="shelves-table-container">
+      <div class="table-header">
+        <h2 class="table-title">Последние поставки</h2>
+        <button class="add-shelf-btn" id="refreshRecentSupplies">Обновить</button>
+      </div>
+      <table id="recentSuppliesTable">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Товар</th>
+            <th>Количество</th>
+            <th>Поставщик</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
           <tr><td colspan="5" class="empty-message">Загрузка...</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Инвентаризация -->
+    <!-- Отгрузки -->
     <div class="shelves-table-container">
       <div class="table-header">
-        <h2 class="table-title">Отчет по наличию товаров</h2>
-        <button class="add-shelf-btn" id="refreshInventory">Обновить</button>
+        <h2 class="table-title">Последние отгрузки</h2>
+        <button class="add-shelf-btn" id="refreshShipments">Обновить</button>
       </div>
-      <table id="inventoryTable">
+      <table id="shipmentsTable">
         <thead>
           <tr>
+            <th>Дата</th>
             <th>Товар</th>
-            <th>Категория</th>
-            <th>На складе</th>
-            <th>Мин. запас</th>
-            <th>Ед. изм.</th>
-            <th>В отстойнике</th>
-            <th>Размещений</th>
-            <th>Стоимость</th>
+            <th>Количество</th>
+            <th>Направление</th>
+            <th>Статус</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td colspan="8" class="empty-message">Загрузка...</td></tr>
+          <tr><td colspan="5" class="empty-message">Загрузка...</td></tr>
         </tbody>
       </table>
     </div>
@@ -225,121 +344,505 @@
   <script>
     const API_BASE_URL = 'http://localhost:8000';
 
-    async function fetchJson(url) {
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+    // Универсальная функция для API запросов
+    async function fetchAPI(endpoint, method = 'GET', data = null) {
+      const url = `${API_BASE_URL}${endpoint}`;
+      const options = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      };
+      
+      if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        options.body = JSON.stringify(data);
+      }
+      
+      try {
+        const response = await fetch(url, options);
+        
+        if (response.status === 204) { // No Content
+          return null;
+        }
+        
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(responseData.detail || `HTTP ${response.status}`);
+        }
+        
+        return responseData;
+      } catch (error) {
+        console.error(`API Error [${method} ${endpoint}]:`, error);
+        throw error;
+      }
     }
 
-    
+    // Функция для показа сообщений
+    function showMessage(text, type = 'info') {
+      const container = document.getElementById('messageContainer');
+      const message = document.createElement('div');
+      message.className = `message ${type}-message`;
+      message.textContent = text;
+      
+      container.innerHTML = '';
+      container.appendChild(message);
+      
+      // Автоудаление через 5 секунд
+      setTimeout(() => {
+        if (message.parentNode === container) {
+          message.remove();
+        }
+      }, 5000);
+    }
 
-    // Отчет по размещениям
+    // 1. Отчет по размещениям товаров
     async function loadPlacementReport() {
       const tbody = document.querySelector('#placementTable tbody');
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-message">Загрузка...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Загрузка...</td></tr>';
+      
       try {
-        const data = await fetchJson(`${API_BASE_URL}/reports/placement`);
-
+        // Получаем размещения
+        const placements = await fetchAPI('/product-placements');
+        
+        // Получаем товары для получения категорий
+        const products = await fetchAPI('/products');
+        const categories = await fetchAPI('/categories');
+        const shelves = await fetchAPI('/shelves');
+        const overflow = await fetchAPI('/overflow-bins');
+        
         tbody.innerHTML = '';
-        if (!data.items || data.items.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" class="empty-message">Нет данных</td></tr>';
+        
+        if (!placements || placements.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Нет размещений</td></tr>';
           return;
         }
-        data.items.forEach(item => {
+        
+        placements.forEach(placement => {
+          // Находим товар
+          const product = products.find(p => p.id === placement.product_id);
+          if (!product) return;
+          
+          // Находим категорию
+          const category = categories.find(c => c.id === product.category_id);
+          
+          // Находим стеллаж
+          let shelfName = 'Не размещен';
+          if (placement.shelf_id) {
+            const shelf = shelves.find(s => s.id === placement.shelf_id);
+            shelfName = shelf ? shelf.name : `Стеллаж ${placement.shelf_id}`;
+          }
+          
+          // Проверяем, в отстойнике ли товар
+          const inOverflow = overflow.find(o => o.product_id === product.id);
+          if (inOverflow) {
+            shelfName = 'В отстойнике';
+          }
+          
+          // Определяем статус запаса
+          const isCritical = product.current_quantity <= product.min_quantity * 0.5;
+          const isLow = product.current_quantity <= product.min_quantity;
+          let status = '';
+          let statusClass = '';
+          
+          if (isCritical) {
+            status = 'Критический';
+            statusClass = 'status-critical';
+          } else if (isLow) {
+            status = 'Низкий';
+            statusClass = 'status-warning';
+          } else {
+            status = 'В норме';
+            statusClass = 'status-normal';
+          }
+          
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${item.product_name}</td>
-            <td>${item.shelf_name || '-'}</td>
-            <td>${item.overflow_id ?? '-'}</td>
-            <td>${item.quantity}</td>
-            <td>${item.total_quantity}</td>
-            <td>${item.unit}</td>
-            <td>${item.is_low_stock ? 'Да' : 'Нет'}</td>
+            <td><strong>${product.name}</strong></td>
+            <td>${category ? category.name : 'Без категории'}</td>
+            <td>${shelfName}</td>
+            <td>${placement.quantity} ${product.unit}</td>
+            <td>${product.current_quantity} ${product.unit}</td>
+            <td class="${statusClass}">${status}</td>
           `;
           tbody.appendChild(tr);
         });
-      } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-message">Ошибка: ${e.message}</td></tr>`;
+        
+      } catch (error) {
+        console.error('Ошибка загрузки отчета по размещениям:', error);
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-message">Ошибка: ${error.message}</td></tr>`;
       }
     }
 
-    // Месячный отчет
-    async function loadMonthlyReport(year, month) {
-      const tbody = document.querySelector('#monthlyTable tbody');
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
-      try {
-        const data = await fetchJson(`${API_BASE_URL}/reports/supply-statistics`);
-        tbody.innerHTML = '';
-        if (!data.items || data.items.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Нет данных</td></tr>';
-          return;
-        }
-        data.items.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${new Date(item.date).toLocaleDateString('ru-RU')}</td>
-            <td>${item.type === 'supply' ? 'Поставка' : 'Отгрузка'}</td>
-            <td>${item.product_name}</td>
-            <td>${item.quantity}</td>
-            <td>${item.details || '-'}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-message">Ошибка: ${e.message}</td></tr>`;
-      }
-    }
-
-    // Инвентаризация
+    // 2. Сводка по запасам (инвентаризация)
     async function loadInventoryReport() {
       const tbody = document.querySelector('#inventoryTable tbody');
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-message">Загрузка...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-message">Загрузка...</td></tr>';
+      
       try {
-        const data = await fetchJson(`${API_BASE_URL}/reports/stock-summary`);
+        // Получаем сводку по запасам
+        const summary = await fetchAPI('/reports/stock-summary');
+        
+        // Получаем товары для деталей
+        const products = await fetchAPI('/products');
+        const categories = await fetchAPI('/categories');
+        const overflow = await fetchAPI('/overflow-bins');
+        
         tbody.innerHTML = '';
-        if (!data.products || data.products.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="empty-message">Нет данных</td></tr>';
+        
+        if (!summary || !summary.low_stock_products || summary.low_stock_products.length === 0) {
+          // Если нет низких запасов, показываем все товары
+          const allProducts = await fetchAPI('/products');
+          
+          if (!allProducts || allProducts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-message">Нет товаров</td></tr>';
+            return;
+          }
+          
+          allProducts.forEach(product => {
+            const category = categories.find(c => c.id === product.category_id);
+            const inOverflow = overflow.find(o => o.product_id === product.id);
+            
+            const isCritical = product.current_quantity <= product.min_quantity * 0.5;
+            const isLow = product.current_quantity <= product.min_quantity;
+            let status = '';
+            let statusClass = '';
+            
+            if (isCritical) {
+              status = 'Критический';
+              statusClass = 'status-critical';
+            } else if (isLow) {
+              status = 'Низкий';
+              statusClass = 'status-warning';
+            } else {
+              status = 'В норме';
+              statusClass = 'status-normal';
+            }
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${product.name}</strong></td>
+              <td>${category ? category.name : 'Без категории'}</td>
+              <td>${product.current_quantity}</td>
+              <td>${product.min_quantity}</td>
+              <td>${product.unit}</td>
+              <td class="${statusClass}">${status}</td>
+              <td>${product.price ? (product.price * product.current_quantity).toFixed(2) + ' ₽' : '-'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+          
+        } else {
+          // Показываем только товары с низким запасом
+          summary.low_stock_products.forEach(item => {
+            const product = products.find(p => p.id === item.product_id);
+            if (!product) return;
+            
+            const isCritical = item.is_critical;
+            let status = '';
+            let statusClass = '';
+            
+            if (isCritical) {
+              status = 'Критический';
+              statusClass = 'status-critical';
+            } else {
+              status = 'Низкий';
+              statusClass = 'status-warning';
+            }
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${item.product_name}</strong></td>
+              <td>${item.category_name}</td>
+              <td>${item.current_quantity}</td>
+              <td>${item.min_quantity}</td>
+              <td>${item.unit}</td>
+              <td class="${statusClass}">${status} (дефицит: ${item.deficit})</td>
+              <td>-</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+        
+      } catch (error) {
+        console.error('Ошибка загрузки сводки по запасам:', error);
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-message">Ошибка: ${error.message}</td></tr>`;
+      }
+    }
+
+    // 3. Статистика по поставкам
+    async function loadSuppliesStatistics() {
+      const tbody = document.querySelector('#suppliesTable tbody');
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-message">Загрузка...</td></tr>';
+      
+      try {
+        const statistics = await fetchAPI('/reports/supply-statistics');
+        
+        tbody.innerHTML = '';
+        
+        if (!statistics || !statistics.by_product || statistics.by_product.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty-message">Нет данных по поставкам</td></tr>';
           return;
         }
-        data.products.forEach(item => {
+        
+        statistics.by_product.forEach(item => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${item.product_name}</td>
-            <td>${item.category_name}</td>
-            <td>${item.current_quantity}</td>
-            <td>${item.min_quantity}</td>
-            <td>${item.unit}</td>
-            <td>${item.in_overflow ? 'Да' : 'Нет'}</td>
-            <td>${item.placement_count}</td>
-            <td>${item.total_value != null ? Number(item.total_value).toFixed(2) : '-'}</td>
+            <td><strong>${item.product_name}</strong></td>
+            <td>${item.supply_count}</td>
+            <td>${item.total_supplied}</td>
+            <td>${statistics.average_supply_quantity ? statistics.average_supply_quantity.toFixed(2) : '0.00'}</td>
           `;
           tbody.appendChild(tr);
         });
-      } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-message">Ошибка: ${e.message}</td></tr>`;
+        
+        // Добавляем итоговую строку
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'total-row';
+        totalRow.innerHTML = `
+          <td><strong>ИТОГО</strong></td>
+          <td><strong>${statistics.total_supplies}</strong></td>
+          <td><strong>${statistics.total_quantity_supplied}</strong></td>
+          <td><strong>${statistics.average_supply_quantity ? statistics.average_supply_quantity.toFixed(2) : '0.00'}</strong></td>
+        `;
+        tbody.appendChild(totalRow);
+        
+      } catch (error) {
+        console.error('Ошибка загрузки статистики поставок:', error);
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-message">Ошибка: ${error.message}</td></tr>`;
+      }
+    }
+
+    // 4. Поставки и отгрузки за указанный месяц
+    async function loadMonthlyReport() {
+      const tbody = document.querySelector('#monthlyTable tbody');
+      const monthSelector = document.getElementById('monthSelector');
+      
+      // Если месяц не выбран, устанавливаем текущий месяц
+      if (!monthSelector.value) {
+        const now = new Date();
+        monthSelector.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      }
+      
+      const [year, month] = monthSelector.value.split('-').map(Number);
+      
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
+      
+      try {
+        // Получаем все поставки и отгрузки
+        const supplies = await fetchAPI('/supplies');
+        const shipments = await fetchAPI('/shipments');
+        const products = await fetchAPI('/products');
+        
+        tbody.innerHTML = '';
+        
+        // Фильтруем данные по выбранному месяцу
+        const filteredData = [];
+        
+        // Обрабатываем поставки
+        if (supplies && supplies.length > 0) {
+          supplies.forEach(supply => {
+            const supplyDate = new Date(supply.supply_date);
+            if (supplyDate.getFullYear() === year && supplyDate.getMonth() + 1 === month) {
+              const product = products.find(p => p.id === supply.product_id);
+              filteredData.push({
+                date: supply.supply_date,
+                type: 'Поставка',
+                product_name: product ? product.name : 'Неизвестный товар',
+                quantity: supply.quantity,
+                details: `Поставщик: ${supply.supplier || 'не указан'}`,
+                sortDate: new Date(supply.supply_date)
+              });
+            }
+          });
+        }
+        
+        // Обрабатываем отгрузки
+        if (shipments && shipments.length > 0) {
+          shipments.forEach(shipment => {
+            const shipmentDate = new Date(shipment.shipment_date);
+            if (shipmentDate.getFullYear() === year && shipmentDate.getMonth() + 1 === month) {
+              const product = products.find(p => p.id === shipment.product_id);
+              filteredData.push({
+                date: shipment.shipment_date,
+                type: 'Отгрузка',
+                product_name: product ? product.name : 'Неизвестный товар',
+                quantity: shipment.quantity,
+                details: `Направление: ${shipment.destination || 'не указано'}`,
+                sortDate: new Date(shipment.shipment_date)
+              });
+            }
+          });
+        }
+        
+        if (filteredData.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="empty-message">Нет данных за ${month}.${year}</td></tr>`;
+          return;
+        }
+        
+        // Сортируем по дате (от новых к старым)
+        filteredData.sort((a, b) => b.sortDate - a.sortDate);
+        
+        // Рассчитываем итоги
+        let totalSupplies = 0;
+        let totalShipments = 0;
+        let totalSuppliesQty = 0;
+        let totalShipmentsQty = 0;
+        
+        filteredData.forEach(item => {
+          const tr = document.createElement('tr');
+          const date = new Date(item.date);
+          
+          if (item.type === 'Поставка') {
+            totalSupplies++;
+            totalSuppliesQty += item.quantity;
+          } else {
+            totalShipments++;
+            totalShipmentsQty += item.quantity;
+          }
+          
+          tr.innerHTML = `
+            <td>${date.toLocaleDateString('ru-RU')}</td>
+            <td><strong>${item.type}</strong></td>
+            <td>${item.product_name}</td>
+            <td>${item.quantity}</td>
+            <td>${item.details}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        
+        // Добавляем строку с итогами
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'total-row';
+        totalRow.innerHTML = `
+          <td colspan="2"><strong>ИТОГО за ${month}.${year}:</strong></td>
+          <td><strong>Поставки: ${totalSupplies}, Отгрузки: ${totalShipments}</strong></td>
+          <td><strong>Поставлено: ${totalSuppliesQty}, Отгружено: ${totalShipmentsQty}</strong></td>
+          <td><strong>Разница: ${totalSuppliesQty - totalShipmentsQty}</strong></td>
+        `;
+        tbody.appendChild(totalRow);
+        
+      } catch (error) {
+        console.error('Ошибка загрузки месячного отчета:', error);
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-message">Ошибка: ${error.message}</td></tr>`;
+      }
+    }
+
+    // 5. Последние поставки
+    async function loadRecentSupplies() {
+      const tbody = document.querySelector('#recentSuppliesTable tbody');
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
+      
+      try {
+        const supplies = await fetchAPI('/supplies');
+        const products = await fetchAPI('/products');
+        
+        tbody.innerHTML = '';
+        
+        if (!supplies || supplies.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Нет поставок</td></tr>';
+          return;
+        }
+        
+        // Сортируем по дате (новые сначала) и берем последние 10
+        const recentSupplies = supplies
+          .sort((a, b) => new Date(b.supply_date) - new Date(a.supply_date))
+          .slice(0, 10);
+        
+        recentSupplies.forEach(supply => {
+          const product = products.find(p => p.id === supply.product_id);
+          const supplyDate = new Date(supply.supply_date);
+          
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${supplyDate.toLocaleDateString('ru-RU')}</td>
+            <td><strong>${product ? product.name : 'Неизвестный товар'}</strong></td>
+            <td>${supply.quantity}</td>
+            <td>${supply.supplier || '-'}</td>
+            <td>${supply.status === 'delivered' ? 'Доставлено' : supply.status}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        
+      } catch (error) {
+        console.error('Ошибка загрузки последних поставок:', error);
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-message">Ошибка: ${error.message}</td></tr>`;
+      }
+    }
+
+    // 6. Последние отгрузки
+    async function loadRecentShipments() {
+      const tbody = document.querySelector('#shipmentsTable tbody');
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Загрузка...</td></tr>';
+      
+      try {
+        const shipments = await fetchAPI('/shipments');
+        const products = await fetchAPI('/products');
+        
+        tbody.innerHTML = '';
+        
+        if (!shipments || shipments.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-message">Нет отгрузок</td></tr>';
+          return;
+        }
+        
+        // Сортируем по дате (новые сначала) и берем последние 10
+        const recentShipments = shipments
+          .sort((a, b) => new Date(b.shipment_date) - new Date(a.shipment_date))
+          .slice(0, 10);
+        
+        recentShipments.forEach(shipment => {
+          const product = products.find(p => p.id === shipment.product_id);
+          const shipmentDate = new Date(shipment.shipment_date);
+          
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${shipmentDate.toLocaleDateString('ru-RU')}</td>
+            <td><strong>${product ? product.name : 'Неизвестный товар'}</strong></td>
+            <td>${shipment.quantity}</td>
+            <td>${shipment.destination || '-'}</td>
+            <td>${shipment.status === 'completed' ? 'Завершена' : shipment.status}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        
+      } catch (error) {
+        console.error('Ошибка загрузки последних отгрузок:', error);
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-message">Ошибка: ${error.message}</td></tr>`;
       }
     }
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', () => {
-      // Размещения
-      loadPlacementReport();
-      document.getElementById('refreshPlacement').addEventListener('click', loadPlacementReport);
-
-      // Месячный отчет
-      const now = new Date();
-      const monthPicker = document.getElementById('monthPicker');
-      monthPicker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-      const refreshMonthly = () => {
-        const [year, month] = monthPicker.value.split('-').map(Number);
-        loadMonthlyReport(year, month);
-      };
-      refreshMonthly();
-      document.getElementById('refreshMonthly').addEventListener('click', refreshMonthly);
-
-      // Инвентаризация
-      loadInventoryReport();
-      document.getElementById('refreshInventory').addEventListener('click', loadInventoryReport);
+      try {
+        // Устанавливаем текущий месяц по умолчанию
+        const now = new Date();
+        const monthSelector = document.getElementById('monthSelector');
+        monthSelector.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        // Загружаем все отчеты
+        loadPlacementReport();
+        loadInventoryReport();
+        loadSuppliesStatistics();
+        loadMonthlyReport();
+        loadRecentSupplies();
+        loadRecentShipments();
+        
+        // Назначаем обработчики кнопок обновления
+        document.getElementById('refreshPlacement').addEventListener('click', loadPlacementReport);
+        document.getElementById('refreshInventory').addEventListener('click', loadInventoryReport);
+        document.getElementById('refreshSupplies').addEventListener('click', loadSuppliesStatistics);
+        document.getElementById('refreshMonthly').addEventListener('click', loadMonthlyReport);
+        document.getElementById('refreshRecentSupplies').addEventListener('click', loadRecentSupplies);
+        document.getElementById('refreshShipments').addEventListener('click', loadRecentShipments);
+        
+        showMessage('Отчеты загружены', 'success');
+        
+      } catch (error) {
+        console.error('Ошибка инициализации отчетов:', error);
+        showMessage(`Ошибка загрузки отчетов: ${error.message}`, 'error');
+      }
     });
   </script>
 </body>
