@@ -196,6 +196,7 @@ class SupplyDTO(SupplyBaseDTO):
     supply_date: datetime
     model_config = ConfigDict(from_attributes=True)
 
+
 # Shipment DTOs
 class ShipmentBaseDTO(BaseModel):
     product_id: int

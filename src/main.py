@@ -10,7 +10,7 @@ from pydantic import BaseModel
 import json
 from fastapi.middleware.cors import CORSMiddleware
 import traceback
-
+from src.service import ProductServiceType
 from .models import (
     Base, 
     UserORM, 
@@ -204,6 +204,20 @@ class ShipmentResponse(ShipmentBase):
     id: int
     shipment_date: datetime
     product_name: Optional[str] = None
+
+# Новые модели для специальных операций
+class MoveFromOverflowRequest(BaseModel):
+    product_id: int
+    shelf_id: int
+    quantity: int
+    notes: Optional[str] = None
+    from_overflow: bool = True
+
+class MoveToOverflowRequest(BaseModel):
+    product_id: int
+    quantity: int
+    placement_id: Optional[int] = None
+    notes: Optional[str] = None
 
 # Специальный обработчик для OPTIONS запросов
 @app.middleware("http")
@@ -1070,6 +1084,25 @@ def delete_supply(supply_id: int, db: Session = Depends(get_db)):
 # ===== ТОВАРЫ В ОТСТОЙНИКЕ =====
 overflow_bins_router = APIRouter(prefix="/overflow-bins", tags=["Отстойники"])
 
+@overflow_bins_router.get("/{item_id}", response_model=OverflowItemResponse)
+def get_overflow_item(item_id: int, db: Session = Depends(get_db)):
+    """Получить товар в отстойнике по ID"""
+    item = db.query(OverflowBinORM).filter(OverflowBinORM.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
+    
+    product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
+    product_name = product.name if product else "Неизвестный товар"
+    
+    return {
+        "id": item.id,
+        "product_id": item.product_id,
+        "quantity": item.quantity,
+        "notes": item.notes,
+        "date_added": item.date_added,
+        "product_name": product_name
+    }
+
 @overflow_bins_router.get("", response_model=List[OverflowItemResponse])
 def get_overflow_items(db: Session = Depends(get_db)):
     """Получить все товары в отстойнике"""
@@ -1097,11 +1130,9 @@ def add_to_overflow(item: OverflowItemBase, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Товар не найден")
     
-    if item.quantity > product.current_quantity:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Недостаточно товара. Доступно: {product.current_quantity}, запрошено: {item.quantity}"
-        )
+    # ИСПРАВЛЕНИЕ: При добавлении в отстойник НЕ уменьшаем общее количество на складе
+    # Товар просто перемещается из доступных на стеллаже в отстойник
+    # Общее количество товара на складе остается неизменным
     
     # Создаем запись в отстойнике
     new_item = OverflowBinORM(
@@ -1111,8 +1142,8 @@ def add_to_overflow(item: OverflowItemBase, db: Session = Depends(get_db)):
         date_added=datetime.now()
     )
     
-    # Уменьшаем количество товара на складе
-    product.current_quantity -= item.quantity
+    # ИСПРАВЛЕНИЕ: НЕ уменьшаем количество товара на складе
+    # product.current_quantity -= item.quantity
     
     db.add(new_item)
     db.commit()
@@ -1126,6 +1157,67 @@ def add_to_overflow(item: OverflowItemBase, db: Session = Depends(get_db)):
         "date_added": new_item.date_added,
         "product_name": product.name
     }
+
+@overflow_bins_router.post("/move-from-shelf", response_model=dict)
+def move_from_shelf_to_overflow(move_data: MoveToOverflowRequest, db: Session = Depends(get_db)):
+    """Переместить товар со стеллажа в отстойник"""
+    try:
+        print("Перемещение товара со стеллажа в отстойник:", move_data.dict())
+        
+        product = db.query(ProductORM).filter(ProductORM.id == move_data.product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Товар не найден")
+        
+        # Если указан placement_id, значит товар уже размещен на стеллаже
+        if move_data.placement_id:
+            placement = db.query(ProductPlacementORM).filter(ProductPlacementORM.id == move_data.placement_id).first()
+            if not placement:
+                raise HTTPException(status_code=404, detail="Размещение товара не найдено")
+            
+            if placement.quantity < move_data.quantity:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Недостаточно товара на стеллаже. Доступно: {placement.quantity}, запрошено: {move_data.quantity}"
+                )
+            
+            # Уменьшаем количество на стеллаже
+            if placement.quantity == move_data.quantity:
+                # Если перемещаем все количество, удаляем размещение
+                db.delete(placement)
+            else:
+                # Если перемещаем часть, уменьшаем количество
+                placement.quantity -= move_data.quantity
+            
+            # Освобождаем место на стеллаже
+            if placement.shelf_id:
+                shelf = db.query(ShelfORM).filter(ShelfORM.id == placement.shelf_id).first()
+                if shelf:
+                    shelf.current_quantity -= move_data.quantity
+        
+        # Добавляем товар в отстойник
+        new_item = OverflowBinORM(
+            product_id=move_data.product_id,
+            quantity=move_data.quantity,
+            notes=move_data.notes or "Перемещено со стеллажа в отстойник",
+            date_added=datetime.now()
+        )
+        
+        db.add(new_item)
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Товар успешно перемещен в отстойник",
+            "overflow_item_id": new_item.id,
+            "product_id": new_item.product_id,
+            "quantity": new_item.quantity
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print("Ошибка при перемещении в отстойник:", str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка при перемещении в отстойник: {str(e)}")
 
 @overflow_bins_router.put("/{item_id}", response_model=OverflowItemResponse)
 def update_overflow_item(item_id: int, item_update: OverflowItemBase, db: Session = Depends(get_db)):
@@ -1147,10 +1239,9 @@ def update_overflow_item(item_id: int, item_update: OverflowItemBase, db: Sessio
     
     # Если меняется количество
     if quantity_diff != 0:
-        # Корректируем количество товара на складе
-        old_product.current_quantity -= quantity_diff
-        if old_product.current_quantity < 0:
-            raise HTTPException(status_code=400, detail="Недостаточно товара на складе")
+        # ИСПРАВЛЕНИЕ: При изменении количества в отстойнике НЕ меняем общее количество на складе
+        # Товар остается в отстойнике, просто меняется его количество там
+        pass
     
     # Обновляем запись
     item.product_id = item_update.product_id
@@ -1178,8 +1269,10 @@ def delete_overflow_item(item_id: int, db: Session = Depends(get_db)):
     
     product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
     if product:
-        # Возвращаем товар на склад
-        product.current_quantity += item.quantity
+        # ИСПРАВЛЕНИЕ: При удалении из отстойника НЕ возвращаем товар на склад
+        # Товар и так считается на складе, просто был в отстойнике
+        # product.current_quantity += item.quantity
+        pass
     
     db.delete(item)
     db.commit()
@@ -1188,7 +1281,7 @@ def delete_overflow_item(item_id: int, db: Session = Depends(get_db)):
         "message": "Товар удален из отстойника",
         "deleted_id": item_id,
         "product_id": item.product_id,
-        "quantity_returned": item.quantity
+        "quantity": item.quantity
     }
 
 # ===== РАЗМЕЩЕНИЕ ТОВАРОВ =====
@@ -1254,6 +1347,32 @@ def get_product_placements(
         })
     
     return result
+
+@product_placements_router.get("/{placement_id}", response_model=ProductPlacementResponse)
+def get_product_placement(placement_id: int, db: Session = Depends(get_db)):
+    """Получить размещение по ID"""
+    placement = db.query(ProductPlacementORM).filter(ProductPlacementORM.id == placement_id).first()
+    if not placement:
+        raise HTTPException(status_code=404, detail="Размещение не найдено")
+    
+    product = db.query(ProductORM).filter(ProductORM.id == placement.product_id).first()
+    product_name = product.name if product else "Неизвестный товар"
+    
+    shelf_name = None
+    if placement.shelf_id:
+        shelf = db.query(ShelfORM).filter(ShelfORM.id == placement.shelf_id).first()
+        shelf_name = shelf.name if shelf else None
+    
+    return {
+        "id": placement.id,
+        "product_id": placement.product_id,
+        "shelf_id": placement.shelf_id,
+        "quantity": placement.quantity,
+        "placement_date": placement.placement_date,
+        "notes": placement.notes,
+        "product_name": product_name,
+        "shelf_name": shelf_name
+    }
 
 @product_placements_router.post("", response_model=dict)
 def create_product_placement(placement: ProductPlacementCreate, db: Session = Depends(get_db)):
@@ -1326,6 +1445,270 @@ def create_product_placement(placement: ProductPlacementCreate, db: Session = De
     except Exception as e:
         db.rollback()
         print("Ошибка при создании размещения:", str(e))
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+@product_placements_router.post("/move-from-overflow", response_model=dict)
+def move_from_overflow_to_shelf(move_data: MoveFromOverflowRequest, db: Session = Depends(get_db)):
+    """Переместить товар из отстойника на стеллаж"""
+    try:
+        print("Перемещение товара из отстойника на стеллаж:", move_data.dict())
+        
+        # Проверяем товар
+        product = db.query(ProductORM).filter(ProductORM.id == move_data.product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Товар не найден")
+        
+        # Проверяем стеллаж
+        shelf = db.query(ShelfORM).filter(ShelfORM.id == move_data.shelf_id).first()
+        if not shelf:
+            raise HTTPException(status_code=404, detail="Стеллаж не найден")
+        
+        # Проверяем место на стеллаже
+        free_space = shelf.max_capacity - shelf.current_quantity
+        if move_data.quantity > free_space:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно места на стеллаже '{shelf.name}'. Свободно: {free_space}, требуется: {move_data.quantity}"
+            )
+        
+        # ИСПРАВЛЕНИЕ: При перемещении из отстойника НЕ проверяем общее количество на складе
+        # Товар и так считается на складе, просто был в отстойнике
+        
+        # Ищем товар в отстойнике
+        overflow_item = db.query(OverflowBinORM).filter(
+            OverflowBinORM.product_id == move_data.product_id
+        ).first()
+        
+        if not overflow_item:
+            raise HTTPException(status_code=404, detail="Товар не найден в отстойнике")
+        
+        if overflow_item.quantity < move_data.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно товара в отстойнике. Доступно: {overflow_item.quantity}, требуется: {move_data.quantity}"
+            )
+        
+        # Создаем размещение на стеллаже
+        new_placement = ProductPlacementORM(
+            product_id=move_data.product_id,
+            shelf_id=move_data.shelf_id,
+            quantity=move_data.quantity,
+            placement_date=datetime.now(),
+            notes=move_data.notes or "Перемещено из отстойника"
+        )
+        
+        # Обновляем стеллаж
+        shelf.current_quantity += move_data.quantity
+        
+        # Обновляем или удаляем отстойник
+        if overflow_item.quantity == move_data.quantity:
+            # Если перемещаем все количество, удаляем из отстойника
+            db.delete(overflow_item)
+        else:
+            # Если перемещаем часть, уменьшаем количество в отстойнике
+            overflow_item.quantity -= move_data.quantity
+        
+        db.add(new_placement)
+        db.commit()
+        db.refresh(new_placement)
+        
+        return {
+            "success": True,
+            "message": "Товар успешно перемещен из отстойника на стеллаж",
+            "id": new_placement.id,
+            "product_id": new_placement.product_id,
+            "shelf_id": new_placement.shelf_id,
+            "quantity": new_placement.quantity,
+            "overflow_item_remaining": overflow_item.quantity if overflow_item.quantity > move_data.quantity else 0
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print("Ошибка при перемещении из отстойника:", str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка при перемещении из отстойника: {str(e)}")
+
+@product_placements_router.put("/{placement_id}", response_model=dict)
+def update_product_placement(
+    placement_id: int, 
+    placement_update: ProductPlacementCreate, 
+    db: Session = Depends(get_db)
+):
+    """Обновить размещение товара"""
+    try:
+        print("Получен запрос на обновление размещения ID:", placement_id)
+        
+        placement = db.query(ProductPlacementORM).filter(ProductPlacementORM.id == placement_id).first()
+        if not placement:
+            raise HTTPException(status_code=404, detail="Размещение не найдено")
+        
+        # Проверяем товар
+        product = db.query(ProductORM).filter(ProductORM.id == placement_update.product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Товар не найден")
+        
+        # Сохраняем старые значения
+        old_quantity = placement.quantity
+        old_shelf_id = placement.shelf_id
+        old_product_id = placement.product_id
+        
+        # Проверяем доступное количество для нового размещения
+        if placement_update.quantity > product.current_quantity + old_quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно товара '{product.name}' на складе. Доступно: {product.current_quantity + old_quantity}, требуется: {placement_update.quantity}"
+            )
+        
+        shelf_name = None
+        if placement_update.shelf_id:
+            # Проверяем новый стеллаж
+            shelf = db.query(ShelfORM).filter(ShelfORM.id == placement_update.shelf_id).first()
+            if not shelf:
+                raise HTTPException(status_code=404, detail="Стеллаж не найден")
+            
+            # Рассчитываем свободное место с учетом старого размещения
+            if old_shelf_id == placement_update.shelf_id:
+                # Если стеллаж тот же, учитываем только разницу в количестве
+                quantity_diff = placement_update.quantity - old_quantity
+                free_space = shelf.max_capacity - shelf.current_quantity
+                if quantity_diff > free_space:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Недостаточно места на стеллаже '{shelf.name}'. Свободно: {free_space}, требуется дополнительно: {quantity_diff}"
+                    )
+            else:
+                # Если новый стеллаж, проверяем все количество
+                free_space = shelf.max_capacity - shelf.current_quantity
+                if placement_update.quantity > free_space:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Недостаточно места на стеллаже '{shelf.name}'. Свободно: {free_space}, требуется: {placement_update.quantity}"
+                    )
+            
+            shelf_name = shelf.name
+        
+        # Корректируем количества
+        # 1. Возвращаем старое количество на склад
+        old_product = db.query(ProductORM).filter(ProductORM.id == old_product_id).first()
+        if old_product:
+            old_product.current_quantity += old_quantity
+        
+        # 2. Освобождаем место на старом стеллаже
+        if old_shelf_id:
+            old_shelf = db.query(ShelfORM).filter(ShelfORM.id == old_shelf_id).first()
+            if old_shelf:
+                old_shelf.current_quantity = max(0, old_shelf.current_quantity - old_quantity)
+        
+        # 3. Забираем новое количество со склада
+        product.current_quantity -= placement_update.quantity
+        
+        # 4. Занимаем место на новом стеллаже
+        if placement_update.shelf_id:
+            shelf.current_quantity += placement_update.quantity
+        
+        # Обновляем размещение
+        placement.product_id = placement_update.product_id
+        placement.shelf_id = placement_update.shelf_id
+        placement.quantity = placement_update.quantity
+        placement.notes = placement_update.notes
+        placement.last_updated = datetime.now()
+        
+        db.commit()
+        db.refresh(placement)
+        
+        return {
+            "success": True,
+            "message": "Размещение успешно обновлено",
+            "id": placement.id,
+            "product_id": placement.product_id,
+            "product_name": product.name,
+            "shelf_id": placement.shelf_id,
+            "shelf_name": shelf_name,
+            "quantity": placement.quantity,
+            "placement_date": placement.placement_date,
+            "last_updated": placement.last_updated
+        }
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        print("Ошибка при обновлении размещения:", str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+@product_placements_router.patch("/{placement_id}", response_model=dict)
+def partial_update_product_placement(
+    placement_id: int, 
+    placement_update: dict, 
+    db: Session = Depends(get_db)
+):
+    """Частично обновить размещение товара"""
+    try:
+        print("Получен запрос на частичное обновление размещения ID:", placement_id)
+        
+        placement = db.query(ProductPlacementORM).filter(ProductPlacementORM.id == placement_id).first()
+        if not placement:
+            raise HTTPException(status_code=404, detail="Размещение не найдено")
+        
+        # Обновляем только переданные поля
+        for field, value in placement_update.items():
+            if hasattr(placement, field) and value is not None:
+                setattr(placement, field, value)
+        
+        placement.last_updated = datetime.now()
+        
+        db.commit()
+        db.refresh(placement)
+        
+        return {
+            "success": True,
+            "message": "Размещение частично обновлено",
+            "id": placement.id
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print("Ошибка при частичном обновлении размещения:", str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+    
+@product_placements_router.delete("/{placement_id}", response_model=dict)
+def delete_product_placement(placement_id: int, db: Session = Depends(get_db)):
+    """Удалить размещение товара"""
+    try:
+        placement = db.query(ProductPlacementORM).filter(ProductPlacementORM.id == placement_id).first()
+        if not placement:
+            raise HTTPException(status_code=404, detail="Размещение не найдено")
+        
+        # Возвращаем товар на склад
+        product = db.query(ProductORM).filter(ProductORM.id == placement.product_id).first()
+        if product:
+            product.current_quantity += placement.quantity
+        
+        # Если размещение было на стеллаже, освобождаем место
+        if placement.shelf_id:
+            shelf = db.query(ShelfORM).filter(ShelfORM.id == placement.shelf_id).first()
+            if shelf:
+                shelf.current_quantity = max(0, shelf.current_quantity - placement.quantity)
+        
+        # Удаляем размещение
+        db.delete(placement)
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Размещение удалено. Товар возвращен на склад.",
+            "deleted_id": placement_id,
+            "product_id": placement.product_id,
+            "quantity_returned": placement.quantity
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print("Ошибка при удалении размещения:", str(e))
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
     
 # ===== ОТГРУЗКИ =====
@@ -1476,6 +1859,11 @@ def get_supply_statistics(db: Session = Depends(get_db)):
         "average_supply_quantity": round(total_quantity / max(total_supplies, 1), 2),
         "by_product": list(product_stats.values())
     }
+
+@app.get("/reports/placement")
+def get_placement_report(service: ProductServiceType):
+    return service.get_placement_report()
+
 
 # Подключаем все роутеры
 app.include_router(users_router)
