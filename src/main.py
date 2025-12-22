@@ -64,6 +64,45 @@ def get_db():
 
 app = FastAPI(title="Продуктовый склад API", version="1.0.0")
 
+# Добавим обработчик startup для создания администратора
+@app.on_event("startup")
+async def startup_event():
+    """Создаем администратора по умолчанию при запуске сервера"""
+    print("\n" + "="*60)
+    print("🚀 ЗАПУСК FASTAPI СЕРВЕРА")
+    print("="*60)
+    
+    try:
+        # Создаем администратора по умолчанию
+        with db.session as session:
+            admin = session.query(AdminORM).filter_by(login="admin").first()
+            
+            if not admin:
+                print("🔧 Создаем администратора по умолчанию...")
+                mock_admin = AdminORM(
+                    login="admin",
+                    password="12341234"
+                )
+                session.add(mock_admin)
+                session.commit()
+                print("✅ Администратор создан:")
+                print("   Логин: admin")
+                print("   Пароль: 12341234")
+            else:
+                print(f"✅ Администратор уже существует: {admin.login}")
+                
+            # Покажем всех администраторов
+            admins = session.query(AdminORM).all()
+            print(f"\n📊 Все администраторы в системе ({len(admins)}):")
+            for a in admins:
+                print(f"  - ID: {a.id}, Логин: '{a.login}', Пароль: '{a.password}'")
+                
+    except Exception as e:
+        print(f"⚠️  Ошибка при создании администратора: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    print("="*60 + "\n")
 
 app.add_middleware(
     CORSMiddleware,
@@ -205,6 +244,26 @@ class ShipmentResponse(ShipmentBase):
     shipment_date: datetime
     product_name: Optional[str] = None
 
+# ===== МОДЕЛИ ДЛЯ АДМИНИСТРАТОРОВ =====
+class AdminBase(BaseModel):
+    login: str
+
+class AdminCreate(BaseModel):
+    login: str
+    password: str
+
+class AdminResponse(AdminBase):
+    id: int
+
+class AdminLoginRequest(BaseModel):
+    login: str
+    password: str
+
+class AdminLoginResponse(BaseModel):
+    message: str
+    login: str
+    is_authenticated: bool
+
 # Новые модели для специальных операций
 class MoveFromOverflowRequest(BaseModel):
     product_id: int
@@ -246,6 +305,138 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "Продуктовый склад API", "timestamp": datetime.now().isoformat()}
+
+# ===== АДМИНИСТРАТОРЫ =====
+admins_router = APIRouter(prefix="/admins", tags=["Администраторы"])
+
+@admins_router.get("", response_model=List[AdminResponse])
+def get_admins(db: Session = Depends(get_db)):
+    """Получить всех администраторов"""
+    admins = db.query(AdminORM).all()
+    return [{"id": admin.id, "login": admin.login} for admin in admins]
+
+@admins_router.get("/{login}", response_model=AdminResponse)
+def get_admin_by_login(login: str, db: Session = Depends(get_db)):
+    """Получить администратора по логину"""
+    admin = db.query(AdminORM).filter(AdminORM.login == login).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="Администратор не найден")
+    
+    return {"id": admin.id, "login": admin.login}
+
+@admins_router.post("/login", response_model=AdminLoginResponse)
+def admin_login(login_data: AdminLoginRequest, db: Session = Depends(get_db)):
+    """Вход администратора - УЛУЧШЕННАЯ ВЕРСИЯ С ОТЛАДКОЙ"""
+    print(f"\n🔐 ===== ПОПЫТКА ВХОДА АДМИНИСТРАТОРА =====")
+    print(f"📤 Получены данные: login='{login_data.login}', password='{login_data.password}'")
+    
+    try:
+        # 1. Покажем ВСЕХ администраторов в БД
+        print(f"\n📊 СОДЕРЖИМОЕ БАЗЫ ДАННЫХ:")
+        all_admins = db.query(AdminORM).all()
+        print(f"   Всего администраторов: {len(all_admins)}")
+        
+        if not all_admins:
+            print("   ❌ В БАЗЕ ДАННЫХ НЕТ НИ ОДНОГО АДМИНИСТРАТОРА!")
+            print("   🔧 Создаем администратора по умолчанию...")
+            
+            # Создаем администратора
+            new_admin = AdminORM(
+                login="admin",
+                password="12341234"
+            )
+            db.add(new_admin)
+            db.commit()
+            print("   ✅ Администратор 'admin' создан с паролем '12341234'")
+            
+            # Повторно получаем список
+            all_admins = db.query(AdminORM).all()
+            print(f"   Теперь администраторов: {len(all_admins)}")
+        
+        for idx, admin in enumerate(all_admins, 1):
+            print(f"   {idx}. ID: {admin.id}, Логин: '{admin.login}', Пароль: '{admin.password}'")
+        
+        # 2. Ищем конкретного администратора
+        print(f"\n🔎 Поиск администратора с login='{login_data.login}'...")
+        admin = db.query(AdminORM).filter(AdminORM.login == login_data.login).first()
+        
+        if not admin:
+            print(f"❌ Администратор с логином '{login_data.login}' НЕ НАЙДЕН!")
+            print(f"   Доступные логины: {[a.login for a in all_admins]}")
+            raise HTTPException(
+                status_code=401, 
+                detail=f"Неверный логин или пароль. Администратор '{login_data.login}' не существует."
+            )
+        
+        print(f"✅ Администратор найден: ID={admin.id}")
+        print(f"   Логин в БД: '{admin.login}'")
+        print(f"   Пароль в БД: '{admin.password}'")
+        print(f"   Введенный пароль: '{login_data.password}'")
+        
+        # 3. Проверяем пароль
+        if admin.password != login_data.password:
+            print(f"❌ ПАРОЛЬ НЕ СОВПАДАЕТ!")
+            print(f"   Ожидалось: '{admin.password}'")
+            print(f"   Получено: '{login_data.password}'")
+            raise HTTPException(
+                status_code=401, 
+                detail="Неверный логин или пароль"
+            )
+        
+        print(f"✅ ПАРОЛЬ СОВПАЛ!")
+        print(f"🎉 УСПЕШНЫЙ ВХОД для администратора '{admin.login}'")
+        print("=" * 50 + "\n")
+        
+        return {
+            "message": "Успешный вход",
+            "login": admin.login,
+            "is_authenticated": True
+        }
+        
+    except HTTPException as he:
+        print(f"⛔ ОШИБКА АВТОРИЗАЦИИ: {he.detail}")
+        print("=" * 50 + "\n")
+        raise
+    except Exception as e:
+        print(f"💥 НЕИЗВЕСТНАЯ ОШИБКА: {e}")
+        import traceback
+        traceback.print_exc()
+        print("=" * 50 + "\n")
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+@admins_router.post("", response_model=AdminResponse)
+def create_admin(admin_data: AdminCreate, db: Session = Depends(get_db)):
+    """Создать нового администратора"""
+    # Проверяем, существует ли уже администратор с таким логином
+    existing_admin = db.query(AdminORM).filter(AdminORM.login == admin_data.login).first()
+    if existing_admin:
+        raise HTTPException(status_code=400, detail="Администратор с таким логином уже существует")
+    
+    new_admin = AdminORM(
+        login=admin_data.login,
+        password=admin_data.password  # В реальном приложении нужно хэшировать пароль!
+    )
+    
+    db.add(new_admin)
+    db.commit()
+    db.refresh(new_admin)
+    
+    return {"id": new_admin.id, "login": new_admin.login}
+
+@admins_router.delete("/{login}", response_model=dict)
+def delete_admin(login: str, db: Session = Depends(get_db)):
+    """Удалить администратора"""
+    admin = db.query(AdminORM).filter(AdminORM.login == login).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="Администратор не найден")
+    
+    db.delete(admin)
+    db.commit()
+    
+    return {
+        "message": "Администратор удален",
+        "deleted_login": login
+    }
 
 # ===== ПОЛЬЗОВАТЕЛИ =====
 users_router = APIRouter(prefix="/users", tags=["Пользователи"])
@@ -1514,7 +1705,7 @@ def move_from_overflow_to_shelf(move_data: MoveFromOverflowRequest, db: Session 
         
         return {
             "success": True,
-            "message": "Товар успешно перемещен из отстойника на стеллаж",
+            "message": "Товаар успешно перемещен из отстойника на стеллаж",
             "id": new_placement.id,
             "product_id": new_placement.product_id,
             "shelf_id": new_placement.shelf_id,
@@ -1865,7 +2056,8 @@ def get_placement_report(service: ProductServiceType):
     return service.get_placement_report()
 
 
-# Подключаем все роутеры
+# Подключаем все роутеры (ДОБАВЛЯЕМ admins_router В СПИСОК)
+app.include_router(admins_router)
 app.include_router(users_router)
 app.include_router(categories_router)
 app.include_router(products_router)

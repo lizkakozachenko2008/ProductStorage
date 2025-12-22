@@ -330,68 +330,68 @@
             const errorMessage = document.getElementById('errorMessage');
             const successMessage = document.getElementById('successMessage');
             
-          
+            // Очищаем сообщения
             errorMessage.style.display = 'none';
             successMessage.style.display = 'none';
             
             try {
-                // Получаем всех администраторов для проверки
-                const response = await fetch(`${API_BASE_URL}/admins`);
+                // Используем специальный эндпоинт для входа администратора
+                const response = await fetch(`${API_BASE_URL}/admins/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        login: login,
+                        password: password
+                    })
+                });
                 
                 if (!response.ok) {
-                    throw new Error('Ошибка при получении данных администраторов');
+                    // Если статус 401 - неправильные учетные данные
+                    if (response.status === 401) {
+                        throw new Error('Неверный логин или пароль');
+                    }
+                    throw new Error('Ошибка подключения к серверу');
                 }
                 
-                const admins = await response.json();
+                const result = await response.json();
                 
-                // Ищем администратора с совпадающими логином и паролем
-                const admin = admins.find(a => 
-                    a.login === login && 
-                    a.password === password
-                );
+                // Успешный вход
+                successMessage.textContent = 'Успешный вход! Перенаправление...';
+                successMessage.style.display = 'block';
                 
-                if (admin) {
-                    
-                    successMessage.textContent = 'Успешный вход! Перенаправление...';
-                    successMessage.style.display = 'block';
-                    
-                    
-                    localStorage.setItem('admin', JSON.stringify({
-                        login: admin.login,
-                        isAuthenticated: true
-                    }));
-                    
-                  
-                    setTimeout(() => {
-                        window.location.href = 'adminok.html';
-                    }, 1000);
-                    
-                } else {
-                  
-                    errorMessage.textContent = 'Неверный логин, пароль';
-                    errorMessage.style.display = 'block';
-                }
+                // Сохраняем данные в localStorage
+                localStorage.setItem('admin', JSON.stringify({
+                    login: result.login,
+                    isAuthenticated: true
+                }));
+                
+                // Перенаправляем на админскую страницу
+                setTimeout(() => {
+                    window.location.href = 'adminok.html';
+                }, 1000);
                 
             } catch (error) {
                 console.error('Ошибка при входе:', error);
-                errorMessage.textContent = 'Ошибка при подключении к серверу';
+                errorMessage.textContent = error.message || 'Ошибка при подключении к серверу';
                 errorMessage.style.display = 'block';
             }
         });
 
-       
+        // Функция для проверки авторизации администратора
         function checkAdminAuth() {
             const adminData = localStorage.getItem('admin');
             return adminData ? JSON.parse(adminData) : null;
         }
 
-      
+        // Функция для выхода администратора
         function adminLogout() {
             localStorage.removeItem('admin');
             window.location.href = 'index.html';
         }
 
-       
+        // Функция для получения администратора по логину
         async function getAdminByLogin(login) {
             try {
                 const response = await fetch(`${API_BASE_URL}/admins/${login}`);
@@ -405,7 +405,7 @@
             }
         }
 
-        
+        // Функция для создания администратора
         async function createAdmin(adminData) {
             try {
                 const response = await fetch(`${API_BASE_URL}/admins`, {
@@ -427,7 +427,7 @@
             }
         }
 
-       
+        // Функция для удаления администратора
         async function deleteAdmin(login) {
             try {
                 const response = await fetch(`${API_BASE_URL}/admins/${login}`, {
@@ -445,11 +445,11 @@
             }
         }
 
-       
+        // Проверяем авторизацию при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             const admin = checkAdminAuth();
             if (admin && window.location.pathname.includes('adminok.html')) {
-             
+                // Можно выполнить дополнительные действия для авторизованного администратора
                 console.log('Администратор авторизован:', admin.login);
             }
         });
