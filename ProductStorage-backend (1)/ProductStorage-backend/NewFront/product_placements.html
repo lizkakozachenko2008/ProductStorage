@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Размещение товаров - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content-panel {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 80px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .name-column {
+            width: 200px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .placement-column {
+            width: 150px;
+        }
+
+        .quantity-column {
+            width: 120px;
+        }
+
+        .date-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .status-column {
+            width: 150px;
+        }
+
+        .actions-column {
+            width: 250px;
+            text-align: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-place, .btn-move {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-place {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .btn-place:hover {
+            background: #8e44ad;
+            transform: translateY(-1px);
+        }
+
+        .btn-move {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-move:hover {
+            background: #d68910;
+            transform: translateY(-1px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .placement-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-on-shelf {
+            background: rgba(52, 152, 219, 0.2);
+            color: #2980b9;
+        }
+
+        .status-in-overflow {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+
+        .status-not-placed {
+            background: rgba(149, 165, 166, 0.2);
+            color: #7f8c8d;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7a6a52;
+        }
+
+        .form-text {
+            font-size: 0.85rem;
+            color: #7a6a52;
+            margin-top: 5px;
+        }
+
+        .current-placement-info {
+            background: rgba(247, 196, 143, 0.1);
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin: 10px 0;
+        }
+
+        .current-placement-info strong {
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1200px) {
+            .admin-content {
+                max-width: 100%;
+                padding: 30px 15px;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+
+            .panel-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="adminok.html" class="logo">StoreMarket</a>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Размещение товаров на складе</h1>
+            <p class="admin-subtitle">Управление размещением товаров на стеллажах и в отстойниках</p>
+        </div>
+
+        <div id="messageContainer"></div>
+
+        <div class="content-panel" id="placements-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Текущее размещение товаров</h2>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Размещение</th>
+                        <th>Количество</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="modal" id="placeProductModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Разместить товар</h2>
+                    <button class="close-btn" onclick="closePlaceModal()">&times;</button>
+                </div>
+                
+                <form id="placeProductForm">
+                    <input type="hidden" id="placeProductId">
+                    
+                    <div class="form-group">
+                        <label for="placeType">Тип размещения *</label>
+                        <select id="placeType" onchange="togglePlacementFields()">
+                            <option value="shelf">На стеллаж</option>
+                            <option value="overflow">В отстойник</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="shelfFieldGroup">
+                        <label for="placeShelfId">Стеллаж *</label>
+                        <select id="placeShelfId">
+                            <option value="">Выберите стеллаж</option>
+                        </select>
+                        <div id="shelfInfo" class="form-text"></div>
+                    </div>
+                    
+                    <div class="form-group" id="overflowReasonGroup" style="display: none;">
+                        <label for="overflowReason">Причина перемещения в отстойник</label>
+                        <textarea id="overflowReason" rows="3" placeholder="Укажите причину перемещения товара в отстойник"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="placeQuantity">Количество *</label>
+                        <input type="number" id="placeQuantity" min="1" required>
+                        <div class="form-text" id="availableQuantity"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="placeNotes">Примечания</label>
+                        <textarea id="placeNotes" rows="3" placeholder="Дополнительная информация"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Разместить</button>
+                        <button type="button" class="submit-btn" onclick="closePlaceModal()" style="background: #95a5a6;">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal" id="moveProductModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Переместить товар</h2>
+                    <button class="close-btn" onclick="closeMoveModal()">&times;</button>
+                </div>
+                
+                <form id="moveProductForm">
+                    <input type="hidden" id="moveProductId">
+                    <input type="hidden" id="movePlacementId">
+                    
+                    <div class="form-group">
+                        <label>Текущее размещение</label>
+                        <div id="currentPlacement" class="current-placement-info">
+                            Информация о текущем размещении товара...
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="moveQuantity">Количество для перемещения *</label>
+                        <input type="number" id="moveQuantity" min="1" required>
+                        <div class="form-text">Укажите количество товара для перемещения</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="moveType">Тип перемещения *</label>
+                        <select id="moveType" onchange="toggleMoveFields()">
+                            <option value="shelf">На стеллаж</option>
+                            <option value="overflow">В отстойник</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="moveShelfFieldGroup">
+                        <label for="moveShelfId">Выберите стеллаж *</label>
+                        <select id="moveShelfId">
+                            <option value="">Выберите стеллаж</option>
+                        </select>
+                        <div id="moveShelfInfo" class="form-text"></div>
+                    </div>
+                    
+                    <div class="form-group" id="moveOverflowReasonGroup" style="display: none;">
+                        <label for="moveOverflowReason">Причина перемещения в отстойник</label>
+                        <textarea id="moveOverflowReason" rows="2" placeholder="Укажите причину перемещения товара в отстойник"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="moveReason">Примечания</label>
+                        <textarea id="moveReason" rows="3" placeholder="Дополнительная информация о перемещении"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Переместить</button>
+                        <button type="button" class="submit-btn" onclick="closeMoveModal()" style="background: #95a5a6;">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let currentProducts = [];
+        let currentPlacements = [];
+        let currentShelves = [];
+        let currentOverflow = [];
+
+        // ==================== УТИЛИТЫ ====================
+
+        async function fetchAPI(endpoint, method = 'GET', data = null) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            };
+            
+            if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(url, options);
+                
+                if (response.status === 204) {
+                    return null;
+                }
+                
+                const responseData = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(responseData.detail || `HTTP ${response.status}`);
+                }
+                
+                return responseData;
+            } catch (error) {
+                console.error(`API Error [${method} ${endpoint}]:`, error);
+                throw error;
+            }
+        }
+
+        function showMessage(text, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const message = document.createElement('div');
+            message.className = `message ${type}-message`;
+            message.textContent = text;
+            
+            container.innerHTML = '';
+            container.appendChild(message);
+            
+            setTimeout(() => {
+                if (message.parentNode === container) {
+                    message.remove();
+                }
+            }, 5000);
+        }
+
+        // ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ДАННЫМИ ====================
+
+        function getPlacementStatus(productId) {
+            const placement = currentPlacements.find(p => p.product_id === productId);
+            const overflowItem = currentOverflow.find(o => o.product_id === productId);
+            
+            if (placement && placement.shelf_id) {
+                const shelf = currentShelves.find(s => s.id === placement.shelf_id);
+                const shelfName = shelf ? shelf.name : `Стеллаж ${placement.shelf_id}`;
+                return `<span class="placement-status status-on-shelf">${shelfName} (${placement.quantity} шт)</span>`;
+            }
+            
+            if (overflowItem) {
+                return `<span class="placement-status status-in-overflow">В отстойнике (${overflowItem.quantity} шт)</span>`;
+            }
+            
+            return '<span class="placement-status status-not-placed">Не размещен</span>';
+        }
+
+        function getPlacementId(productId) {
+            const placement = currentPlacements.find(p => p.product_id === productId);
+            if (placement) return placement.id;
+            
+            const overflowItem = currentOverflow.find(o => o.product_id === productId);
+            if (overflowItem) return overflowItem.id;
+            
+            return null;
+        }
+
+        async function loadProducts() {
+            try {
+                const products = await fetchAPI('/products');
+                currentProducts = products || [];
+                return products;
+            } catch (error) {
+                console.error('Load products error:', error);
+                showMessage('Ошибка загрузки товаров', 'error');
+                return [];
+            }
+        }
+
+        async function loadPlacements() {
+            try {
+                const placements = await fetchAPI('/product-placements');
+                currentPlacements = placements || [];
+                return placements;
+            } catch (error) {
+                console.error('Load placements error:', error);
+                showMessage('Ошибка загрузки размещений', 'error');
+                return [];
+            }
+        }
+
+        async function loadShelves() {
+            try {
+                const shelves = await fetchAPI('/shelves');
+                currentShelves = shelves || [];
+                return shelves;
+            } catch (error) {
+                console.error('Load shelves error:', error);
+                showMessage('Ошибка загрузки стеллажей', 'error');
+                return [];
+            }
+        }
+
+        async function loadOverflow() {
+            try {
+                const overflow = await fetchAPI('/overflow-bins');
+                currentOverflow = overflow || [];
+                return overflow;
+            } catch (error) {
+                console.error('Load overflow error:', error);
+                showMessage('Ошибка загрузки отстойника', 'error');
+                return [];
+            }
+        }
+
+        async function initializeData() {
+            try {
+                await Promise.all([
+                    loadProducts(),
+                    loadPlacements(),
+                    loadShelves(),
+                    loadOverflow()
+                ]);
+                
+                renderProductsTable(currentProducts);
+                return true;
+            } catch (error) {
+                console.error('Ошибка инициализации:', error);
+                return false;
+            }
+        }
+
+        // ==================== ОТОБРАЖЕНИЕ ТАБЛИЦЫ ====================
+
+        function renderProductsTable(products) {
+            const tbody = document.getElementById('productsTableBody');
+            if (!tbody) return;
+
+            if (!products || products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Товары не найдены</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = products.map(product => {
+                const isLowStock = product.current_quantity <= product.min_quantity;
+                const placementStatus = getPlacementStatus(product.id);
+                const placementId = getPlacementId(product.id);
+                
+                const inOverflow = currentOverflow.find(o => o.product_id === product.id);
+                const isPlaced = currentPlacements.find(p => p.product_id === product.id) || inOverflow;
+                
+                const stockStatusClass = isLowStock ? 'status-in-overflow' : (inOverflow ? 'status-in-overflow' : 'status-on-shelf');
+                const stockStatusText = isLowStock ? 'Низкий запас' : (inOverflow ? 'В отстойнике' : 'В норме');
+                
+                return `
+                <tr>
+                    <td class="id-column">${product.id}</td>
+                    <td class="name-column">
+                        <strong>${product.name}</strong><br>
+                        <small>${product.description || ''}</small>
+                    </td>
+                    <td class="placement-column">
+                        ${placementStatus}
+                    </td>
+                    <td class="quantity-column">
+                        ${product.current_quantity} ${product.unit}
+                    </td>
+                    <td class="status-column">
+                        <span class="placement-status ${stockStatusClass}">
+                            ${stockStatusText}
+                        </span>
+                    </td>
+                    <td class="actions-column">
+                        <div class="action-btns">
+                            <button class="btn-place" onclick="placeProduct(${product.id})">Разместить</button>
+                            ${isPlaced ? `<button class="btn-move" onclick="moveProduct(${product.id}, ${placementId})">Переместить</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // ==================== РАБОТА С РАЗМЕЩЕНИЕМ ====================
+
+        async function placeProduct(productId) {
+            const product = currentProducts.find(p => p.id === productId);
+            if (!product) {
+                showMessage('Товар не найден', 'error');
+                return;
+            }
+
+            document.getElementById('placeProductForm').reset();
+            document.getElementById('placeProductId').value = productId;
+            document.getElementById('placeQuantity').max = product.current_quantity;
+            document.getElementById('placeQuantity').value = Math.min(product.current_quantity, 1);
+            document.getElementById('availableQuantity').innerHTML =
+                `Доступно: ${product.current_quantity} ${product.unit}`;
+
+            await loadShelvesForPlacement();
+            document.getElementById('placeType').value = 'shelf';
+            togglePlacementFields();
+            document.getElementById('placeProductModal').style.display = 'flex';
+        }
+
+        function togglePlacementFields() {
+            const placeType = document.getElementById('placeType').value;
+            const shelfGroup = document.getElementById('shelfFieldGroup');
+            const overflowGroup = document.getElementById('overflowReasonGroup');
+            
+            if (placeType === 'shelf') {
+                if (shelfGroup) shelfGroup.style.display = 'block';
+                if (overflowGroup) overflowGroup.style.display = 'none';
+            } else {
+                if (shelfGroup) shelfGroup.style.display = 'none';
+                if (overflowGroup) overflowGroup.style.display = 'block';
+            }
+        }
+
+        async function handlePlaceProduct(e) {
+            e.preventDefault();
+
+            const productId = parseInt(document.getElementById('placeProductId').value);
+            const placeType = document.getElementById('placeType').value;
+            const quantity = parseInt(document.getElementById('placeQuantity').value);
+            const notes = document.getElementById('placeNotes').value;
+            const overflowReason = document.getElementById('overflowReason').value;
+
+            if (!quantity || quantity <= 0) {
+                showMessage('Укажите количество', 'error');
+                return;
+            }
+
+            const product = currentProducts.find(p => p.id === productId);
+            if (!product) {
+                showMessage('Товар не найден', 'error');
+                return;
+            }
+
+            if (quantity > product.current_quantity) {
+                showMessage(`Недостаточно товара. Доступно: ${product.current_quantity}`, 'error');
+                return;
+            }
+
+            try {
+                if (placeType === 'shelf') {
+                    const shelfId = parseInt(document.getElementById('placeShelfId').value);
+                    if (!shelfId) {
+                        showMessage('Выберите стеллаж', 'error');
+                        return;
+                    }
+
+                    const shelf = currentShelves.find(s => s.id === shelfId);
+                    if (!shelf) {
+                        showMessage('Стеллаж не найден', 'error');
+                        return;
+                    }
+
+                    const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                    if (quantity > freeSpace) {
+                        showMessage(`Недостаточно места на стеллаже. Свободно: ${freeSpace}`, 'error');
+                        return;
+                    }
+                    
+                    const placementData = {
+                        product_id: productId,
+                        shelf_id: shelfId,
+                        quantity: quantity
+                    };
+                    
+                    if (notes) {
+                        placementData.notes = notes;
+                    }
+                    
+                    const result = await fetchAPI('/product-placements', 'POST', placementData);
+                    
+                    if (result && result.success) {
+                        showMessage(result.message || 'Товар успешно размещен', 'success');
+                        closePlaceModal();
+                        await initializeData();
+                    } else {
+                        showMessage('Ошибка размещения товара', 'error');
+                    }
+                } else {
+                    const overflowData = {
+                        product_id: productId,
+                        quantity: quantity,
+                        notes: overflowReason || notes || "Перемещено в отстойник"
+                    };
+                    
+                    const result = await fetchAPI('/overflow-bins', 'POST', overflowData);
+                    
+                    if (result && result.id) {
+                        showMessage('Товар успешно перемещен в отстойник', 'success');
+                        closePlaceModal();
+                        await initializeData();
+                    } else {
+                        showMessage('Ошибка перемещения в отстойник', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка размещения:', error);
+                showMessage(`Ошибка размещения: ${error.message}`, 'error');
+            }
+        }
+
+        // ==================== РАБОТА С ПЕРЕМЕЩЕНИЕМ ====================
+
+        async function moveProduct(productId, placementId) {
+            const product = currentProducts.find(p => p.id === productId);
+            if (!product) {
+                showMessage('Товар не найден', 'error');
+                return;
+            }
+
+            const placement = currentPlacements.find(p => p.id === placementId);
+            const overflowItem = currentOverflow.find(o => o.id === placementId);
+            
+            document.getElementById('moveProductId').value = productId;
+            document.getElementById('movePlacementId').value = placementId;
+            
+            let currentPlacementText = 'Неизвестно';
+            let currentQuantity = 0;
+            let currentPlacementType = '';
+            
+            if (placement && placement.shelf_id) {
+                const shelf = currentShelves.find(s => s.id === placement.shelf_id);
+                currentPlacementText = shelf ? `На стеллаже: ${shelf.name}` : `На стеллаже ID: ${placement.shelf_id}`;
+                currentQuantity = placement.quantity;
+                currentPlacementType = 'shelf';
+            } else if (overflowItem) {
+                currentPlacementText = `В отстойнике`;
+                currentQuantity = overflowItem.quantity;
+                currentPlacementType = 'overflow';
+            }
+            
+            document.getElementById('currentPlacement').innerHTML = `
+                <div class="current-placement-info">
+                    <strong>Товар:</strong> ${product.name}<br>
+                    <strong>Текущее размещение:</strong> ${currentPlacementText}<br>
+                    <strong>Количество:</strong> ${currentQuantity} ${product.unit}<br>
+                    <strong>Тип размещения:</strong> ${currentPlacementType === 'shelf' ? 'На стеллаже' : 'В отстойнике'}<br>
+                    <strong>Доступно на складе:</strong> ${product.current_quantity} ${product.unit}
+                </div>
+            `;
+            
+            document.getElementById('moveQuantity').value = currentQuantity;
+            document.getElementById('moveQuantity').max = currentQuantity;
+            document.getElementById('moveQuantity').min = 1;
+            
+            await loadShelvesForMovement();
+            document.getElementById('moveType').value = 'shelf';
+            document.getElementById('moveReason').value = '';
+            document.getElementById('moveOverflowReason').value = '';
+            toggleMoveFields();
+            document.getElementById('moveProductModal').style.display = 'flex';
+        }
+
+        async function handleMoveProduct(e) {
+            e.preventDefault();
+
+            const productId = parseInt(document.getElementById('moveProductId').value);
+            const placementId = parseInt(document.getElementById('movePlacementId').value);
+            const moveType = document.getElementById('moveType').value;
+            const quantity = parseInt(document.getElementById('moveQuantity').value);
+            const notes = document.getElementById('moveReason').value;
+            const overflowReason = document.getElementById('moveOverflowReason').value;
+
+            if (!quantity || quantity <= 0) {
+                showMessage('Укажите количество', 'error');
+                return;
+            }
+
+            const product = currentProducts.find(p => p.id === productId);
+            if (!product) {
+                showMessage('Товар не найден', 'error');
+                return;
+            }
+
+            const placement = currentPlacements.find(p => p.id === placementId);
+            const overflowItem = currentOverflow.find(o => o.id === placementId);
+            
+            try {
+                if (moveType === 'shelf') {
+                    // ПЕРЕМЕЩЕНИЕ НА СТЕЛЛАЖ
+                    const shelfId = parseInt(document.getElementById('moveShelfId').value);
+                    if (!shelfId) {
+                        showMessage('Выберите стеллаж', 'error');
+                        return;
+                    }
+                    
+                    const shelf = currentShelves.find(s => s.id === shelfId);
+                    if (shelf) {
+                        const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                        if (quantity > freeSpace) {
+                            showMessage(`Недостаточно места на стеллаже. Свободно: ${freeSpace}`, 'error');
+                            return;
+                        }
+                    }
+                    
+                    if (overflowItem) {
+                        // ТОВАР В ОТСТОЙНИКЕ -> перемещаем на стеллаж
+                        // НЕ УМЕНЬШАЕМ ОБЩЕЕ КОЛИЧЕСТВО НА СКЛАДЕ!
+                        const placementData = {
+                            product_id: productId,
+                            shelf_id: shelfId,
+                            quantity: quantity,
+                            notes: notes || 'Перемещено из отстойника',
+                            from_overflow: true
+                        };
+                        
+                        console.log('Перемещение из отстойника на стеллаж:', placementData);
+                        
+                        try {
+                            // Пробуем специальный эндпоинт для перемещения из отстойника
+                            const result = await fetchAPI('/product-placements/move-from-overflow', 'POST', placementData);
+                            
+                            if (result && result.success) {
+                                // Удаляем из отстойника
+                                if (quantity === overflowItem.quantity) {
+                                    await fetchAPI(`/overflow-bins/${placementId}`, 'DELETE');
+                                } else {
+                                    const remainingQuantity = overflowItem.quantity - quantity;
+                                    await fetchAPI(`/overflow-bins/${placementId}`, 'PUT', {
+                                        product_id: productId,
+                                        quantity: remainingQuantity,
+                                        notes: 'Частично перемещен на стеллаж'
+                                    });
+                                }
+                                showMessage('Товар успешно перемещен из отстойника на стеллаж', 'success');
+                            }
+                        } catch (endpointError) {
+                            console.error('Ошибка специального эндпоинта:', endpointError);
+                            // Если специальный эндпоинт не работает, используем обходной путь
+                            await handleMoveFromOverflowFallback(productId, shelfId, placementId, quantity, notes, overflowItem);
+                        }
+                    } else if (placement) {
+                        // ТОВАР НА ДРУГОМ СТЕЛЛАЖЕ -> обновляем размещение
+                        const placementData = {
+                            product_id: productId,
+                            shelf_id: shelfId,
+                            quantity: quantity,
+                            notes: notes || 'Перемещено'
+                        };
+                        
+                        const result = await fetchAPI(`/product-placements/${placementId}`, 'PUT', placementData);
+                        if (result && result.success) {
+                            showMessage('Товар успешно перемещен на другой стеллаж', 'success');
+                        }
+                    } else {
+                        // ТОВАР НЕ РАЗМЕЩЕН -> создаем новое размещение
+                        const placementData = {
+                            product_id: productId,
+                            shelf_id: shelfId,
+                            quantity: quantity,
+                            notes: notes || 'Размещено'
+                        };
+                        
+                        const result = await fetchAPI('/product-placements', 'POST', placementData);
+                        if (result && result.success) {
+                            showMessage('Товар успешно размещен на стеллаже', 'success');
+                        }
+                    }
+                } else {
+                    // ПЕРЕМЕЩЕНИЕ В ОТСТОЙНИК
+                    // НЕ УМЕНЬШАЕМ ОБЩЕЕ КОЛИЧЕСТВО НА СКЛАДЕ!
+                    // УМЕНЬШАЕМ ТОЛЬКО КОЛИЧЕСТВО НА СТЕЛЛАЖЕ!
+                    const overflowData = {
+                        product_id: productId,
+                        quantity: quantity,
+                        notes: overflowReason || notes || 'Перемещено в отстойник'
+                    };
+                    
+                    if (placement) {
+                        // ТОВАР НА СТЕЛЛАЖЕ -> перемещаем в отстойник
+                        const overflowResult = await fetchAPI('/overflow-bins', 'POST', overflowData);
+                        
+                        if (overflowResult && overflowResult.id) {
+                            // Обновляем размещение на стеллаже (уменьшаем количество)
+                            if (quantity === placement.quantity) {
+                                // Полностью убираем со стеллажа
+                                await fetchAPI(`/product-placements/${placementId}`, 'DELETE');
+                                showMessage('Товар успешно перемещен с стеллажа в отстойник', 'success');
+                            } else {
+                                // Частичное перемещение - уменьшаем количество на стеллаже
+                                const newQuantity = placement.quantity - quantity;
+                                await fetchAPI(`/product-placements/${placementId}`, 'PUT', {
+                                    product_id: productId,
+                                    shelf_id: placement.shelf_id,
+                                    quantity: newQuantity,
+                                    notes: 'Частично перемещен в отстойник'
+                                });
+                                showMessage('Часть товара перемещена с стеллажа в отстойник', 'success');
+                            }
+                        }
+                    } else if (overflowItem) {
+                        // ТОВАР УЖЕ В ОТСТОЙНИКЕ -> обновляем
+                        try {
+                            const result = await fetchAPI(`/overflow-bins/${placementId}`, 'PUT', overflowData);
+                            if (result) {
+                                showMessage('Товар обновлен в отстойнике', 'success');
+                            }
+                        } catch (putError) {
+                            await fetchAPI(`/overflow-bins/${placementId}`, 'DELETE');
+                            await fetchAPI('/overflow-bins', 'POST', overflowData);
+                            showMessage('Товар обновлен в отстойнике', 'success');
+                        }
+                    } else {
+                        // ТОВАР НЕ РАЗМЕЩЕН -> добавляем в отстойник
+                        const result = await fetchAPI('/overflow-bins', 'POST', overflowData);
+                        if (result && result.id) {
+                            showMessage('Товар добавлен в отстойник', 'success');
+                        }
+                    }
+                }
+
+                closeMoveModal();
+                await initializeData();
+                
+            } catch (error) {
+                console.error('Ошибка перемещения:', error);
+                
+                if (error.message.includes('Недостаточно товара') && overflowItem) {
+                    showMessage('Ошибка: Невозможно переместить из отстойника. Обновите бекенд.', 'error');
+                } else if (error.message.includes('405')) {
+                    showMessage('Ошибка: Метод не разрешен', 'error');
+                } else if (error.message.includes('404')) {
+                    showMessage('Ошибка: Ресурс не найден', 'error');
+                } else if (error.message.includes('400')) {
+                    showMessage(`Ошибка валидации: ${error.message}`, 'error');
+                } else {
+                    showMessage(`Ошибка перемещения: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Обходной путь для перемещения из отстойника
+        async function handleMoveFromOverflowFallback(productId, shelfId, overflowItemId, quantity, notes, overflowItem) {
+            try {
+                // Временное решение: сначала временно увеличиваем количество товара
+                const product = await fetchAPI(`/products/${productId}`);
+                
+                // Увеличиваем количество товара на складе
+                await fetchAPI(`/products/${productId}`, 'PUT', {
+                    ...product,
+                    current_quantity: product.current_quantity + quantity
+                });
+                
+                // Создаем размещение на стеллаже
+                const placementData = {
+                    product_id: productId,
+                    shelf_id: shelfId,
+                    quantity: quantity,
+                    notes: notes || 'Перемещено из отстойника'
+                };
+                
+                const placementResult = await fetchAPI('/product-placements', 'POST', placementData);
+                
+                if (placementResult && placementResult.success) {
+                    // Возвращаем правильное количество товара
+                    await fetchAPI(`/products/${productId}`, 'PUT', {
+                        ...product,
+                        current_quantity: product.current_quantity
+                    });
+                    
+                    // Обновляем или удаляем отстойник
+                    if (quantity === overflowItem.quantity) {
+                        await fetchAPI(`/overflow-bins/${overflowItemId}`, 'DELETE');
+                    } else {
+                        const remainingQuantity = overflowItem.quantity - quantity;
+                        await fetchAPI(`/overflow-bins/${overflowItemId}`, 'PUT', {
+                            product_id: productId,
+                            quantity: remainingQuantity,
+                            notes: 'Частично перемещен на стеллаж'
+                        });
+                    }
+                    
+                    showMessage('Товар успешно перемещен из отстойника на стеллаж', 'success');
+                }
+            } catch (error) {
+                console.error('Ошибка обходного пути:', error);
+                showMessage('Не удалось переместить товар из отстойника', 'error');
+            }
+        }
+
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+
+        async function loadShelvesForPlacement() {
+            const shelfSelect = document.getElementById('placeShelfId');            
+            
+            shelfSelect.innerHTML = '<option value="">Выберите стеллаж</option>';
+            
+            if (!currentShelves || currentShelves.length === 0) {
+                await loadShelves();
+            }
+            
+            currentShelves.forEach(shelf => {
+                const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                if (freeSpace > 0) {
+                    const option = document.createElement('option');
+                    option.value = shelf.id;
+                    option.textContent = `${shelf.name} (свободно: ${freeSpace})`;
+                    shelfSelect.appendChild(option);
+                }
+            });
+            
+            if (shelfSelect.options.length === 1) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Нет стеллажей со свободным местом';
+                option.disabled = true;
+                shelfSelect.appendChild(option);
+            }
+        }
+
+        async function loadShelvesForMovement() {
+            const shelfSelect = document.getElementById('moveShelfId');
+            
+            shelfSelect.innerHTML = '<option value="">Выберите стеллаж</option>';
+            
+            currentShelves.forEach(shelf => {
+                const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                const option = document.createElement('option');
+                option.value = shelf.id;
+                option.textContent = `${shelf.name} (свободно: ${freeSpace})`;
+                shelfSelect.appendChild(option);
+            });
+            
+            shelfSelect.addEventListener('change', updateMoveShelfInfo);
+        }
+
+        function updateMoveShelfInfo() {
+            const shelfId = document.getElementById('moveShelfId').value;
+            const shelf = currentShelves.find(s => s.id == shelfId);
+            const quantity = parseInt(document.getElementById('moveQuantity').value) || 0;
+            
+            if (shelf) {
+                const freeSpace = shelf.max_capacity - shelf.current_quantity;
+                let infoHTML = `Свободно: ${freeSpace} мест, занято: ${shelf.current_quantity}/${shelf.max_capacity}`;
+                
+                if (quantity > freeSpace) {
+                    infoHTML += `<br><span style="color: #e74c3c;">Недостаточно места! Требуется: ${quantity}, доступно: ${freeSpace}</span>`;
+                }
+                
+                document.getElementById('moveShelfInfo').innerHTML = infoHTML;
+            } else {
+                document.getElementById('moveShelfInfo').innerHTML = '';
+            }
+        }
+
+        function updateAvailableInfo() {
+            const productId = document.getElementById('placeProductId').value;
+            const product = currentProducts.find(p => p.id == productId);
+            const requestedQuantity = parseInt(document.getElementById('placeQuantity').value) || 0;
+            
+            if (product) {
+                if (requestedQuantity > product.current_quantity) {
+                    document.getElementById('availableQuantity').innerHTML = 
+                        `<span style="color: #e74c3c;">Превышает доступное количество (${product.current_quantity})</span>`;
+                } else {
+                    document.getElementById('availableQuantity').innerHTML = 
+                        `Доступно: ${product.current_quantity} ${product.unit}`;
+                }
+            }
+        }
+
+        function updateMoveQuantityInfo() {
+            updateMoveShelfInfo();
+        }
+
+        function toggleMoveFields() {
+            const moveType = document.getElementById('moveType').value;
+            const shelfGroup = document.getElementById('moveShelfFieldGroup');
+            const overflowGroup = document.getElementById('moveOverflowReasonGroup');
+            
+            if (moveType === 'shelf') {
+                if (shelfGroup) shelfGroup.style.display = 'block';
+                if (overflowGroup) overflowGroup.style.display = 'none';
+            } else {
+                if (shelfGroup) shelfGroup.style.display = 'none';
+                if (overflowGroup) overflowGroup.style.display = 'block';
+            }
+        }
+
+        // ==================== РАБОТА С МОДАЛЬНЫМИ ОКНАМИ ====================
+
+        function closePlaceModal() {
+            document.getElementById('placeProductModal').style.display = 'none';
+            document.getElementById('placeProductForm').reset();
+            if (document.getElementById('availableQuantity')) {
+                document.getElementById('availableQuantity').innerHTML = '';
+            }
+        }
+
+        function closeMoveModal() {
+            document.getElementById('moveProductModal').style.display = 'none';
+            document.getElementById('moveProductForm').reset();
+        }
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+        function setupEventListeners() {
+            const placeForm = document.getElementById('placeProductForm');
+            if (placeForm) {
+                placeForm.addEventListener('submit', handlePlaceProduct);
+            }
+            
+            const moveForm = document.getElementById('moveProductForm');
+            if (moveForm) {
+                moveForm.addEventListener('submit', handleMoveProduct);
+            }
+            
+            const quantityInput = document.getElementById('placeQuantity');
+            if (quantityInput) {
+                quantityInput.addEventListener('input', updateAvailableInfo);
+            }
+            
+            const placeTypeSelect = document.getElementById('placeType');
+            if (placeTypeSelect) {
+                placeTypeSelect.addEventListener('change', togglePlacementFields);
+            }
+            
+            const moveTypeSelect = document.getElementById('moveType');
+            if (moveTypeSelect) {
+                moveTypeSelect.addEventListener('change', toggleMoveFields);
+            }
+            
+            const moveQuantityInput = document.getElementById('moveQuantity');
+            if (moveQuantityInput) {
+                moveQuantityInput.addEventListener('input', updateMoveQuantityInfo);
+            }
+            
+            const closeButtons = document.querySelectorAll('.close-btn');
+            closeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+            
+            window.addEventListener('click', function(event) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOM Content Loaded - страница размещения товаров');
+            
+            setupEventListeners();
+            const success = await initializeData();
+            
+            if (success) {
+                showMessage('Система размещения товаров загружена', 'success');
+            } else {
+                showMessage('Ошибка загрузки данных системы', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
