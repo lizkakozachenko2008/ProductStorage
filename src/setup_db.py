@@ -13,8 +13,8 @@ def setup_db():
 
         if not admin:
             mock_admin = AdminORM(
-                login="admin",
-                password="12341234"
+                login="adminok",
+                password="123456789"
             )
             session.add(mock_admin)
             session.commit()

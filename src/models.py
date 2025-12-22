@@ -3,7 +3,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship,
 from sqlalchemy import ForeignKey, String, Text, Boolean, Float, CheckConstraint, inspect
 from datetime import datetime, timezone
 from typing import Any, List, Optional, Set, Type, Union
-
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Integer
 
 class Base(DeclarativeBase):
     __abstract__ = True
@@ -53,11 +54,14 @@ class UserORM(Base):
     password: Mapped[str] = mapped_column(String(15))
 
 
+
+
 class AdminORM(Base):
     __tablename__ = 'admins'
 
-    login: Mapped[str] = mapped_column(primary_key=True)
-    password: Mapped[str] = mapped_column (String(15))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    login: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(15), nullable=False)
 
 
 class CategoryORM(Base):
