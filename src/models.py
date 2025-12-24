@@ -261,11 +261,32 @@ class ShipmentORM(Base):
     shipment_date: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
     destination: Mapped[str] = mapped_column(String(200))
     customer: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    customer_email: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     order_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    status: Mapped[str] = mapped_column(String(50), default='completed')
+    status: Mapped[str] = mapped_column(String(50), default='pending')
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'), nullable=True)
+    order_id: Mapped[Optional[int]] = mapped_column(ForeignKey('customer_orders.id'), nullable=True) 
 
     product: Mapped['ProductORM'] = relationship(back_populates='shipments')
+    user: Mapped[Optional['UserORM']] = relationship()
+    order: Mapped[Optional['OrderORM']] = relationship(back_populates='shipments')  
+
+#Таблица для заказов 
+class OrderORM(Base):
+    __tablename__ = 'customer_orders'
+     
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_number: Mapped[str] = mapped_column(String(50), unique=True)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'), nullable=True)
+    customer_name: Mapped[str] = mapped_column(String(100))
+    customer_email: Mapped[str] = mapped_column(String(100))
+    delivery_address: Mapped[str] = mapped_column(String(200))
+    customer_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    order_comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    total_amount: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(50), default='pending')
+    order_date: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
+    items_json: Mapped[str] = mapped_column(Text)
     
-    __table_args__ = (
-        CheckConstraint('quantity > 0', name='check_shipment_quantity_positive'),
-    )
+    user: Mapped[Optional['UserORM']] = relationship()
+    shipments: Mapped[List['ShipmentORM']] = relationship(back_populates='order') 

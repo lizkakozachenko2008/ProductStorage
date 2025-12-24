@@ -72,8 +72,6 @@
             transition: all 0.3s ease;
             font-weight: 500;
             font-size: 14px;
-            position: relative;
-            overflow: hidden;
             text-decoration: none;
             display: inline-block;
             text-align: center;
@@ -93,13 +91,14 @@
             cursor: pointer;
             transition: all 0.3s ease;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+            position: relative;
         }
 
         .corzina-icon:hover {
             transform: scale(1.1) translateY(-2px);
         }
 
-        /* Счетчик товаров в корзине с анимацией */
+        /* Счетчик товаров в корзине */
         .cart-count {
             position: absolute;
             top: -5px;
@@ -387,14 +386,34 @@
     <div class="container">
         <div class="left-section">
             <div class="logo-container">
-                <a href="#" class="logo">StoreMarket</a>
+                <a href="index.html" class="logo">StoreMarket</a>
             </div>
         </div>
-        <div class="right-section">
-            <a href="reg.html" class="buttonn">Зарегистрироваться</a>
-            <a href="vxod.html" class="vxod">Войти</a>
-            <a href="admin.html" class="admin">Администратор</a>
-            <img class="corzina-icon" src="../photoPNG/тележка.png" alt="Корзина">
+        
+        <div class="right-section" id="userSection">
+            <!-- До входа: только кнопки -->
+            <div id="guestSection">
+                <a href="admin.html" class="admin">Администратор</a>
+                <a href="reg.html" class="buttonn">Зарегистрироваться</a>
+                <a href="vxod.html" class="vxod">Войти</a>
+            </div>
+            
+            <!-- После входа: иконка корзины + личный кабинет -->
+            <div id="loggedInSection" style="display: none; align-items: center; gap: 15px;">
+                
+                <!-- Личный кабинет -->
+                <a href="profile.html" class="buttonn" style="padding: 8px 15px;">Личный кабинет</a>
+                <!-- Иконка корзины -->
+                <div style="position: relative;">
+                    <img src="../photoPNG/тележка.png" class="corzina-icon" alt="Корзина" id="cartIcon">
+                    <div class="cart-count" id="cartCounter" style="display: none;">0</div>
+                </div>
+                
+                
+                
+                <!-- Кнопка выхода -->
+                <!--<button id="logoutBtn" class="buttonn" style="padding: 8px 15px; border: none;">Выйти</button> -->
+            </div>
         </div>
     </div>
 
@@ -407,7 +426,7 @@
                         <span class="supplier-text">ПОСТАВЩИК</span> ПРОДУКТОВ!
                     </h1>
                     <div class="shop-button-container">
-                        <a href="shop.html" class="shop-button">SHOP</a>
+                        <a href="shop.html" class="shop-button" id="shopButton">SHOP</a>
                     </div>
                 </div>
                 <div class="image-content">
@@ -425,5 +444,193 @@
             </div>
         </footer>
     </main>
+
+    <script>
+        // Конфигурация API
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // Функция для обновления счетчика корзины
+        function updateCartCounter() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            const counter = document.getElementById('cartCounter');
+            
+            if (counter) {
+                if (totalItems > 0) {
+                    counter.textContent = totalItems;
+                    counter.style.display = 'flex';
+                } else {
+                    counter.style.display = 'none';
+                }
+            }
+        }
+        
+        // Функция для проверки авторизации
+        function checkAuth() {
+            const token = localStorage.getItem('user_token');
+            const userInfo = localStorage.getItem('user_info');
+            const guestSection = document.getElementById('guestSection');
+            const loggedInSection = document.getElementById('loggedInSection');
+            
+            if (token && userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    console.log('Пользователь авторизован:', user.login);
+                    
+                    // Показываем секцию для авторизованных
+                    if (guestSection) guestSection.style.display = 'none';
+                    if (loggedInSection) {
+                        loggedInSection.style.display = 'flex';
+                        loggedInSection.style.alignItems = 'center';
+                    }
+                    
+                    // Обновляем счетчик корзины
+                    updateCartCounter();
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Ошибка парсинга пользователя:', error);
+                    localStorage.removeItem('user_token');
+                    localStorage.removeItem('user_info');
+                }
+            }
+            
+            // Показываем гостевую версию
+            if (guestSection) guestSection.style.display = 'flex';
+            if (loggedInSection) loggedInSection.style.display = 'none';
+            
+            return false;
+        }
+        
+        // Функция для выхода
+        async function logout() {
+            const token = localStorage.getItem('user_token');
+            if (token) {
+                try {
+                    await fetch(`${API_BASE_URL}/users/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ token: token })
+                    });
+                } catch (error) {
+                    console.error('Ошибка выхода:', error);
+                }
+            }
+            
+            // Очищаем локальное хранилище
+            localStorage.removeItem('user_token');
+            localStorage.removeItem('user_info');
+            
+            // Обновляем интерфейс
+            checkAuth();
+            
+            // Показываем уведомление
+            alert('Вы вышли из системы');
+            
+            // Перенаправляем на главную
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 500);
+        }
+        
+        // Функция для проверки токена на сервере
+        async function verifyToken(token) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/check-token/${token}`);
+                const result = await response.json();
+                return result.valid;
+            } catch (error) {
+                console.error('Ошибка проверки токена:', error);
+                return false;
+            }
+        }
+        
+        // Обработчик для иконки корзины
+        function setupCartIconHandler() {
+            const cartIcon = document.getElementById('cartIcon');
+            if (cartIcon) {
+                cartIcon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Проверяем авторизацию
+                    const token = localStorage.getItem('user_token');
+                    if (!token) {
+                        alert('Для доступа к корзине необходимо войти в систему');
+                        window.location.href = 'vxod.html';
+                        return;
+                    }
+                    
+                    // Переходим на страницу корзины
+                    console.log('Переход на страницу корзины');
+                    window.location.href = 'cart.html';
+                });
+            }
+        }
+        
+        // Обработчик для кнопки магазина
+        function setupShopButtonHandler() {
+            const shopButton = document.getElementById('shopButton');
+            if (shopButton) {
+                shopButton.addEventListener('click', function(e) {
+                    const token = localStorage.getItem('user_token');
+                    if (!token) {
+                        e.preventDefault();
+                        alert('Для покупок необходимо войти в систему');
+                        window.location.href = 'vxod.html';
+                        return false;
+                    }
+                    return true;
+                });
+            }
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Главная страница загружена');
+            
+            // Проверяем авторизацию
+            const isAuthenticated = checkAuth();
+            
+            // Если пользователь авторизован, проверяем токен
+            if (isAuthenticated) {
+                const token = localStorage.getItem('user_token');
+                if (token) {
+                    const isValid = await verifyToken(token);
+                    if (!isValid) {
+                        // Токен невалидный, выходим
+                        localStorage.removeItem('user_token');
+                        localStorage.removeItem('user_info');
+                        checkAuth();
+                        alert('Сессия истекла. Пожалуйста, войдите снова.');
+                    }
+                }
+            }
+            
+            // Настраиваем обработчики
+            setupCartIconHandler();
+            setupShopButtonHandler();
+            
+            // Назначаем обработчик для кнопки выхода
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
+            
+            // Проверяем наличие товаров в корзине (даже для неавторизованных)
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length > 0) {
+                console.log('В корзине товаров:', cart.length);
+            }
+        });
+        
+        // Обновляем счетчик корзины при изменении localStorage
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'cart') {
+                updateCartCounter();
+            }
+        });
+    </script>
 </body>
 </html>

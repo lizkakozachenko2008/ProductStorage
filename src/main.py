@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
-from fastapi import APIRouter, FastAPI, HTTPException, Depends, Path, Query, Request
+from fastapi import APIRouter, Body, FastAPI, HTTPException, Depends, Path, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, JSONResponse
 import uvicorn
@@ -11,6 +11,10 @@ import json
 from fastapi.middleware.cors import CORSMiddleware
 import traceback
 from src.service import ProductServiceType
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
+import secrets
+
 from .models import (
     Base, 
     UserORM, 
@@ -25,7 +29,8 @@ from .models import (
     NotificationORM, 
     ProductPlacementORM, 
     SupplyORM, 
-    ShipmentORM
+    ShipmentORM,
+    OrderORM
 )
 
 DATABASE_URL = 'sqlite:///mydb.db'
@@ -37,7 +42,6 @@ class Database:
             echo=True
         )
         
-        # Создаем все таблицы
         Base.metadata.create_all(bind=self.engine)
         
         self.session_factory: sessionmaker = (
@@ -54,7 +58,6 @@ class Database:
 
 db = Database()
 
-# Функция для получения сессии базы данных
 def get_db():
     db_session = db.session
     try:
@@ -64,16 +67,13 @@ def get_db():
 
 app = FastAPI(title="Продуктовый склад API", version="1.0.0")
 
-# Добавим обработчик startup для создания администратора
 @app.on_event("startup")
 async def startup_event():
-    """Создаем администратора по умолчанию при запуске сервера"""
     print("\n" + "="*60)
     print("🚀 ЗАПУСК FASTAPI СЕРВЕРА")
     print("="*60)
     
     try:
-        # Создаем администратора по умолчанию
         with db.session as session:
             admin = session.query(AdminORM).filter_by(login="admin").first()
             
@@ -91,7 +91,6 @@ async def startup_event():
             else:
                 print(f"✅ Администратор уже существует: {admin.login}")
                 
-            # Покажем всех администраторов
             admins = session.query(AdminORM).all()
             print(f"\n📊 Все администраторы в системе ({len(admins)}):")
             for a in admins:
@@ -112,7 +111,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ===== PYDANTIC МОДЕЛИ ДЛЯ API =====
+# ===== PYDANTIC МОДЕЛИ =====
+
+class UserLoginRequest(BaseModel):
+    login: str
+    password: str
+
+class UserLoginResponse(BaseModel):
+    success: bool
+    message: str
+    token: Optional[str] = None
+    user: Optional[dict] = None
 
 class UserBase(BaseModel):
     login: str
@@ -236,15 +245,76 @@ class ShipmentBase(BaseModel):
     quantity: int
     destination: str
     customer: Optional[str] = None
+    customer_email: Optional[str] = None
     order_number: Optional[str] = None
-    status: str = "completed"
+    status: str = "pending"
+    user_id: Optional[int] = None
+    order_id: Optional[int] = None
+
+class ShipmentCreate(ShipmentBase):
+    pass
 
 class ShipmentResponse(ShipmentBase):
     id: int
     shipment_date: datetime
     product_name: Optional[str] = None
 
-# ===== МОДЕЛИ ДЛЯ АДМИНИСТРАТОРОВ =====
+class OrderItemBase(BaseModel):
+    product_id: int
+    quantity: int
+    product_name: str
+    price: float
+    unit: str
+
+class OrderCreate(BaseModel):
+    customer_name: str
+    customer_email: str
+    delivery_address: str
+    customer_phone: Optional[str] = None
+    order_comment: Optional[str] = None
+    items: List[OrderItemBase]
+    total_amount: float
+    status: str = "pending"
+    user_token: Optional[str] = None  
+
+class OrderResponse(OrderCreate):
+    id: int
+    order_date: datetime
+    order_number: str
+
+class OrderItemResponse(BaseModel):
+    product_id: Optional[int] = None
+    product_name: Optional[str] = None
+    quantity: Optional[int] = None
+    price: Optional[float] = None
+    unit: Optional[str] = None
+
+class OrderShipmentResponse(BaseModel):
+    id: Optional[int] = None
+    product_id: Optional[int] = None
+    product_name: Optional[str] = None
+    quantity: Optional[int] = None
+    status: Optional[str] = None
+    shipment_date: Optional[datetime] = None
+
+class AdminOrderResponse(BaseModel):
+    id: int
+    order_number: str
+    user_id: Optional[int] = None
+    customer_name: str
+    customer_email: str
+    delivery_address: str
+    customer_phone: Optional[str] = None
+    order_comment: Optional[str] = None
+    total_amount: float
+    status: str
+    order_date: datetime
+    items: List[OrderItemResponse] = []
+    shipments: List[OrderShipmentResponse] = []
+    
+    class Config:
+        from_attributes = True
+
 class AdminBase(BaseModel):
     login: str
 
@@ -264,7 +334,6 @@ class AdminLoginResponse(BaseModel):
     login: str
     is_authenticated: bool
 
-# Новые модели для специальных операций
 class MoveFromOverflowRequest(BaseModel):
     product_id: int
     shelf_id: int
@@ -278,7 +347,6 @@ class MoveToOverflowRequest(BaseModel):
     placement_id: Optional[int] = None
     notes: Optional[str] = None
 
-# Специальный обработчик для OPTIONS запросов
 @app.middleware("http")
 async def add_cors_headers(request, call_next):
     response = await call_next(request)
@@ -309,6 +377,228 @@ def health_check():
 # ===== АДМИНИСТРАТОРЫ =====
 admins_router = APIRouter(prefix="/admins", tags=["Администраторы"])
 
+@admins_router.get("/test-orders")
+def test_orders_endpoint(db: Session = Depends(get_db)):
+    """Тестовый эндпоинт для проверки"""
+    try:
+        orders = db.query(OrderORM).limit(5).all()
+        
+        result = []
+        for order in orders:
+            result.append({
+                "id": order.id,
+                "order_number": order.order_number,
+                "customer_name": order.customer_name,
+                "status": order.status
+            })
+        
+        return {
+            "success": True,
+            "count": len(result),
+            "orders": result,
+            "message": f"Найдено {len(orders)} заказов в базе"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Ошибка при получении заказов"
+        }
+
+@admins_router.get("/orders", response_model=List[AdminOrderResponse])
+def get_all_orders_admin(
+    status: Optional[str] = Query(None, description="Фильтр по статусу"),
+    db: Session = Depends(get_db)
+):
+    """Получить все заказы (для администратора)"""
+    try:
+        print(f" Запрос заказов (статус={status})")
+        
+        query = db.query(OrderORM)
+        
+        if status:
+            query = query.filter(OrderORM.status == status)
+        
+        orders = query.order_by(OrderORM.order_date.desc()).all()
+        print(f" Найдено {len(orders)} заказов")
+        
+        result = []
+        for order in orders:
+            items = []
+            try:
+                if order.items_json:
+                    items_data = json.loads(order.items_json)
+                    if isinstance(items_data, list):
+                        for item in items_data:
+                            items.append(OrderItemResponse(
+                                product_id=item.get('product_id'),
+                                product_name=item.get('product_name'),
+                                quantity=item.get('quantity'),
+                                price=item.get('price'),
+                                unit=item.get('unit')
+                            ))
+            except Exception as e:
+                print(f" Ошибка парсинга items для заказа {order.id}: {e}")
+                items = []
+            
+            shipments = db.query(ShipmentORM).filter(
+                ShipmentORM.order_id == order.id
+            ).all()
+            
+            shipments_list = []
+            for shipment in shipments:
+                product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
+                shipments_list.append(OrderShipmentResponse(
+                    id=shipment.id,
+                    product_id=shipment.product_id,
+                    product_name=product.name if product else None,
+                    quantity=shipment.quantity,
+                    status=shipment.status,
+                    shipment_date=shipment.shipment_date
+                ))
+            
+            order_response = AdminOrderResponse(
+                id=order.id,
+                order_number=order.order_number,
+                user_id=order.user_id,
+                customer_name=order.customer_name,
+                customer_email=order.customer_email,
+                delivery_address=order.delivery_address,
+                customer_phone=order.customer_phone,
+                order_comment=order.order_comment,
+                total_amount=float(order.total_amount) if order.total_amount else 0.0,
+                status=order.status,
+                order_date=order.order_date,
+                items=items,
+                shipments=shipments_list
+            )
+            
+            result.append(order_response)
+        
+        print(f" Возвращаем {len(result)} заказов")
+        return result
+        
+    except Exception as e:
+        print(f" Критическая ошибка в /admins/orders: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Внутренняя ошибка сервера: {str(e)}"
+        )
+
+@admins_router.put("/orders/{order_id}/status", response_model=dict)
+def update_admin_order_status(
+    order_id: int,
+    status: str = Query(..., description="Новый статус"),
+    db: Session = Depends(get_db)
+):
+    """Обновить статус заказа"""
+    print(f" Обновление статуса заказа {order_id} на '{status}'")
+    
+    order = db.query(OrderORM).filter(OrderORM.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    
+    order.status = status
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": f"Статус заказа #{order.order_number} обновлен на '{status}'",
+        "order_id": order_id,
+        "order_number": order.order_number,
+        "new_status": status
+    }
+
+@admins_router.put("/orders/{order_id}/status", response_model=dict)
+def update_order_status(
+    order_id: int,
+    status: str = Query(..., description="Новый статус заказа"),
+    db: Session = Depends(get_db)
+):
+    """Обновить статус заказа"""
+    order = db.query(OrderORM).filter(OrderORM.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    
+    order.status = status
+    
+    shipments = db.query(ShipmentORM).filter(ShipmentORM.order_id == order_id).all()
+    for shipment in shipments:
+        shipment.status = status
+        
+        if status == 'completed':
+            product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
+            if product:
+                if product.current_quantity >= shipment.quantity:
+                    product.current_quantity -= shipment.quantity
+                else:
+                    db.rollback()
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Недостаточно товара '{product.name}' для отгрузки"
+                    )
+    
+    db.commit()
+    
+    return {
+        "message": "Статус заказа обновлен",
+        "order_id": order_id,
+        "new_status": status,
+        "shipments_updated": len(shipments)
+    }
+
+@admins_router.get("/orders/debug")
+def debug_admin_orders(db: Session = Depends(get_db)):
+    """Отладочный эндпоинт для проверки структуры данных"""
+    try:
+        order = db.query(OrderORM).first()
+        
+        if not order:
+            return {
+                "success": False,
+                "message": "Нет заказов в базе",
+                "total_orders": 0
+            }
+        
+        test_data = {
+            "id": order.id,
+            "order_number": order.order_number,
+            "customer_name": order.customer_name,
+            "customer_email": order.customer_email,
+            "delivery_address": order.delivery_address,
+            "total_amount": float(order.total_amount) if order.total_amount else 0.0,
+            "status": order.status,
+            "order_date": order.order_date.isoformat() if order.order_date else None,
+            "has_items_json": bool(order.items_json),
+            "items_json_length": len(order.items_json) if order.items_json else 0,
+            "items_json_sample": order.items_json[:100] + "..." if order.items_json and len(order.items_json) > 100 else order.items_json
+        }
+        
+        return {
+            "success": True,
+            "message": "Данные доступны",
+            "sample_order": test_data,
+            "total_orders": db.query(OrderORM).count(),
+            "api_status": {
+                "/admins/orders": "available",
+                "/admins/orders/debug": "available",
+                "database_connected": True
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Ошибка при проверке данных",
+            "api_status": {
+                "/admins/orders": "error",
+                "database_connected": False
+            }
+        }
+
 @admins_router.get("", response_model=List[AdminResponse])
 def get_admins(db: Session = Depends(get_db)):
     """Получить всех администраторов"""
@@ -326,56 +616,51 @@ def get_admin_by_login(login: str, db: Session = Depends(get_db)):
 
 @admins_router.post("/login", response_model=AdminLoginResponse)
 def admin_login(login_data: AdminLoginRequest, db: Session = Depends(get_db)):
-    """Вход администратора - УЛУЧШЕННАЯ ВЕРСИЯ С ОТЛАДКОЙ"""
-    print(f"\n🔐 ===== ПОПЫТКА ВХОДА АДМИНИСТРАТОРА =====")
-    print(f"📤 Получены данные: login='{login_data.login}', password='{login_data.password}'")
+    """Вход администратора"""
+    print(f"\n ===== ПОПЫТКА ВХОДА АДМИНИСТРАТОРА =====")
+    print(f" Получены данные: login='{login_data.login}', password='{login_data.password}'")
     
     try:
-        # 1. Покажем ВСЕХ администраторов в БД
-        print(f"\n📊 СОДЕРЖИМОЕ БАЗЫ ДАННЫХ:")
+        print(f"\n СОДЕРЖИМОЕ БАЗЫ ДАННЫХ:")
         all_admins = db.query(AdminORM).all()
         print(f"   Всего администраторов: {len(all_admins)}")
         
         if not all_admins:
-            print("   ❌ В БАЗЕ ДАННЫХ НЕТ НИ ОДНОГО АДМИНИСТРАТОРА!")
-            print("   🔧 Создаем администратора по умолчанию...")
+            print("    В БАЗЕ ДАННЫХ НЕТ НИ ОДНОГО АДМИНИСТРАТОРА!")
+            print("    Создаем администратора по умолчанию...")
             
-            # Создаем администратора
             new_admin = AdminORM(
                 login="admin",
                 password="12341234"
             )
             db.add(new_admin)
             db.commit()
-            print("   ✅ Администратор 'admin' создан с паролем '12341234'")
+            print("    Администратор 'admin' создан с паролем '12341234'")
             
-            # Повторно получаем список
             all_admins = db.query(AdminORM).all()
             print(f"   Теперь администраторов: {len(all_admins)}")
         
         for idx, admin in enumerate(all_admins, 1):
             print(f"   {idx}. ID: {admin.id}, Логин: '{admin.login}', Пароль: '{admin.password}'")
         
-        # 2. Ищем конкретного администратора
-        print(f"\n🔎 Поиск администратора с login='{login_data.login}'...")
+        print(f"\n Поиск администратора с login='{login_data.login}'...")
         admin = db.query(AdminORM).filter(AdminORM.login == login_data.login).first()
         
         if not admin:
-            print(f"❌ Администратор с логином '{login_data.login}' НЕ НАЙДЕН!")
+            print(f" Администратор с логином '{login_data.login}' НЕ НАЙДЕН!")
             print(f"   Доступные логины: {[a.login for a in all_admins]}")
             raise HTTPException(
                 status_code=401, 
                 detail=f"Неверный логин или пароль. Администратор '{login_data.login}' не существует."
             )
         
-        print(f"✅ Администратор найден: ID={admin.id}")
+        print(f" Администратор найден: ID={admin.id}")
         print(f"   Логин в БД: '{admin.login}'")
         print(f"   Пароль в БД: '{admin.password}'")
         print(f"   Введенный пароль: '{login_data.password}'")
         
-        # 3. Проверяем пароль
         if admin.password != login_data.password:
-            print(f"❌ ПАРОЛЬ НЕ СОВПАДАЕТ!")
+            print(f" ПАРОЛЬ НЕ СОВПАДАЕТ!")
             print(f"   Ожидалось: '{admin.password}'")
             print(f"   Получено: '{login_data.password}'")
             raise HTTPException(
@@ -383,8 +668,8 @@ def admin_login(login_data: AdminLoginRequest, db: Session = Depends(get_db)):
                 detail="Неверный логин или пароль"
             )
         
-        print(f"✅ ПАРОЛЬ СОВПАЛ!")
-        print(f"🎉 УСПЕШНЫЙ ВХОД для администратора '{admin.login}'")
+        print(f" ПАРОЛЬ СОВПАЛ!")
+        print(f" УСПЕШНЫЙ ВХОД для администратора '{admin.login}'")
         print("=" * 50 + "\n")
         
         return {
@@ -394,11 +679,11 @@ def admin_login(login_data: AdminLoginRequest, db: Session = Depends(get_db)):
         }
         
     except HTTPException as he:
-        print(f"⛔ ОШИБКА АВТОРИЗАЦИИ: {he.detail}")
+        print(f"ОШИБКА АВТОРИЗАЦИИ: {he.detail}")
         print("=" * 50 + "\n")
         raise
     except Exception as e:
-        print(f"💥 НЕИЗВЕСТНАЯ ОШИБКА: {e}")
+        print(f" НЕИЗВЕСТНАЯ ОШИБКА: {e}")
         import traceback
         traceback.print_exc()
         print("=" * 50 + "\n")
@@ -407,14 +692,13 @@ def admin_login(login_data: AdminLoginRequest, db: Session = Depends(get_db)):
 @admins_router.post("", response_model=AdminResponse)
 def create_admin(admin_data: AdminCreate, db: Session = Depends(get_db)):
     """Создать нового администратора"""
-    # Проверяем, существует ли уже администратор с таким логином
     existing_admin = db.query(AdminORM).filter(AdminORM.login == admin_data.login).first()
     if existing_admin:
         raise HTTPException(status_code=400, detail="Администратор с таким логином уже существует")
     
     new_admin = AdminORM(
         login=admin_data.login,
-        password=admin_data.password  # В реальном приложении нужно хэшировать пароль!
+        password=admin_data.password
     )
     
     db.add(new_admin)
@@ -440,10 +724,100 @@ def delete_admin(login: str, db: Session = Depends(get_db)):
 
 # ===== ПОЛЬЗОВАТЕЛИ =====
 users_router = APIRouter(prefix="/users", tags=["Пользователи"])
+user_tokens = {}
+
+@users_router.post("/login", response_model=UserLoginResponse)
+def user_login(login_data: UserLoginRequest, db: Session = Depends(get_db)):
+    """Вход пользователя"""
+    print(f" Попытка входа пользователя: {login_data.login}")
+    print(f"Полученные данные: login='{login_data.login}', password='{login_data.password}'")
+    
+    user = db.query(UserORM).filter(UserORM.login == login_data.login).first()
+    
+    if not user:
+        print(f" Пользователь {login_data.login} не найден")
+        return UserLoginResponse(
+            success=False,
+            message="Пользователь не найден"
+        )
+    
+    print(f" Пользователь найден: ID={user.id}")
+    print(f"   Введенный пароль: {login_data.password}")
+    print(f"   Пароль в БД: {user.password}")
+    
+    if user.password != login_data.password:
+        print(f" Неверный пароль для пользователя {login_data.login}")
+        return UserLoginResponse(
+            success=False,
+            message="Неверный пароль"
+        )
+    
+    token = secrets.token_hex(32)
+    user_tokens[token] = {
+        "user_id": user.id,
+        "login": user.login,
+        "email": user.email,
+        "created_at": datetime.now().isoformat()
+    }
+    
+    print(f" Успешный вход для пользователя {user.login}")
+    print(f"   Создан токен: {token[:20]}...")
+    
+    return UserLoginResponse(
+        success=True,
+        message="Успешный вход",
+        token=token,
+        user={
+            "id": user.id,
+            "login": user.login,
+            "email": user.email
+        }
+    )
+
+@users_router.get("/check-token/{token}")
+def check_token(token: str):
+    """Проверить валидность токена"""
+    print(f" Проверка токена: {token[:20]}...")
+    
+    user_data = user_tokens.get(token)
+    if not user_data:
+        print(f" Токен не найден или истек")
+        return {"valid": False, "message": "Невалидный токен"}
+    
+    print(f" Токен валиден для пользователя: {user_data['login']}")
+    return {
+        "valid": True,
+        "user": user_data
+    }
+
+@users_router.post("/logout")
+def user_logout(token: str):
+    """Выход пользователя"""
+    print(f" Выход пользователя, токен: {token[:20]}...")
+    
+    if token in user_tokens:
+        del user_tokens[token]
+        print(f" Токен удален")
+    else:
+        print(f"Токен не найден при выходе")
+    
+    return {"success": True, "message": "Успешный выход"}
+
+@users_router.get("/me")
+def get_current_user(token: str):
+    """Получить информацию о текущем пользователе"""
+    user_data = user_tokens.get(token)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Неавторизованный доступ")
+    
+    return {
+        "success": True,
+        "user": user_data
+    }
 
 @users_router.get("", response_model=List[UserResponse])
 def get_users(db: Session = Depends(get_db)):
-    """Получить всех пользователей из базы данных"""
+    """Получить всех пользователей"""
     users = db.query(UserORM).all()
     return [
         {"id": user.id, "login": user.login, "email": user.email}
@@ -459,10 +833,65 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
     
     return {"id": user.id, "login": user.login, "email": user.email}
 
+@users_router.get("/orders", response_model=List[dict])
+def get_user_orders(
+    token: str = Query(..., description="Токен пользователя"),
+    db: Session = Depends(get_db)
+):
+    """Получить заказы пользователя по токену"""
+    user_data = user_tokens.get(token)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Неавторизованный доступ")
+    
+    user_id = user_data["user_id"]
+    
+    orders = db.query(OrderORM).filter(
+        (OrderORM.user_id == user_id) | (OrderORM.customer_email == user_data["email"])
+    ).all()
+    
+    result = []
+    for order in orders:
+        items = []
+        try:
+            items = json.loads(order.items_json) if order.items_json else []
+        except:
+            items = []
+        
+        shipments = db.query(ShipmentORM).filter(
+            ShipmentORM.order_id == order.id
+        ).all()
+        
+        result.append({
+            "id": order.id,
+            "order_number": order.order_number,
+            "customer_name": order.customer_name,
+            "customer_email": order.customer_email,
+            "delivery_address": order.delivery_address,
+            "customer_phone": order.customer_phone,
+            "order_comment": order.order_comment,
+            "total_amount": order.total_amount,
+            "status": order.status,
+            "order_date": order.order_date,
+            "items": items,
+            "shipments": [
+                {
+                    "id": s.id,
+                    "product_id": s.product_id,
+                    "product_name": s.product.name if s.product else "Неизвестный товар",
+                    "quantity": s.quantity,
+                    "status": s.status,
+                    "shipment_date": s.shipment_date,
+                    "destination": s.destination
+                }
+                for s in shipments
+            ]
+        })
+    
+    return result
+
 @users_router.post("", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     """Создать нового пользователя"""
-    # Проверяем уникальность логина и email
     existing_login = db.query(UserORM).filter(UserORM.login == user.login).first()
     if existing_login:
         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
@@ -1182,7 +1611,6 @@ def create_supply(supply: SupplyCreate, db: Session = Depends(get_db)):
         supply_date=datetime.now()
     )
     
-    # Обновляем количество товара
     product.current_quantity += supply.quantity
     
     db.add(new_supply)
@@ -1215,7 +1643,6 @@ def update_supply(supply_id: int, supply_update: SupplyBase, db: Session = Depen
     if not product:
         raise HTTPException(status_code=404, detail="Товар не найден")
     
-    # Корректируем количество товара
     quantity_diff = supply_update.quantity - supply.quantity
     product.current_quantity += quantity_diff
     
@@ -1321,20 +1748,12 @@ def add_to_overflow(item: OverflowItemBase, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Товар не найден")
     
-    # ИСПРАВЛЕНИЕ: При добавлении в отстойник НЕ уменьшаем общее количество на складе
-    # Товар просто перемещается из доступных на стеллаже в отстойник
-    # Общее количество товара на складе остается неизменным
-    
-    # Создаем запись в отстойнике
     new_item = OverflowBinORM(
         product_id=item.product_id,
         quantity=item.quantity,
         notes=item.notes,
         date_added=datetime.now()
     )
-    
-    # ИСПРАВЛЕНИЕ: НЕ уменьшаем количество товара на складе
-    # product.current_quantity -= item.quantity
     
     db.add(new_item)
     db.commit()
@@ -1359,7 +1778,6 @@ def move_from_shelf_to_overflow(move_data: MoveToOverflowRequest, db: Session = 
         if not product:
             raise HTTPException(status_code=404, detail="Товар не найден")
         
-        # Если указан placement_id, значит товар уже размещен на стеллаже
         if move_data.placement_id:
             placement = db.query(ProductPlacementORM).filter(ProductPlacementORM.id == move_data.placement_id).first()
             if not placement:
@@ -1371,21 +1789,16 @@ def move_from_shelf_to_overflow(move_data: MoveToOverflowRequest, db: Session = 
                     detail=f"Недостаточно товара на стеллаже. Доступно: {placement.quantity}, запрошено: {move_data.quantity}"
                 )
             
-            # Уменьшаем количество на стеллаже
             if placement.quantity == move_data.quantity:
-                # Если перемещаем все количество, удаляем размещение
                 db.delete(placement)
             else:
-                # Если перемещаем часть, уменьшаем количество
                 placement.quantity -= move_data.quantity
             
-            # Освобождаем место на стеллаже
             if placement.shelf_id:
                 shelf = db.query(ShelfORM).filter(ShelfORM.id == placement.shelf_id).first()
                 if shelf:
                     shelf.current_quantity -= move_data.quantity
         
-        # Добавляем товар в отстойник
         new_item = OverflowBinORM(
             product_id=move_data.product_id,
             quantity=move_data.quantity,
@@ -1417,24 +1830,10 @@ def update_overflow_item(item_id: int, item_update: OverflowItemBase, db: Sessio
     if not item:
         raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
     
-    # Получаем старый товар
-    old_product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
-    
-    # Получаем новый товар
     new_product = db.query(ProductORM).filter(ProductORM.id == item_update.product_id).first()
     if not new_product:
         raise HTTPException(status_code=404, detail="Товар не найден")
     
-    # Рассчитываем разницу
-    quantity_diff = item_update.quantity - item.quantity
-    
-    # Если меняется количество
-    if quantity_diff != 0:
-        # ИСПРАВЛЕНИЕ: При изменении количества в отстойнике НЕ меняем общее количество на складе
-        # Товар остается в отстойнике, просто меняется его количество там
-        pass
-    
-    # Обновляем запись
     item.product_id = item_update.product_id
     item.quantity = item_update.quantity
     item.notes = item_update.notes
@@ -1458,13 +1857,6 @@ def delete_overflow_item(item_id: int, db: Session = Depends(get_db)):
     if not item:
         raise HTTPException(status_code=404, detail="Товар в отстойнике не найден")
     
-    product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
-    if product:
-        # ИСПРАВЛЕНИЕ: При удалении из отстойника НЕ возвращаем товар на склад
-        # Товар и так считается на складе, просто был в отстойнике
-        # product.current_quantity += item.quantity
-        pass
-    
     db.delete(item)
     db.commit()
     
@@ -1477,27 +1869,6 @@ def delete_overflow_item(item_id: int, db: Session = Depends(get_db)):
 
 # ===== РАЗМЕЩЕНИЕ ТОВАРОВ =====
 product_placements_router = APIRouter(prefix="/product-placements", tags=["Размещение товаров"])
-
-# Pydantic модели для размещения товаров
-class ProductPlacementCreate(BaseModel):
-    product_id: int
-    shelf_id: Optional[int] = None
-    quantity: int
-    notes: Optional[str] = None
-    placement_date: Optional[datetime] = None
-
-class ProductPlacementResponse(BaseModel):
-    id: int
-    product_id: int
-    shelf_id: Optional[int] = None
-    quantity: int
-    placement_date: datetime
-    notes: Optional[str] = None
-    product_name: Optional[str] = None
-    shelf_name: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
 
 @product_placements_router.get("", response_model=List[ProductPlacementResponse])
 def get_product_placements(
@@ -1571,19 +1942,16 @@ def create_product_placement(placement: ProductPlacementCreate, db: Session = De
     try:
         print("Получен запрос на создание размещения:", placement.dict())
         
-        # Проверяем товар
         product = db.query(ProductORM).filter(ProductORM.id == placement.product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Товар не найден")
         
         shelf_name = None
         if placement.shelf_id:
-            # Проверяем стеллаж
             shelf = db.query(ShelfORM).filter(ShelfORM.id == placement.shelf_id).first()
             if not shelf:
                 raise HTTPException(status_code=404, detail="Стеллаж не найден")
             
-            # Проверяем место на стеллаже
             free_space = shelf.max_capacity - shelf.current_quantity
             if placement.quantity > free_space:
                 raise HTTPException(
@@ -1591,21 +1959,17 @@ def create_product_placement(placement: ProductPlacementCreate, db: Session = De
                     detail=f"Недостаточно места на стеллаже '{shelf.name}'. Свободно: {free_space}, требуется: {placement.quantity}"
                 )
             
-            # Обновляем стеллаж
             shelf.current_quantity += placement.quantity
             shelf_name = shelf.name
         
-        # Проверяем наличие товара на складе
         if placement.quantity > product.current_quantity:
             raise HTTPException(
                 status_code=400,
                 detail=f"Недостаточно товара '{product.name}' на складе. Доступно: {product.current_quantity}, требуется: {placement.quantity}"
             )
         
-        # Уменьшаем количество товара на складе
         product.current_quantity -= placement.quantity
         
-        # Создаем запись размещения
         new_placement = ProductPlacementORM(
             product_id=placement.product_id,
             shelf_id=placement.shelf_id,
@@ -1644,17 +2008,14 @@ def move_from_overflow_to_shelf(move_data: MoveFromOverflowRequest, db: Session 
     try:
         print("Перемещение товара из отстойника на стеллаж:", move_data.dict())
         
-        # Проверяем товар
         product = db.query(ProductORM).filter(ProductORM.id == move_data.product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Товар не найден")
         
-        # Проверяем стеллаж
         shelf = db.query(ShelfORM).filter(ShelfORM.id == move_data.shelf_id).first()
         if not shelf:
             raise HTTPException(status_code=404, detail="Стеллаж не найден")
         
-        # Проверяем место на стеллаже
         free_space = shelf.max_capacity - shelf.current_quantity
         if move_data.quantity > free_space:
             raise HTTPException(
@@ -1662,10 +2023,6 @@ def move_from_overflow_to_shelf(move_data: MoveFromOverflowRequest, db: Session 
                 detail=f"Недостаточно места на стеллаже '{shelf.name}'. Свободно: {free_space}, требуется: {move_data.quantity}"
             )
         
-        # ИСПРАВЛЕНИЕ: При перемещении из отстойника НЕ проверяем общее количество на складе
-        # Товар и так считается на складе, просто был в отстойнике
-        
-        # Ищем товар в отстойнике
         overflow_item = db.query(OverflowBinORM).filter(
             OverflowBinORM.product_id == move_data.product_id
         ).first()
@@ -1679,7 +2036,6 @@ def move_from_overflow_to_shelf(move_data: MoveFromOverflowRequest, db: Session 
                 detail=f"Недостаточно товара в отстойнике. Доступно: {overflow_item.quantity}, требуется: {move_data.quantity}"
             )
         
-        # Создаем размещение на стеллаже
         new_placement = ProductPlacementORM(
             product_id=move_data.product_id,
             shelf_id=move_data.shelf_id,
@@ -1688,15 +2044,11 @@ def move_from_overflow_to_shelf(move_data: MoveFromOverflowRequest, db: Session 
             notes=move_data.notes or "Перемещено из отстойника"
         )
         
-        # Обновляем стеллаж
         shelf.current_quantity += move_data.quantity
         
-        # Обновляем или удаляем отстойник
         if overflow_item.quantity == move_data.quantity:
-            # Если перемещаем все количество, удаляем из отстойника
             db.delete(overflow_item)
         else:
-            # Если перемещаем часть, уменьшаем количество в отстойнике
             overflow_item.quantity -= move_data.quantity
         
         db.add(new_placement)
@@ -1733,17 +2085,14 @@ def update_product_placement(
         if not placement:
             raise HTTPException(status_code=404, detail="Размещение не найдено")
         
-        # Проверяем товар
         product = db.query(ProductORM).filter(ProductORM.id == placement_update.product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Товар не найден")
         
-        # Сохраняем старые значения
         old_quantity = placement.quantity
         old_shelf_id = placement.shelf_id
         old_product_id = placement.product_id
         
-        # Проверяем доступное количество для нового размещения
         if placement_update.quantity > product.current_quantity + old_quantity:
             raise HTTPException(
                 status_code=400,
@@ -1752,14 +2101,11 @@ def update_product_placement(
         
         shelf_name = None
         if placement_update.shelf_id:
-            # Проверяем новый стеллаж
             shelf = db.query(ShelfORM).filter(ShelfORM.id == placement_update.shelf_id).first()
             if not shelf:
                 raise HTTPException(status_code=404, detail="Стеллаж не найден")
             
-            # Рассчитываем свободное место с учетом старого размещения
             if old_shelf_id == placement_update.shelf_id:
-                # Если стеллаж тот же, учитываем только разницу в количестве
                 quantity_diff = placement_update.quantity - old_quantity
                 free_space = shelf.max_capacity - shelf.current_quantity
                 if quantity_diff > free_space:
@@ -1768,7 +2114,6 @@ def update_product_placement(
                         detail=f"Недостаточно места на стеллаже '{shelf.name}'. Свободно: {free_space}, требуется дополнительно: {quantity_diff}"
                     )
             else:
-                # Если новый стеллаж, проверяем все количество
                 free_space = shelf.max_capacity - shelf.current_quantity
                 if placement_update.quantity > free_space:
                     raise HTTPException(
@@ -1778,26 +2123,20 @@ def update_product_placement(
             
             shelf_name = shelf.name
         
-        # Корректируем количества
-        # 1. Возвращаем старое количество на склад
         old_product = db.query(ProductORM).filter(ProductORM.id == old_product_id).first()
         if old_product:
             old_product.current_quantity += old_quantity
         
-        # 2. Освобождаем место на старом стеллаже
         if old_shelf_id:
             old_shelf = db.query(ShelfORM).filter(ShelfORM.id == old_shelf_id).first()
             if old_shelf:
                 old_shelf.current_quantity = max(0, old_shelf.current_quantity - old_quantity)
         
-        # 3. Забираем новое количество со склада
         product.current_quantity -= placement_update.quantity
         
-        # 4. Занимаем место на новом стеллаже
         if placement_update.shelf_id:
             shelf.current_quantity += placement_update.quantity
         
-        # Обновляем размещение
         placement.product_id = placement_update.product_id
         placement.shelf_id = placement_update.shelf_id
         placement.quantity = placement_update.quantity
@@ -1843,7 +2182,6 @@ def partial_update_product_placement(
         if not placement:
             raise HTTPException(status_code=404, detail="Размещение не найдено")
         
-        # Обновляем только переданные поля
         for field, value in placement_update.items():
             if hasattr(placement, field) and value is not None:
                 setattr(placement, field, value)
@@ -1873,18 +2211,15 @@ def delete_product_placement(placement_id: int, db: Session = Depends(get_db)):
         if not placement:
             raise HTTPException(status_code=404, detail="Размещение не найдено")
         
-        # Возвращаем товар на склад
         product = db.query(ProductORM).filter(ProductORM.id == placement.product_id).first()
         if product:
             product.current_quantity += placement.quantity
         
-        # Если размещение было на стеллаже, освобождаем место
         if placement.shelf_id:
             shelf = db.query(ShelfORM).filter(ShelfORM.id == placement.shelf_id).first()
             if shelf:
                 shelf.current_quantity = max(0, shelf.current_quantity - placement.quantity)
         
-        # Удаляем размещение
         db.delete(placement)
         db.commit()
         
@@ -1906,9 +2241,27 @@ def delete_product_placement(placement_id: int, db: Session = Depends(get_db)):
 shipments_router = APIRouter(prefix="/shipments", tags=["Отгрузки"])
 
 @shipments_router.get("", response_model=List[ShipmentResponse])
-def get_shipments(db: Session = Depends(get_db)):
-    """Получить все отгрузки"""
-    shipments = db.query(ShipmentORM).all()
+def get_shipments(
+    user_email: Optional[str] = Query(None, description="Фильтр по email пользователя"),
+    status: Optional[str] = Query(None, description="Фильтр по статусу"),
+    order_number: Optional[str] = Query(None, description="Фильтр по номеру заказа"),
+    db: Session = Depends(get_db)
+):
+    """Получить все отгрузки с возможностью фильтрации"""
+    
+    query = db.query(ShipmentORM)
+    
+    if user_email:
+        query = query.filter(ShipmentORM.customer_email == user_email)
+    
+    if status:
+        query = query.filter(ShipmentORM.status == status)
+    
+    if order_number:
+        query = query.filter(ShipmentORM.order_number == order_number)
+    
+    shipments = query.order_by(ShipmentORM.shipment_date.desc()).all()
+    
     result = []
     for shipment in shipments:
         product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
@@ -1920,9 +2273,103 @@ def get_shipments(db: Session = Depends(get_db)):
             "quantity": shipment.quantity,
             "destination": shipment.destination,
             "customer": shipment.customer,
+            "customer_email": shipment.customer_email,
             "order_number": shipment.order_number,
             "status": shipment.status,
             "shipment_date": shipment.shipment_date,
+            "user_id": shipment.user_id,
+            "order_id": shipment.order_id,
+            "product_name": product_name
+        })
+    
+    return result
+
+@shipments_router.get("/{shipment_id}", response_model=ShipmentResponse)
+def get_shipment(shipment_id: int, db: Session = Depends(get_db)):
+    """Получить отгрузку по ID"""
+    shipment = db.query(ShipmentORM).filter(ShipmentORM.id == shipment_id).first()
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Отгрузка не найдена")
+    
+    product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
+    product_name = product.name if product else "Неизвестный товар"
+    
+    return {
+        "id": shipment.id,
+        "product_id": shipment.product_id,
+        "quantity": shipment.quantity,
+        "destination": shipment.destination,
+        "customer": shipment.customer,
+        "customer_email": shipment.customer_email,
+        "order_number": shipment.order_number,
+        "status": shipment.status,
+        "shipment_date": shipment.shipment_date,
+        "user_id": shipment.user_id,
+        "order_id": shipment.order_id,
+        "product_name": product_name
+    }
+
+@shipments_router.patch("/{shipment_id}/status")
+def update_shipment_status(
+    shipment_id: int,
+    status_data: dict = Body(...),
+    db: Session = Depends(get_db)
+):
+    """Обновить только статус отгрузки"""
+    shipment = db.query(ShipmentORM).filter(ShipmentORM.id == shipment_id).first()
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Отгрузка не найдена")
+    
+    new_status = status_data.get("status")
+    if not new_status:
+        raise HTTPException(status_code=400, detail="Статус не указан")
+    
+    valid_statuses = ["pending", "processing", "completed", "cancelled"]
+    if new_status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Неверный статус. Допустимые: {', '.join(valid_statuses)}")
+    
+    shipment.status = new_status
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "Статус обновлен",
+        "shipment_id": shipment_id,
+        "new_status": new_status
+    }
+
+@shipments_router.get("/user/{user_email}", response_model=List[ShipmentResponse])
+def get_shipments_by_user(
+    user_email: str,
+    status: Optional[str] = Query(None, description="Фильтр по статусу"),
+    db: Session = Depends(get_db)
+):
+    """Получить отгрузки по email пользователя"""
+    
+    query = db.query(ShipmentORM).filter(ShipmentORM.customer_email == user_email)
+    
+    if status:
+        query = query.filter(ShipmentORM.status == status)
+    
+    shipments = query.order_by(ShipmentORM.shipment_date.desc()).all()
+    
+    result = []
+    for shipment in shipments:
+        product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
+        product_name = product.name if product else "Неизвестный товар"
+        
+        result.append({
+            "id": shipment.id,
+            "product_id": shipment.product_id,
+            "quantity": shipment.quantity,
+            "destination": shipment.destination,
+            "customer": shipment.customer,
+            "customer_email": shipment.customer_email,
+            "order_number": shipment.order_number,
+            "status": shipment.status,
+            "shipment_date": shipment.shipment_date,
+            "user_id": shipment.user_id,
+            "order_id": shipment.order_id,
             "product_name": product_name
         })
     
@@ -1951,7 +2398,6 @@ def create_shipment(shipment: ShipmentBase, db: Session = Depends(get_db)):
         shipment_date=datetime.now()
     )
     
-    # Уменьшаем количество товара
     product.current_quantity -= shipment.quantity
     
     db.add(new_shipment)
@@ -1969,6 +2415,192 @@ def create_shipment(shipment: ShipmentBase, db: Session = Depends(get_db)):
         "shipment_date": new_shipment.shipment_date,
         "product_name": product.name
     }
+
+@shipments_router.put("/{shipment_id}", response_model=ShipmentResponse)
+def update_shipment(
+    shipment_id: int,
+    shipment_update: ShipmentBase,
+    db: Session = Depends(get_db)
+):
+    """Обновить отгрузку"""
+    print(f"Обновление отгрузки {shipment_id}: {shipment_update.dict()}")
+    
+    shipment = db.query(ShipmentORM).filter(ShipmentORM.id == shipment_id).first()
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Отгрузка не найдена")
+    
+    product = db.query(ProductORM).filter(ProductORM.id == shipment_update.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    # Проверяем изменение количества
+    if shipment_update.quantity != shipment.quantity:
+        print(f"Изменение количества: было {shipment.quantity}, стало {shipment_update.quantity}")
+        
+        # Возвращаем старое количество на склад
+        old_product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
+        if old_product:
+            old_product.current_quantity += shipment.quantity
+            print(f"Вернули на склад {shipment.quantity} товара {old_product.name}")
+        
+        # Проверяем доступность нового количества
+        if shipment_update.quantity > product.current_quantity:
+            print(f"Недостаточно товара: требуется {shipment_update.quantity}, доступно {product.current_quantity}")
+            if old_product:
+                old_product.current_quantity -= shipment.quantity
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно товара '{product.name}'. Доступно: {product.current_quantity}, требуется: {shipment_update.quantity}"
+            )
+        
+        # Вычитаем новое количество
+        product.current_quantity -= shipment_update.quantity
+        print(f"Вычли со склада {shipment_update.quantity} товара {product.name}")
+    
+    # Обновляем отгрузку
+    shipment.product_id = shipment_update.product_id
+    shipment.quantity = shipment_update.quantity
+    shipment.destination = shipment_update.destination
+    shipment.customer = shipment_update.customer
+    shipment.order_number = shipment_update.order_number
+    shipment.status = shipment_update.status
+    
+    db.commit()
+    db.refresh(shipment)
+    
+    print(f"Отгрузка {shipment_id} обновлена успешно")
+    
+    return {
+        "id": shipment.id,
+        "product_id": shipment.product_id,
+        "quantity": shipment.quantity,
+        "destination": shipment.destination,
+        "customer": shipment.customer,
+        "order_number": shipment.order_number,
+        "status": shipment.status,
+        "shipment_date": shipment.shipment_date,
+        "product_name": product.name
+    }
+
+@shipments_router.delete("/{shipment_id}", response_model=dict)
+def delete_shipment(shipment_id: int, db: Session = Depends(get_db)):
+    """Удалить отгрузку"""
+    shipment = db.query(ShipmentORM).filter(ShipmentORM.id == shipment_id).first()
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Отгрузка не найдена")
+    
+    product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
+    if product:
+        product.current_quantity += shipment.quantity
+    
+    db.delete(shipment)
+    db.commit()
+    
+    return {
+        "message": "Отгрузка удалена",
+        "deleted_id": shipment_id,
+        "product_id": shipment.product_id,
+        "quantity_returned": shipment.quantity
+    }
+
+@app.post("/api/orders", response_model=OrderResponse)
+def create_customer_order(
+    order: OrderCreate, 
+    db: Session = Depends(get_db)
+):
+    """Создать заказ клиента с привязкой к пользователю"""
+    try:
+        print(f"Создание заказа для: {order.customer_email}")
+        print(f"Товары: {order.items}")
+        
+        user_id = None
+        if order.user_token:
+            print(f"Проверяем токен: {order.user_token[:20]}...")
+            user_data = user_tokens.get(order.user_token)
+            if user_data:
+                user_id = user_data["user_id"]
+                print(f"Найден пользователь ID: {user_id}")
+                order.customer_email = user_data["email"]
+        
+        order_number = f"ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        for item in order.items:
+            product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
+            if not product:
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"Товар с ID {item.product_id} не найден"
+                )
+            
+            if product.current_quantity < item.quantity:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Недостаточно товара '{product.name}'. В наличии: {product.current_quantity}, требуется: {item.quantity}"
+                )
+        
+        new_order = OrderORM(
+            order_number=order_number,
+            user_id=user_id,
+            customer_name=order.customer_name,
+            customer_email=order.customer_email,
+            delivery_address=order.delivery_address,
+            customer_phone=order.customer_phone,
+            order_comment=order.order_comment,
+            total_amount=order.total_amount,
+            status="pending",
+            items_json=json.dumps([item.dict() for item in order.items])
+        )
+        
+        db.add(new_order)
+        db.commit()
+        db.refresh(new_order)
+        
+        for item in order.items:
+            product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
+            
+            shipment = ShipmentORM(
+                order_id=new_order.id,
+                product_id=item.product_id,
+                quantity=item.quantity,
+                destination=order.delivery_address,
+                customer=order.customer_name,
+                customer_email=order.customer_email,
+                order_number=order_number,
+                status='pending',
+                user_id=user_id
+            )
+            db.add(shipment)
+        
+        db.commit()
+        
+        print(f"Заказ успешно создан: {order_number}")
+        
+        return {
+            "id": new_order.id,
+            "order_number": order_number,
+            "customer_name": new_order.customer_name,
+            "customer_email": new_order.customer_email,
+            "delivery_address": new_order.delivery_address,
+            "customer_phone": new_order.customer_phone,
+            "order_comment": new_order.order_comment,
+            "total_amount": new_order.total_amount,
+            "status": new_order.status,
+            "order_date": new_order.order_date,
+            "items": order.items,
+            "user_token": order.user_token
+        }
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Ошибка создания заказа: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Ошибка создания заказа: {str(e)}"
+        )
 
 # ===== ОТЧЕТЫ =====
 reports_router = APIRouter(prefix="/reports", tags=["Отчеты"])
@@ -2055,9 +2687,116 @@ def get_supply_statistics(db: Session = Depends(get_db)):
 def get_placement_report(service: ProductServiceType):
     return service.get_placement_report()
 
+# ===== ДОПОЛНИТЕЛЬНЫЕ ЭНДПОИНТЫ ДЛЯ МАГАЗИНА =====
+shop_router = APIRouter(prefix="/shop", tags=["Магазин"])
 
-# Подключаем все роутеры (ДОБАВЛЯЕМ admins_router В СПИСОК)
-app.include_router(admins_router)
+@app.get("/api/products/shop", response_model=List[ProductResponse])
+def get_products_for_shop(
+    category_id: Optional[int] = Query(None, description="Фильтр по категории"),
+    search: Optional[str] = Query(None, description="Поиск по названию"),
+    include_low_stock: Optional[bool] = Query(None, description="Включать товары с низким запасом"),
+    db: Session = Depends(get_db)
+):
+    """Получить товары для магазина с поиском"""
+    query = db.query(ProductORM)
+    
+    if category_id and category_id > 0:
+        query = query.filter(ProductORM.category_id == category_id)
+    
+    if search:
+        query = query.filter(ProductORM.name.ilike(f"%{search}%"))
+    
+    products = query.all()
+    
+    result = []
+    for product in products:
+        category = db.query(CategoryORM).filter(CategoryORM.id == product.category_id).first()
+        category_name = category.name if category else "Без категории"
+        
+        is_low_stock = product.current_quantity <= product.min_quantity
+        
+        if include_low_stock is False and is_low_stock:
+            continue
+        
+        result.append({
+            "id": product.id,
+            "name": product.name,
+            "category_id": product.category_id,
+            "category_name": category_name,
+            "min_quantity": product.min_quantity,
+            "unit": product.unit,
+            "description": product.description,
+            "price": product.price,
+            "current_quantity": product.current_quantity,
+            "is_low_stock": is_low_stock,
+            "stock_percentage": min(100, (product.current_quantity / (product.min_quantity or 1)) * 100)
+        })
+    
+    return result
+
+@app.get("/api/categories/shop", response_model=List[CategoryResponse])
+def get_categories_for_shop(db: Session = Depends(get_db)):
+    """Получить категории для магазина"""
+    categories = db.query(CategoryORM).all()
+    result = []
+    for category in categories:
+        product_count = db.query(ProductORM).filter(ProductORM.category_id == category.id).count()
+        if product_count > 0:
+            result.append({
+                "id": category.id,
+                "name": category.name,
+                "description": category.description,
+                "product_count": product_count
+            })
+    return result
+
+# ===== КОРЗИНА С ПРОВЕРКОЙ АУТЕНТИФИКАЦИИ =====
+
+class CartItemRequest(BaseModel):
+    product_id: int
+    quantity: int = 1
+
+@users_router.post("/cart/add")
+def add_to_cart(
+    cart_item: CartItemRequest,
+    user_data: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Добавить товар в корзину пользователя"""
+    user_id = user_data["user_id"]
+    
+    product = db.query(ProductORM).filter(ProductORM.id == cart_item.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    if product.current_quantity < cart_item.quantity:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Недостаточно товара. В наличии: {product.current_quantity}"
+        )
+    
+    return {
+        "success": True,
+        "message": "Товар добавлен в корзину",
+        "product": {
+            "id": product.id,
+            "name": product.name,
+            "price": product.price,
+            "quantity": cart_item.quantity
+        }
+    }
+
+@users_router.get("/cart")
+def get_cart(user_data: dict = Depends(get_current_user)):
+    """Получить корзину пользователя"""
+    return {
+        "success": True,
+        "cart": []
+    }
+
+# ===== ПОДКЛЮЧЕНИЕ ВСЕХ РОУТЕРОВ =====
+
+app.include_router(admins_router)  # ПЕРВЫЙ И ВАЖНЫЙ!
 app.include_router(users_router)
 app.include_router(categories_router)
 app.include_router(products_router)
@@ -2068,6 +2807,7 @@ app.include_router(overflow_bins_router)
 app.include_router(product_placements_router)
 app.include_router(shipments_router)
 app.include_router(reports_router)
+app.include_router(shop_router)
 
 if __name__ == "__main__":
     uvicorn.run(app)

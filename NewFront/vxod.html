@@ -337,112 +337,70 @@ form .data input:focus {
             const successMessage = document.getElementById('successMessage');
             const submitButton = this.querySelector('button[type="submit"]');
             
-           
+            // Очищаем предыдущие сообщения
             errorMessage.style.display = 'none';
             successMessage.style.display = 'none';
-         
+            
+            // Проверяем заполненность полей
             if (!login || !password) {
                 showError('Пожалуйста, заполните все поля');
                 return;
             }
             
             try {
-               
+                // Показываем состояние загрузки
                 submitButton.textContent = 'Вход...';
                 submitButton.disabled = true;
                 this.classList.add('loading');
                 
-                const users = await getUsers();
+                console.log('Отправка запроса на вход:', { login, password });
                 
-                const user = users.find(u => u.login === login && u.password === password);
+                // Отправляем запрос на вход через новый эндпоинт
+                const response = await fetch(`${API_BASE_URL}/users/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        login: login,
+                        password: password
+                    })
+                });
                 
-                if (user) {
+                console.log('Статус ответа:', response.status);
+                
+                const result = await response.json();
+                console.log('Результат входа:', result);
+                
+                if (result.success && result.token) {
+                    // Сохраняем токен и информацию о пользователе
+                    localStorage.setItem('user_token', result.token);
+                    localStorage.setItem('user_info', JSON.stringify(result.user));
                     
                     showSuccess('Успешный вход! Перенаправление...');
-                    localStorage.setItem('user', JSON.stringify({
-                        id: user.id,
-                        login: user.login,
-                        email: user.email,
-                        isAuthenticated: true
-                    }));
                     
-                   
+                    // Перенаправляем на главную страницу через 1 секунду
                     setTimeout(() => {
-                        window.location.href = 'user-dashboard.html'; 
-                    }, 1500);
+                        window.location.href = 'index.html';
+                    }, 1000);
                     
                 } else {
-                    
-                    showError('Неверный логин или пароль');
+                    // Показываем ошибку от сервера
+                    showError(result.message || 'Неверный логин или пароль');
                 }
                 
             } catch (error) {
                 console.error('Ошибка при входе:', error);
-                showError('Ошибка при подключении к серверу');
+                showError('Ошибка при подключении к серверу: ' + error.message);
             } finally {
-                
+                // Восстанавливаем кнопку
                 submitButton.textContent = 'войти';
                 submitButton.disabled = false;
                 this.classList.remove('loading');
             }
         });
 
-        async function getUsers() {
-            const response = await fetch(`${API_BASE_URL}/users`);
-            
-            if (!response.ok) {
-                throw new Error('Ошибка при получении данных пользователей');
-            }
-            
-            return await response.json();
-        }
-
-        async function getUserById(userId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/users/${userId}`);
-                if (!response.ok) {
-                    throw new Error('Пользователь не найден');
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('Ошибка при получении пользователя:', error);
-                return null;
-            }
-        }
-
-        async function updateUser(userId, userData) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Ошибка при обновлении пользователя');
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('Ошибка при обновлении пользователя:', error);
-                throw error;
-            }
-        }
-
-        function userLogout() {
-            localStorage.removeItem('user');
-            window.location.href = 'index.html';
-        }
-
-      
-        function checkUserAuth() {
-            const userData = localStorage.getItem('user');
-            return userData ? JSON.parse(userData) : null;
-        }
-
-       
+        // Функция для отображения ошибки
         function showError(message) {
             const errorElement = document.getElementById('errorMessage');
             errorElement.textContent = message;
@@ -453,42 +411,82 @@ form .data input:focus {
             }, 5000);
         }
 
+        // Функция для отображения успеха
         function showSuccess(message) {
             const successElement = document.getElementById('successMessage');
             successElement.textContent = message;
             successElement.style.display = 'block';
         }
 
- 
+        // Проверяем, если пользователь уже вошел
         document.addEventListener('DOMContentLoaded', function() {
-            const user = checkUserAuth();
-            if (user) {
-                
-                console.log('Пользователь уже авторизован:', user.login);
-                
+            const token = localStorage.getItem('user_token');
+            if (token) {
+                // Пользователь уже авторизован, перенаправляем
+                console.log('Пользователь уже авторизован');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
             }
         });
 
-        
-        function getCurrentUser() {
-            return checkUserAuth();
+        // Проверка токена на сервере (опционально)
+        async function verifyToken(token) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/check-token/${token}`);
+                const result = await response.json();
+                return result.valid;
+            } catch (error) {
+                console.error('Ошибка проверки токена:', error);
+                return false;
+            }
         }
 
-       
-        function hasUserRole(role) {
-            const user = getCurrentUser();
-            return user && user.role === role;
+        // Функция для выхода
+        async function userLogout() {
+            const token = localStorage.getItem('user_token');
+            if (token) {
+                try {
+                    await fetch(`${API_BASE_URL}/users/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ token: token })
+                    });
+                } catch (error) {
+                    console.error('Ошибка выхода:', error);
+                }
+            }
+            
+            localStorage.removeItem('user_token');
+            localStorage.removeItem('user_info');
+            window.location.href = 'index.html';
         }
 
-       
-        function updateCurrentUser(userData) {
-            const currentUser = getCurrentUser();
-            if (currentUser) {
-                const updatedUser = { ...currentUser, ...userData };
-                localStorage.setItem('user', JSON.stringify(updatedUser));
-                return updatedUser;
+        // Проверка авторизации
+        function checkUserAuth() {
+            const token = localStorage.getItem('user_token');
+            const userInfo = localStorage.getItem('user_info');
+            
+            if (token && userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    return {
+                        isAuthenticated: true,
+                        ...user
+                    };
+                } catch (error) {
+                    console.error('Ошибка парсинга пользователя:', error);
+                    return null;
+                }
             }
             return null;
+        }
+
+        // Получение текущего пользователя
+        function getCurrentUser() {
+            return checkUserAuth();
         }
     </script>
 </body>
