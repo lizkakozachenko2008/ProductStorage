@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            height: 70px;
+            background-color: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .left-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .right-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .buttonn, .vxod, .admin {
+            border: 0;
+            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .buttonn:hover, .vxod:hover, .admin:hover {
+            background: linear-gradient(135deg, #F7C48F 0%, #8B7355 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 115, 85, 0.3);
+        }
+
+        /* Основной контент личного кабинета */
+        .profile-content {
+            margin-top: 70px;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #F7C48F 0%, #8B7355 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .user-details h1 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .user-details p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .logout-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        /* Табы для навигации */
+        .profile-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            border: 2px solid #F7C48F;
+            background: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 1rem;
+            flex: 1;
+        }
+
+        .tab-btn.active,
+        .tab-btn:hover {
+            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+            color: white;
+            border-color: #8B7355;
+        }
+
+        /* Контент табов */
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #F7C48F;
+        }
+
+        /* Стили для заказов */
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .order-card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #F7C48F;
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .order-number {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.2rem;
+        }
+
+        .order-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .order-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-pending {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .status-processing {
+            background: #D1ECF1;
+            color: #0C5460;
+        }
+
+        .status-shipped {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .order-items {
+            margin: 15px 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-total {
+            text-align: right;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #333;
+            margin-top: 15px;
+        }
+
+        .no-orders {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Стили для настроек */
+        .settings-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #F7C48F;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #8B7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.2);
+        }
+
+        .save-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Стили для отгрузок */
+        .shipments-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .shipment-card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 25px;
+            border-top: 5px solid #4CAF50;
+        }
+
+        .shipment-info {
+            margin: 15px 0;
+        }
+
+        .shipment-info p {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+
+            .profile-tabs {
+                flex-direction: column;
+            }
+
+            .shipments-list {
+                grid-template-columns: 1fr;
+            }
+
+            .user-info {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .profile-content {
+                padding: 20px 10px;
+            }
+
+            .tab-content {
+                padding: 20px;
+            }
+
+            .buttonn, .vxod, .admin {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+        }
+
+        /* Статусы заказов */
+        .order-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .badge-processing {
+            background: #E3F2FD;
+            color: #1565C0;
+        }
+
+        .badge-shipped {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .badge-delivered {
+            background: #FFF8E1;
+            color: #F57C00;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8B7355;
+            font-size: 1.2rem;
+        }
+
+        .error-message {
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Шапка -->
+    <div class="container">
+        <div class="left-section">
+            <div class="logo-container">
+                <a href="index.html" class="logo">StoreMarket</a>
+            </div>
+        </div>
+        <div class="right-section">
+            <a href="shop.html" class="buttonn">Магазин</a>
+            <button id="logoutBtn" class="buttonn" style="padding: 8px 15px; border: none;">Выйти</button>
+
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Основной контент -->
+    <main class="profile-content">
+        <!-- Заголовок с информацией о пользователе -->
+        <div class="profile-header" id="userProfileHeader">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <h1 id="userName">Загрузка...</h1>
+                    <p id="userEmail">Загрузка...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Табы навигации -->
+        <div class="profile-tabs">
+            <button class="tab-btn active" data-tab="orders">Мои заказы</button>
+            <button class="tab-btn" data-tab="shipments">Мои отгрузки</button>
+            <button class="tab-btn" data-tab="settings">Настройки</button>
+        </div>
+
+        <!-- Контент табов -->
+        
+        <!-- Таб "Мои заказы" -->
+        <div class="tab-content active" id="ordersTab">
+            <h2 class="section-title">История заказов</h2>
+            <div class="orders-list" id="ordersList">
+                <div class="loading">Загрузка заказов...</div>
+            </div>
+        </div>
+
+        <!-- Таб "Мои отгрузки" -->
+        <div class="tab-content" id="shipmentsTab">
+            <h2 class="section-title">Отгрузки товаров</h2>
+            <div class="shipments-list" id="shipmentsList">
+                <div class="loading">Загрузка отгрузок...</div>
+            </div>
+        </div>
+
+        <!-- Таб "Настройки" -->
+        <div class="tab-content" id="settingsTab">
+            <h2 class="section-title">Настройки аккаунта</h2>
+            <div class="settings-form">
+                <div class="form-group">
+                    <label for="loginInput">Логин</label>
+                    <input type="text" id="loginInput" placeholder="Введите новый логин">
+                </div>
+                <div class="form-group">
+                    <label for="emailInput">Email</label>
+                    <input type="email" id="emailInput" placeholder="Введите новый email">
+                </div>
+                <div class="form-group">
+                    <label for="passwordInput">Новый пароль</label>
+                    <input type="password" id="passwordInput" placeholder="Введите новый пароль">
+                </div>
+                <button class="save-btn" id="saveSettingsBtn">Сохранить изменения</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    // Конфигурация API
+    const API_BASE_URL = 'http://localhost:8000';
+    
+    // Глобальные переменные
+    let currentUser = null;
+    let userToken = null;
+
+    // Утилиты
+    function showNotification(message, type = 'success') {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.style.background = type === 'error' ? '#ff6b6b' : 
+                                       type === 'warning' ? '#ffa726' : 
+                                       type === 'info' ? '#2196F3' : 
+                                       '#4CAF50';
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
+    // Проверка авторизации
+    function checkAuth() {
+        userToken = localStorage.getItem('user_token');
+        const userInfo = localStorage.getItem('user_info');
+        
+        if (!userToken || !userInfo) {
+            showNotification('Требуется авторизация', 'warning');
+            setTimeout(() => {
+                window.location.href = 'vxod.html';
+            }, 1500);
+            return false;
+        }
+        
+        try {
+            currentUser = JSON.parse(userInfo);
+            return true;
+        } catch (error) {
+            console.error('Ошибка парсинга пользователя:', error);
+            localStorage.removeItem('user_token');
+            localStorage.removeItem('user_info');
+            window.location.href = 'vxod.html';
+            return false;
+        }
+    }
+
+    // Загрузка информации о пользователе
+    async function loadUserInfo() {
+        if (!currentUser) return;
+        
+        try {
+
+            const response = await fetch(`${API_BASE_URL}/users/check-token/${userToken}`);
+            
+            if (!response.ok) {
+                throw new Error('Токен недействителен');
+            }
+            
+            const data = await response.json();
+            console.log('Данные пользователя:', data);
+            
+            if (data.valid && data.user) {
+                // Обновляем информацию о пользователе
+                currentUser = data.user;
+                localStorage.setItem('user_info', JSON.stringify(data.user));
+                updateUserUI(data.user);
+            } else {
+                // Используем данные из localStorage
+                updateUserUI(currentUser);
+            }
+        } catch (error) {
+            console.error('Ошибка проверки токена:', error);
+            // Используем данные из localStorage как fallback
+            updateUserUI(currentUser);
+        }
+    }
+
+    // Обновление интерфейса пользователя
+    function updateUserUI(user) {
+        document.getElementById('userName').textContent = user.login || 'Пользователь';
+        document.getElementById('userEmail').textContent = user.email || 'Email не указан';
+        document.getElementById('userAvatar').textContent = user.login ? user.login.charAt(0).toUpperCase() : 'U';
+        
+        // Заполняем поля настроек
+        document.getElementById('loginInput').value = user.login || '';
+        document.getElementById('emailInput').value = user.email || '';
+    }
+
+    // Загрузка заказов пользователя
+    async function loadUserOrders() {
+    const ordersList = document.getElementById('ordersList');
+    ordersList.innerHTML = '<div class="loading">Загрузка заказов...</div>';
+    
+    if (!userToken) {
+        ordersList.innerHTML = '<div class="error-message">Необходима авторизация</div>';
+        return;
+    }
+    
+    try {
+        // Используем новый эндпоинт
+        const response = await fetch(`${API_BASE_URL}/users/orders?token=${userToken}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ошибка ${response.status}`);
+        }
+        
+        const orders = await response.json();
+        
+        if (orders.length === 0) {
+            ordersList.innerHTML = `
+                <div class="no-orders">
+                    <h3>У вас пока нет заказов</h3>
+                    <p>Совершите первую покупку в нашем магазине!</p>
+                    <a href="shop.html" class="buttonn" style="margin-top: 20px; display: inline-block;">
+                        Перейти в магазин
+                    </a>
+                </div>
+            `;
+            return;
+        }
+        
+        displayUserOrders(orders);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки заказов:', error);
+        ordersList.innerHTML = `
+            <div class="error-message">
+                <h3>Ошибка загрузки заказов</h3>
+                <p>${error.message}</p>
+                <p><small>Попробуйте позже или обратитесь в поддержку</small></p>
+            </div>
+        `;
+    }
+}
+
+    // Отображение заказов
+    function displayOrders(orders) {
+        const ordersList = document.getElementById('ordersList');
+        ordersList.innerHTML = '';
+        
+        orders.sort((a, b) => new Date(b.shipment_date || b.order_date) - new Date(a.shipment_date || a.order_date));
+        
+        orders.forEach(order => {
+            const orderDate = order.shipment_date ? 
+                new Date(order.shipment_date).toLocaleDateString('ru-RU', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'Дата не указана';
+            
+            const orderCard = document.createElement('div');
+            orderCard.className = 'order-card';
+            orderCard.innerHTML = `
+                <div class="order-header">
+                    <div>
+                        <span class="order-number">Заказ #${order.order_number}</span>
+                        <span class="order-date">${orderDate}</span>
+                    </div>
+                    <div class="order-status ${order.status}">
+                        ${getStatusText(order.status)}
+                    </div>
+                </div>
+                
+                <div class="order-items">
+                    ${order.items.map(item => `
+                        <div class="order-item">
+                            <span>${item.product_name} × ${item.quantity} шт</span>
+                            <span>₽ ${item.price ? (item.price * item.quantity).toFixed(2) : '—'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="order-total">
+                    Итого: ₽ ${order.total.toFixed(2)}
+                </div>
+            `;
+            
+            ordersList.appendChild(orderCard);
+        });
+    }
+
+    // Загрузка отгрузок пользователя
+    async function loadUserShipments() {
+        const shipmentsList = document.getElementById('shipmentsList');
+        shipmentsList.innerHTML = '<div class="loading">Загрузка отгрузок...</div>';
+        
+        try {
+            // Получаем все отгрузки
+            const response = await fetch(`${API_BASE_URL}/shipments`, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ошибка ${response.status}`);
+            }
+            
+            let shipments = await response.json();
+            console.log('Все отгрузки:', shipments);
+            
+            // Фильтруем отгрузки по текущему пользователю
+            if (currentUser) {
+                shipments = shipments.filter(shipment => {
+                    // Проверяем разные варианты совпадения
+                    const matchesCustomer = shipment.customer === currentUser.email || 
+                                           shipment.customer === currentUser.login;
+                    const matchesOrderNumber = shipment.order_number && 
+                        (shipment.order_number.includes(currentUser.email) || 
+                         shipment.order_number.includes(currentUser.login));
+                    
+                    return matchesCustomer || matchesOrderNumber;
+                });
+            }
+            
+            // Сортируем: сначала pending (в обработке), потом completed (отгружено)
+            shipments.sort((a, b) => {
+                if (a.status === 'pending' && b.status !== 'pending') return -1;
+                if (a.status !== 'pending' && b.status === 'pending') return 1;
+                return new Date(b.shipment_date) - new Date(a.shipment_date);
+            });
+            
+            if (shipments.length === 0) {
+                shipmentsList.innerHTML = `
+                    <div class="no-orders">
+                        <h3>У вас пока нет отгрузок</h3>
+                        <p>Отгрузки появятся здесь после подтверждения заказа администратором.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            displayShipments(shipments);
+        } catch (error) {
+            console.error('Ошибка загрузки отгрузок:', error);
+            shipmentsList.innerHTML = `
+                <div class="error-message">
+                    <h3>Ошибка загрузки отгрузок</h3>
+                    <p>${error.message}</p>
+                    <p><small>Попробуйте позже или обратитесь в поддержку</small></p>
+                </div>
+            `;
+        }
+    }
+
+    // Отображение отгрузок
+    function displayShipments(shipments) {
+        const shipmentsList = document.getElementById('shipmentsList');
+        shipmentsList.innerHTML = '';
+        
+        shipments.forEach(shipment => {
+            const shipmentDate = shipment.shipment_date ? 
+                new Date(shipment.shipment_date).toLocaleDateString('ru-RU', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'Дата не указана';
+            
+            // Определяем цвет карточки в зависимости от статуса
+            let cardStyle = 'border-top: 5px solid #';
+            if (shipment.status === 'pending') {
+                cardStyle += 'FFA726'; // оранжевый для ожидания
+            } else if (shipment.status === 'completed') {
+                cardStyle += '4CAF50'; // зеленый для завершенных
+            } else {
+                cardStyle += 'F7C48F'; // стандартный цвет
+            }
+            
+            const shipmentCard = document.createElement('div');
+            shipmentCard.className = 'shipment-card';
+            shipmentCard.style.cssText = cardStyle;
+            shipmentCard.innerHTML = `
+                <div class="order-header">
+                    <span class="order-number">Отгрузка #${shipment.id}</span>
+                    <span class="order-date">${shipmentDate}</span>
+                </div>
+                
+                <div class="shipment-info">
+                    <p><strong>Товар:</strong> ${shipment.product_name || `Товар #${shipment.product_id}`}</p>
+                    <p><strong>Количество:</strong> ${shipment.quantity} шт</p>
+                    <p><strong>Направление:</strong> ${shipment.destination || 'Не указано'}</p>
+                    <p><strong>Статус:</strong> ${getStatusText(shipment.status)}</p>
+                    ${shipment.order_number ? `<p><strong>Номер заказа:</strong> ${shipment.order_number}</p>` : ''}
+                    ${shipment.customer ? `<p><strong>Получатель:</strong> ${shipment.customer}</p>` : ''}
+                </div>
+                
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <p><strong>Обработка заказа:</strong> ${
+                        shipment.status === 'pending' ? 
+                        '⏳ Ожидает подтверждения администратором' : 
+                        shipment.status === 'completed' ?
+                        '✅ Заказ подтвержден и отгружен' :
+                        '🔄 В процессе обработки'
+                    }</p>
+                </div>
+            `;
+            
+            shipmentsList.appendChild(shipmentCard);
+        });
+    }
+
+    // Получение текста статуса
+    function getStatusText(status) {
+        const statusMap = {
+            'pending': 'В обработке',
+            'processing': 'В процессе',
+            'shipped': 'Отгружено',
+            'delivered': 'Доставлено',
+            'completed': 'Завершено'
+        };
+        return statusMap[status] || status;
+    }
+
+    // Сохранение настроек
+    async function saveUserSettings() {
+        const login = document.getElementById('loginInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
+        const password = document.getElementById('passwordInput').value;
+        
+        if (!login || !email) {
+            showNotification('Заполните обязательные поля', 'error');
+            return;
+        }
+        
+        try {
+            const updateData = { login, email };
+            if (password) {
+                updateData.password = password;
+            }
+            
+            // Используем PUT /users/{user_id} из вашего API
+            const response = await fetch(`${API_BASE_URL}/users/${currentUser.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка обновления');
+            }
+            
+            const updatedUser = await response.json();
+            
+            // Обновляем локальные данные
+            localStorage.setItem('user_info', JSON.stringify(updatedUser));
+            currentUser = updatedUser;
+            
+            // Обновляем UI
+            updateUserUI(updatedUser);
+            showNotification('Настройки успешно сохранены');
+            
+            // Очищаем поле пароля
+            document.getElementById('passwordInput').value = '';
+            
+        } catch (error) {
+            console.error('Ошибка сохранения настроек:', error);
+            showNotification('Ошибка: ' + error.message, 'error');
+        }
+    }
+
+    // Выход из системы
+    async function logout() {
+        try {
+            if (userToken) {
+                // Используем POST /users/logout из вашего API
+                await fetch(`${API_BASE_URL}/users/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token: userToken })
+                });
+            }
+        } catch (error) {
+            console.error('Ошибка выхода:', error);
+        }
+        
+        // Очищаем локальное хранилище
+        localStorage.removeItem('user_token');
+        localStorage.removeItem('user_info');
+        
+        // Показываем уведомление
+        showNotification('Вы успешно вышли из системы', 'success');
+        
+        // Ждем немного и перенаправляем на главную страницу (index.html ДО входа)
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1500);
+    }
+
+    // Инициализация табов
+    function initTabs() {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                
+                // Обновляем активные кнопки
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Обновляем активные контенты
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId + 'Tab') {
+                        content.classList.add('active');
+                        
+                        // Загружаем данные при переключении
+                        switch(tabId) {
+                            case 'orders':
+                                loadUserOrders();
+                                break;
+                            case 'shipments':
+                                loadUserShipments();
+                                break;
+                        }
+                    }
+                });
+            });
+        });
+    }
+
+    // Обновление данных каждые 30 секунд
+    function startAutoRefresh() {
+        setInterval(() => {
+            if (document.querySelector('#ordersTab').classList.contains('active')) {
+                loadUserOrders();
+            }
+            if (document.querySelector('#shipmentsTab').classList.contains('active')) {
+                loadUserShipments();
+            }
+        }, 30000);
+    }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log('Личный кабинет загружен');
+        
+        // Проверяем авторизацию
+        if (!checkAuth()) {
+            return;
+        }
+        
+        // Загружаем информацию о пользователе
+        await loadUserInfo();
+        
+        // Инициализируем табы
+        initTabs();
+        
+        // Загружаем начальные данные (заказы)
+        loadUserOrders();
+        
+        // Назначаем обработчики
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        document.getElementById('saveSettingsBtn').addEventListener('click', saveUserSettings);
+        
+        // Запускаем автообновление
+        startAutoRefresh();
+    });
+
+    // Глобальный обработчик ошибок
+    window.addEventListener('error', function(e) {
+        console.error('Глобальная ошибка:', e.error);
+        showNotification('Произошла ошибка приложения', 'error');
+    });
+
+    // Дополнительные функции для отладки
+    async function testAPI() {
+        console.log('Тестируем API эндпоинты...');
+        
+        const endpoints = [
+            '/users/check-token/test',
+            '/shipments',
+            '/users'
+        ];
+        
+        for (const endpoint of endpoints) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`);
+                console.log(`${endpoint}: ${response.status} ${response.statusText}`);
+            } catch (error) {
+                console.error(`${endpoint}: ${error.message}`);
+            }
+        }
+    }
+    </script>
+</body>
+</html>

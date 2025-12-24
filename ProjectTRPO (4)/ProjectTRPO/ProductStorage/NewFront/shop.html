@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            height: 70px;
+            background-color: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .left-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .right-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .buttonn, .vxod, .admin {
+            border: 0;
+            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .buttonn:hover, .vxod:hover, .admin:hover {
+            background: linear-gradient(135deg, #F7C48F 0%, #8B7355 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 115, 85, 0.3);
+        }
+
+        .corzina-icon {
+            width: 50px;
+            height: 50px;
+            margin-left: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .corzina-icon:hover {
+            transform: scale(1.1) translateY(-2px);
+        }
+
+        /* Основной контент магазина */
+        .shop-content {
+            margin-top: 70px;
+            padding: 40px 20px;
+        }
+
+        .shop-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .shop-title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .shop-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Фильтры и поиск */
+        .shop-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #F7C48F;
+            border-radius: 25px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #8B7355;
+            box-shadow: 0 5px 15px rgba(139, 115, 85, 0.2);
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 12px 25px;
+            border: 2px solid #F7C48F;
+            background: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .category-btn.active,
+        .category-btn:hover {
+            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+            color: white;
+            border-color: #8B7355;
+        }
+
+        /* Сетка товаров */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #8B7355;
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .product-category {
+            color: #8B7355;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .product-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .product-description {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .add-to-cart {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-cart:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #ff6b6b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        /* Баннер скидки */
+        .discount-banner {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin: 50px auto;
+            border-radius: 20px;
+            max-width: 1200px;
+        }
+
+        .discount-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .discount-text {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Новые стили для динамических элементов */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #8B7355;
+            background: white;
+            border-radius: 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .error-message {
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: center;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .no-products {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 1.2rem;
+            background: white;
+            border-radius: 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* Стили для статуса наличия */
+        .stock-status {
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+
+        .stock-status.low-stock {
+            background: #ff6b6b;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .stock-status.in-stock {
+            background: #4CAF50;
+            color: white;
+        }
+
+        /* Анимация пульсации для низкого запаса */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Стили для единиц измерения */
+        .unit-badge {
+            display: inline-block;
+            background: #8B7355;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        /* Стили для уведомлений */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Стили для счетчика корзины */
+        .cart-counter {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff6b6b;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .corzina-icon {
+            position: relative;
+        }
+
+        /* Стили для цены без скидки */
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 1rem;
+            margin-right: 10px;
+        }
+
+        .discount-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        /* Стили для мини-индикатора запаса */
+        .stock-indicator {
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .stock-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+
+        .stock-fill.low {
+            background: #ff6b6b;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .shop-title {
+                font-size: 2.2rem;
+            }
+
+            .shop-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .category-filter {
+                justify-content: center;
+            }
+
+            .products-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                padding: 0 10px;
+            }
+
+            .discount-banner {
+                margin: 30px 10px;
+                padding: 20px;
+            }
+
+            .discount-title {
+                font-size: 1.5rem;
+            }
+
+            .notification {
+                left: 20px;
+                right: 20px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .shop-content {
+                padding: 20px 10px;
+            }
+
+            .shop-title {
+                font-size: 1.8rem;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .product-card {
+                margin: 0 10px;
+            }
+
+            .buttonn, .vxod, .admin {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+        }
+
+        /* Стили для ссылки корзины */
+        .cart-link {
+            position: relative;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .cart-link:hover .corzina-icon {
+            transform: scale(1.1) translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <div class="logo-container">
+                <a href="index.html" class="logo">StoreMarket</a>
+            </div>
+        </div>
+        <div class="right-section">
+            <!-- Исправленная корзина - теперь это ссылка -->
+            <a href="cart.html" class="cart-link">
+                <img class="corzina-icon" src="../photoPNG/тележка.png" alt="Корзина">
+                <div class="cart-counter" id="cartCounter" style="display: none;">0</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Уведомление о добавлении в корзину -->
+    <div class="notification" id="notification"></div>
+
+    <main class="shop-content">
+        <div class="shop-header">
+            <h1 class="shop-title">Наши товары</h1>
+            <p class="shop-subtitle">Широкий ассортимент качественных продуктов по доступным ценам. Быстрая доставка и свежие товары каждый день!</p>
+        </div>
+
+        <div class="shop-controls">
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Поиск товаров..." id="searchInput">
+            </div>
+            <div class="category-filter" id="categoryFilter">
+                <button class="category-btn active" data-category="all">Все товары</button>
+                <!-- Категории будут загружены динамически -->
+            </div>
+        </div>
+
+        <div class="discount-banner">
+            <h2 class="discount-title">Скидка 20% на первый заказ!</h2>
+            <p class="discount-text">Используйте промокод WELCOME20 при оформлении заказа</p>
+        </div>
+
+        <!-- Контейнер для товаров -->
+        <div id="productsContainer">
+            <div class="loading">Загрузка товаров...</div>
+        </div>
+    </main>
+
+    <script>
+    // Конфигурация API - используем уже существующие эндпоинты
+    const API_BASE_URL = 'http://localhost:8000';
+    
+    // Эмодзи для категорий
+    const categoryEmojis = {
+        'овощи': '🥦',
+        'фрукты': '🍎',
+        'молочные': '🥛',
+        'молочка': '🥛',
+        'мясо': '🥩',
+        'мясные': '🥩',
+        'бакалея': '🍚',
+        'крупы': '🍚',
+        'напитки': '🥤',
+        'вода': '🥤',
+        'хлеб': '🍞',
+        'сладости': '🍫',
+        'кондитерские': '🍫',
+        'рыба': '🐟',
+        'морепродукты': '🦐',
+        'замороженные': '❄️',
+        'консервы': '🥫',
+        'специи': '🌶️',
+        'чай': '☕',
+        'кофе': '☕',
+        'default': '🛒'
+    };
+
+    // Получение эмодзи для категории
+    function getCategoryEmoji(categoryName) {
+        if (!categoryName) return categoryEmojis.default;
+        
+        const lowerName = categoryName.toLowerCase();
+        for (const [key, emoji] of Object.entries(categoryEmojis)) {
+            if (lowerName.includes(key.toLowerCase())) {
+                return emoji;
+            }
+        }
+        
+        return categoryEmojis.default;
+    }
+
+    // Показать уведомление
+    function showNotification(message, type = 'success') {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.style.background = type === 'error' ? '#ff6b6b' : 
+                                       type === 'warning' ? '#ffa726' : 
+                                       type === 'info' ? '#2196F3' : 
+                                       '#4CAF50';
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
+    // Обновить счетчик корзины
+    function updateCartCounter() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        const counter = document.getElementById('cartCounter');
+        if (totalItems > 0) {
+            counter.textContent = totalItems;
+            counter.style.display = 'flex';
+        } else {
+            counter.style.display = 'none';
+        }
+    }
+
+    // Загрузка категорий (используем /categories который существует)
+    async function loadCategories() {
+        try {
+            console.log('Загружаем категории из:', `${API_BASE_URL}/categories`);
+            const response = await fetch(`${API_BASE_URL}/categories`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const categories = await response.json();
+            console.log('Получены категории:', categories);
+            
+            const categoryFilter = document.getElementById('categoryFilter');
+            
+            // Очищаем и добавляем кнопку "Все товары"
+            categoryFilter.innerHTML = '<button class="category-btn active" data-category="all">Все товары</button>';
+            
+            // Добавляем кнопки для каждой категории
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'category-btn';
+                button.textContent = `${getCategoryEmoji(category.name)} ${category.name}`;
+                button.setAttribute('data-category', category.id);
+                button.setAttribute('title', `Товаров: ${category.product_count || 0}`);
+                categoryFilter.appendChild(button);
+            });
+            
+            // Добавляем обработчики кликов
+            setupCategoryFilters();
+            
+        } catch (error) {
+            console.error('Ошибка загрузки категорий:', error);
+            showNotification('Не удалось загрузить категории', 'error');
+        }
+    }
+
+    // Загрузка товаров (используем /products который существует)
+    async function loadProducts(categoryId = null, searchQuery = '') {
+        const container = document.getElementById('productsContainer');
+        container.innerHTML = '<div class="loading">Загрузка товаров...</div>';
+        
+        try {
+            let url = `${API_BASE_URL}/products`;
+            const params = new URLSearchParams();
+            
+            // Если выбрана конкретная категория (не "all"), добавляем фильтр на сервер
+            if (categoryId && categoryId !== 'all') {
+                params.append('category_id', categoryId);
+                console.log('Фильтр по категории ID:', categoryId);
+            }
+            
+            // Если нужно, можно добавить low_stock фильтр
+            params.append('low_stock', 'false');
+            
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+            
+            console.log('Запрос товаров по URL:', url);
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            let products = await response.json();
+            console.log('Получены товары:', products.length, 'для категории:', categoryId);
+            
+            // Фильтрация поиска на клиенте (если нужна)
+            if (searchQuery && searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                products = products.filter(product => 
+                    product.name.toLowerCase().includes(query) ||
+                    (product.description && product.description.toLowerCase().includes(query)) ||
+                    (product.category_name && product.category_name.toLowerCase().includes(query))
+                );
+                console.log('После поиска осталось:', products.length);
+            }
+            
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="no-products">
+                        <h3>Товары не найдены</h3>
+                        <p>${searchQuery ? 'По вашему запросу ничего не найдено' : 
+                           categoryId && categoryId !== 'all' ? 'В этой категории нет товаров' : 
+                           'Попробуйте выбрать другую категорию'}</p>
+                        ${categoryId && categoryId !== 'all' ? 
+                            '<p><small>Или проверьте наличие товаров во всех категориях</small></p>' : 
+                            '<p><small>Или добавьте товары через админ-панель</small></p>'}
+                    </div>
+                `;
+                return;
+            }
+            
+            displayProducts(products);
+            
+        } catch (error) {
+            console.error('Ошибка загрузки товаров:', error);
+            container.innerHTML = `
+                <div class="error-message">
+                    <h3>Ошибка загрузки товаров</h3>
+                    <p>${error.message}</p>
+                    <p><small>Убедитесь, что сервер запущен на http://localhost:8000</small></p>
+                    <button onclick="location.reload()" style="margin-top: 10px; padding: 10px 20px; background: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Попробовать снова
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Отображение товаров
+    function displayProducts(products) {
+        const container = document.getElementById('productsContainer');
+        
+        container.innerHTML = '<div class="products-grid" id="productsGrid"></div>';
+        const grid = document.getElementById('productsGrid');
+        
+        // Получаем активную категорию для отображения в заголовке
+        const activeCategoryButton = document.querySelector('.category-btn.active');
+        let categoryName = 'Все товары';
+        
+        if (activeCategoryButton && activeCategoryButton.getAttribute('data-category') !== 'all') {
+            categoryName = activeCategoryButton.textContent.replace(/[🥦🍎🥛🥩🍚🥤🍞🍫🐟🦐❄️🥫🌶️☕🛒]/g, '').trim();
+        }
+        
+        // Обновляем заголовок
+        const shopTitle = document.querySelector('.shop-title');
+        if (shopTitle) {
+            shopTitle.textContent = categoryName;
+        }
+        
+        products.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.setAttribute('data-category', product.category_id);
+            productCard.setAttribute('data-name', product.name.toLowerCase());
+            
+            const isLowStock = product.current_quantity <= product.min_quantity;
+            const stockPercentage = Math.min(100, (product.current_quantity / (product.min_quantity || 1)) * 100);
+            
+            // Форматирование цены
+            const formattedPrice = product.price ? 
+                `₽ ${product.price.toFixed(2)}` : 
+                'Цена не указана';
+            
+            productCard.innerHTML = `
+                <div class="product-image">${getCategoryEmoji(product.category_name)}</div>
+                <div class="product-info">
+                    <div class="product-category">${product.category_name || 'Без категории'}</div>
+                    <h3 class="product-name">${product.name}</h3>
+                    <p class="product-description">${product.description || 'Описание отсутствует'}</p>
+                    
+                    <div class="stock-indicator">
+                        <div class="stock-fill ${isLowStock ? 'low' : ''}" style="width: ${stockPercentage}%"></div>
+                    </div>
+                    
+                    <div class="product-meta">
+                        <span>
+                            В наличии: ${product.current_quantity} 
+                            <span class="unit-badge">${product.unit || 'шт'}</span>
+                        </span>
+                        <span class="stock-status ${isLowStock ? 'low-stock' : 'in-stock'}">
+                            ${isLowStock ? ' Мало' : ' Есть'}
+                        </span>
+                    </div>
+                    
+                    <div class="product-price">${formattedPrice}</div>
+                    
+                    <button class="add-to-cart" 
+                            data-product-id="${product.id}"
+                            data-product-name="${product.name}"
+                            data-product-price="${product.price || 0}"
+                            ${isLowStock ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                        ${isLowStock ? 'Нет в наличии' : 'В корзину'}
+                    </button>
+                </div>
+            `;
+            
+            grid.appendChild(productCard);
+        });
+        
+        // Добавляем обработчики для кнопок "В корзину"
+        setupAddToCartButtons();
+    }
+
+    // Настройка фильтров категорий
+    function setupCategoryFilters() {
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                categoryButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const categoryId = this.getAttribute('data-category');
+                const searchQuery = document.getElementById('searchInput').value;
+                console.log('Фильтр: категория', categoryId, 'поиск:', searchQuery);
+                loadProducts(categoryId, searchQuery);
+            });
+        });
+    }
+
+    // Настройка поиска
+    function setupSearch() {
+        const searchInput = document.getElementById('searchInput');
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const activeCategory = document.querySelector('.category-btn.active');
+                const categoryId = activeCategory ? activeCategory.getAttribute('data-category') : 'all';
+                console.log('Поиск:', this.value, 'категория:', categoryId);
+                loadProducts(categoryId, this.value);
+            }, 500);
+        });
+    }
+
+    // Настройка кнопок "В корзину"
+    function setupAddToCartButtons() {
+        const addToCartButtons = document.querySelectorAll('.add-to-cart:not([disabled])');
+        
+        addToCartButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                const productName = this.getAttribute('data-product-name');
+                const productPrice = parseFloat(this.getAttribute('data-product-price'));
+                
+                addToCart(productId, productName, productPrice);
+                showNotification(`"${productName}" добавлен в корзину!`);
+            });
+        });
+    }
+
+    // Добавление в корзину
+    function addToCart(productId, productName, price) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        
+        // Проверяем, есть ли уже такой товар в корзине
+        const existingItemIndex = cart.findIndex(item => item.id == productId);
+        
+        if (existingItemIndex !== -1) {
+            // Увеличиваем количество существующего товара
+            cart[existingItemIndex].quantity += 1;
+        } else {
+            // Добавляем новый товар
+            cart.push({
+                id: productId,
+                name: productName,
+                price: price,
+                quantity: 1,
+                addedAt: new Date().toISOString()
+            });
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCounter();
+        
+        // Анимация кнопки
+        const button = document.querySelector(`.add-to-cart[data-product-id="${productId}"]`);
+        if (button) {
+            const originalText = button.textContent;
+            const originalBg = button.style.background;
+            
+            button.style.background = '#4CAF50';
+            button.textContent = '✓ Добавлено';
+            
+            setTimeout(() => {
+                button.style.background = originalBg;
+                button.textContent = originalText;
+            }, 1500);
+        }
+    }
+
+    // Обработчик для ссылки корзины
+    function setupCartLink() {
+        const cartLink = document.querySelector('.cart-link');
+        
+        cartLink.addEventListener('click', function(e) {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            
+            if (cart.length === 0) {
+                e.preventDefault(); // Отменяем переход, если корзина пуста
+                showNotification('Корзина пуста', 'info');
+                
+                // Анимация иконки корзины
+                const icon = this.querySelector('.corzina-icon');
+                icon.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    icon.style.transform = 'scale(1)';
+                }, 300);
+            }
+            // Если корзина не пустая - переход на cart.html произойдет автоматически
+        });
+    }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log('Страница магазина загружена');
+        
+        // Проверяем доступность сервера
+        try {
+            const response = await fetch(`${API_BASE_URL}/health`);
+            if (!response.ok) {
+                throw new Error('Сервер не доступен');
+            }
+            console.log('Сервер доступен');
+        } catch (error) {
+            console.error('Сервер не доступен:', error);
+            showNotification('Сервер не доступен. Запустите бэкенд на localhost:8000', 'error');
+        }
+        
+        // Загружаем категории
+        await loadCategories();
+        
+        // Загружаем все товары
+        await loadProducts();
+        
+        // Настраиваем поиск
+        setupSearch();
+        
+        // Настраиваем обработчик для корзины
+        setupCartLink();
+        
+        // Обновляем счетчик корзины
+        updateCartCounter();
+        
+        // Обновление данных каждые 60 секунд
+        setInterval(() => {
+            const activeCategory = document.querySelector('.category-btn.active');
+            const categoryId = activeCategory ? activeCategory.getAttribute('data-category') : 'all';
+            const searchQuery = document.getElementById('searchInput').value;
+            loadProducts(categoryId, searchQuery);
+        }, 60000);
+    });
+
+    // Глобальный обработчик ошибок
+    window.addEventListener('error', function(e) {
+        console.error('Глобальная ошибка:', e.error);
+        showNotification('Произошла ошибка приложения', 'error');
+    });
+    </script>
+</body>
+</html>

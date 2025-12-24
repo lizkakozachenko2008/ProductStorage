@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поставки - StoreMarket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+            min-height: 100vh;
+            color: #5a4a42;
+        }
+
+        .container {
+            width: 100%;
+            height: 80px;
+            background: #F7C48F;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #5a4a42;
+            text-decoration: none;
+        }
+
+        .admin-content {
+            padding: 50px 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #5a4a42;
+            margin-bottom: 15px;
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            color: #7a6a52;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .supplies-table-container {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .table-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .add-supply-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .add-supply-btn:hover {
+            background: #e8b47a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.1);
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+        }
+
+        th {
+            background: #F7C48F;
+            color: #5a4a42;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        tr:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .id-column {
+            width: 100px;
+            font-weight: 600;
+            color: #7a6a52;
+        }
+
+        .product-column {
+            width: 250px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .quantity-column {
+            width: 150px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+
+        .date-column {
+            width: 150px;
+            color: #7a6a52;
+        }
+
+        .supplier-column {
+            width: 200px;
+            color: #7a6a52;
+        }
+
+        .status-column {
+            width: 150px;
+        }
+
+        .actions-column {
+            width: 200px;
+            text-align: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit, .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-edit:hover, .btn-save:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+        }
+
+        .editable {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .editable-select {
+            background: rgba(247, 196, 143, 0.2);
+            border: 1px solid #F7C48F;
+            border-radius: 4px;
+            padding: 8px 12px;
+            width: 100%;
+            font-family: inherit;
+            font-size: inherit;
+            cursor: pointer;
+        }
+
+        .editable:focus, .editable-select:focus {
+            outline: none;
+            border-color: #e8b47a;
+            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
+        }
+
+        .add-form {
+            background: rgba(255, 253, 248, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(247, 196, 143, 0.3);
+            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+            margin-top: 30px;
+            display: none;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #5a4a42;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #5a4a42;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #F7C48F;
+            box-shadow: 0 0 0 2px rgba(247, 196, 143, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            background: #F7C48F;
+            color: #5a4a42;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid rgba(222, 193, 150, 0.5);
+        }
+
+        .submit-btn:hover {
+            background: #e8b47a;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #7a6a52;
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .status-delivered {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .status-in_progress {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .status-cancelled {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .status-partial {
+            background: rgba(155, 89, 182, 0.2);
+            color: #8e44ad;
+            border: 1px solid rgba(155, 89, 182, 0.3);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Стили для автодополнения продуктов */
+        .product-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid rgba(247, 196, 143, 0.5);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: calc(100% - 30px);
+        }
+
+        .product-suggestion {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:hover {
+            background: rgba(247, 196, 143, 0.1);
+        }
+
+        .product-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-id {
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .suggestion-name {
+            color: #7a6a52;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 1200px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .admin-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            th, td {
+                padding: 10px 15px;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .status-badge {
+                min-width: 100px;
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <a href="adminok.html" class="logo">StoreMarket</a>
+        </div>
+    </div>
+
+    <main class="admin-content">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление поставками</h1>
+            <p class="admin-subtitle">Просмотр и управление поставками товаров на склад</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messageContainer"></div>
+
+        <div class="supplies-table-container">
+            <div class="table-header">
+                <h2 class="table-title">Список поставок</h2>
+                <button class="add-supply-btn" id="showAddForm">+ Добавить поставку</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th class="id-column">ID поставки</th>
+                        <th class="product-column">Товар</th>
+                        <th class="quantity-column">Количество</th>
+                        <th class="date-column">Дата поставки</th>
+                        <th class="supplier-column">Поставщик</th>
+                        <th class="status-column">Статус</th>
+                        <th class="actions-column">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="suppliesTableBody">
+                    <tr><td colspan="7" class="empty-message">Загрузка поставок...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Форма добавления новой поставки -->
+        <div class="add-form" id="addForm">
+            <h2 class="form-title">Добавить новую поставку</h2>
+            <form id="addSupplyForm">
+                <div class="form-group">
+                    <label for="supplyProductId">Товар *</label>
+                    <input type="text" id="supplyProductId" placeholder="Начните вводить название или ID товара" required autocomplete="off">
+                    <div id="productSuggestions" class="product-suggestions" style="display: none;"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="supplyQuantity">Количество *</label>
+                        <input type="number" id="supplyQuantity" placeholder="Введите количество" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="supplyDate">Дата поставки</label>
+                        <input type="date" id="supplyDate">
+                        <small class="form-text">Оставьте пустым для текущей даты</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="supplySupplier">Поставщик *</label>
+                        <input type="text" id="supplySupplier" placeholder="Введите название поставщика" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplyStatus">Статус *</label>
+                        <select id="supplyStatus" required>
+                            <option value="pending">В ожидании</option>
+                            <option value="in_progress">В процессе</option>
+                            <option value="delivered" selected>Доставлено</option>
+                            <option value="partial">Частично</option>
+                            <option value="cancelled">Отменено</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="supplyNotes">Примечания</label>
+                    <textarea id="supplyNotes" placeholder="Дополнительная информация" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Добавить поставку</button>
+                    <button type="button" class="btn-cancel" id="hideAddForm">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    #<script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Элементы DOM
+        const suppliesTableBody = document.getElementById('suppliesTableBody');
+        const addForm = document.getElementById('addForm');
+        const addSupplyForm = document.getElementById('addSupplyForm');
+        const showAddFormBtn = document.getElementById('showAddForm');
+        const hideAddFormBtn = document.getElementById('hideAddForm');
+        const messageContainer = document.getElementById('messageContainer');
+        const supplyProductIdInput = document.getElementById('supplyProductId');
+        const productSuggestions = document.getElementById('productSuggestions');
+        const supplyDateInput = document.getElementById('supplyDate');
+        const formTitle = document.querySelector('.form-title');
+        const submitBtn = document.querySelector('.submit-btn');
+
+        // Устанавливаем текущую дату по умолчанию
+        const today = new Date().toISOString().split('T')[0];
+        supplyDateInput.value = today;
+
+        // Переменные для хранения данных
+        let allProducts = [];
+        let selectedProductId = null;
+        let isEditMode = false;
+        let currentEditId = null;
+
+        // Загрузка поставок при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadSupplies();
+        });
+
+        // Показать форму добавления
+        showAddFormBtn.addEventListener('click', () => {
+            isEditMode = false;
+            currentEditId = null;
+            formTitle.textContent = 'Добавить новую поставку';
+            submitBtn.textContent = 'Добавить поставку';
+            addForm.style.display = 'block';
+            addSupplyForm.reset();
+            supplyDateInput.value = today;
+            productSuggestions.style.display = 'none';
+            selectedProductId = null;
+            supplyProductIdInput.focus();
+            loadProductsForSuggestions();
+        });
+
+        // Скрыть форму
+        hideAddFormBtn.addEventListener('click', () => {
+            addForm.style.display = 'none';
+            resetForm();
+        });
+
+        // Сброс формы
+        function resetForm() {
+            isEditMode = false;
+            currentEditId = null;
+            formTitle.textContent = 'Добавить новую поставку';
+            submitBtn.textContent = 'Добавить поставку';
+            addSupplyForm.reset();
+            supplyDateInput.value = today;
+            productSuggestions.style.display = 'none';
+            selectedProductId = null;
+        }
+
+        // Загрузка продуктов для автодополнения
+        async function loadProductsForSuggestions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки продуктов');
+                }
+                
+                allProducts = await response.json();
+                console.log('Загружено продуктов:', allProducts.length);
+            } catch (error) {
+                console.error('Ошибка при загрузке продуктов:', error);
+                showMessage('Ошибка при загрузке списка продуктов', 'error');
+            }
+        }
+
+        // Автодополнение для выбора продукта
+        supplyProductIdInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.trim();
+            
+            if (searchTerm.length < 2) {
+                productSuggestions.style.display = 'none';
+                return;
+            }
+
+            // Фильтруем продукты по поисковому запросу
+            const filteredProducts = allProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.id.toString().includes(searchTerm)
+            );
+
+            if (filteredProducts.length > 0) {
+                productSuggestions.innerHTML = filteredProducts.map(product => `
+                    <div class="product-suggestion" 
+                         data-product-id="${product.id}" 
+                         data-product-name="${product.name}">
+                        <div class="suggestion-id">ID: ${product.id}</div>
+                        <div class="suggestion-name">${product.name}</div>
+                        <div class="suggestion-name" style="font-size: 0.8rem; color: #95a5a6;">
+                            В наличии: ${product.current_quantity || 0} ${product.unit || 'шт'}
+                        </div>
+                    </div>
+                `).join('');
+                productSuggestions.style.display = 'block';
+            } else {
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Обработка выбора продукта из списка
+        productSuggestions.addEventListener('click', (e) => {
+            const suggestion = e.target.closest('.product-suggestion');
+            if (suggestion) {
+                const productId = suggestion.dataset.productId;
+                const productName = suggestion.dataset.productName;
+                
+                selectedProductId = productId;
+                supplyProductIdInput.value = `${productName} (ID: ${productId})`;
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Скрыть подсказки при клике вне поля
+        document.addEventListener('click', (e) => {
+            if (!supplyProductIdInput.contains(e.target) && !productSuggestions.contains(e.target)) {
+                productSuggestions.style.display = 'none';
+            }
+        });
+
+        // Обработка формы (добавление/редактирование)
+        addSupplyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const quantity = parseInt(document.getElementById('supplyQuantity').value);
+            const supplyDate = document.getElementById('supplyDate').value;
+            const supplier = document.getElementById('supplySupplier').value.trim();
+            const status = document.getElementById('supplyStatus').value;
+            const notes = document.getElementById('supplyNotes').value.trim();
+
+            if (!selectedProductId) {
+                showMessage('Пожалуйста, выберите товар из списка', 'error');
+                return;
+            }
+
+            if (!quantity || quantity < 1) {
+                showMessage('Пожалуйста, введите корректное количество', 'error');
+                return;
+            }
+
+            if (!supplier) {
+                showMessage('Пожалуйста, введите поставщика', 'error');
+                return;
+            }
+
+            try {
+                const supplyData = {
+                    product_id: parseInt(selectedProductId),
+                    quantity: quantity,
+                    supplier: supplier,
+                    status: status
+                };
+
+                // Если дата указана, добавляем ее
+                if (supplyDate) {
+                    supplyData.supply_date = supplyDate;
+                    supplyData.delivery_date = supplyDate;
+                }
+
+                // Добавляем примечания если есть
+                if (notes) {
+                    supplyData.notes = notes;
+                }
+
+                console.log(`${isEditMode ? 'Обновление' : 'Создание'} поставки:`, supplyData);
+
+                let result;
+                if (isEditMode && currentEditId) {
+                    // Режим редактирования
+                    result = await updateSupply(currentEditId, supplyData);
+                    showMessage('Поставка успешно обновлена', 'success');
+                } else {
+                    // Режим добавления
+                    result = await createSupply(supplyData);
+                    showMessage('Поставка успешно создана', 'success');
+                }
+
+                console.log('Результат операции:', result);
+
+                // Перезагружаем список поставок
+                await loadSupplies();
+                
+                // Скрываем форму и сбрасываем
+                addForm.style.display = 'none';
+                resetForm();
+
+            } catch (error) {
+                console.error('Ошибка при сохранении поставки:', error);
+                showMessage('Ошибка при сохранении поставки: ' + error.message, 'error');
+            }
+        });
+
+        // Функция загрузки поставок
+        async function loadSupplies() {
+            try {
+                suppliesTableBody.innerHTML = '<tr><td colspan="7" class="empty-message">Загрузка...</td></tr>';
+                
+                const supplies = await getSupplies();
+                
+                if (supplies.length === 0) {
+                    suppliesTableBody.innerHTML = '<tr><td colspan="7" class="empty-message">Поставки не найдены</td></tr>';
+                    return;
+                }
+
+                suppliesTableBody.innerHTML = '';
+                supplies.forEach(supply => {
+                    const row = createSupplyRow(supply);
+                    suppliesTableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Ошибка при загрузке поставок:', error);
+                suppliesTableBody.innerHTML = '<tr><td colspan="7" class="empty-message">Ошибка при загрузке поставок</td></tr>';
+            }
+        }
+
+        // Создание строки поставки
+        function createSupplyRow(supply) {
+            const row = document.createElement('tr');
+            
+            // Определяем класс статуса
+            let statusClass = '';
+            let statusText = '';
+            switch(supply.status) {
+                case 'delivered':
+                    statusClass = 'status-delivered';
+                    statusText = 'Доставлено';
+                    break;
+                case 'pending':
+                    statusClass = 'status-pending';
+                    statusText = 'В ожидании';
+                    break;
+                case 'in_progress':
+                case 'in_transit':
+                    statusClass = 'status-in_progress';
+                    statusText = 'В процессе';
+                    break;
+                case 'partial':
+                    statusClass = 'status-partial';
+                    statusText = 'Частично';
+                    break;
+                case 'cancelled':
+                    statusClass = 'status-cancelled';
+                    statusText = 'Отменено';
+                    break;
+                default:
+                    statusClass = 'status-pending';
+                    statusText = supply.status || 'В ожидании';
+            }
+
+            // Получаем название продукта
+            let productName = supply.product_name || `Товар ID: ${supply.product_id}`;
+
+            // Форматируем дату
+            const formatDate = (dateString) => {
+                if (!dateString) return 'Н/Д';
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('ru-RU');
+                } catch {
+                    return dateString;
+                }
+            };
+
+            row.innerHTML = `
+                <td class="id-column">${supply.id}</td>
+                <td class="product-column">
+                    <strong>${productName}</strong><br>
+                    <small>ID: ${supply.product_id}</small>
+                </td>
+                <td class="quantity-column">${supply.quantity} шт</td>
+                <td class="date-column">
+                    ${formatDate(supply.supply_date || supply.delivery_date)}
+                </td>
+                <td class="supplier-column">${supply.supplier || '-'}</td>
+                <td class="status-column">
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </td>
+                <td class="actions-column">
+                    <div class="action-btns">
+                        <button class="btn-edit" onclick="editSupply(${supply.id})">Изменить</button>
+                        <button class="btn-delete" onclick="deleteSupply(${supply.id})">Удалить</button>
+                    </div>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        // Редактирование поставки
+        async function editSupply(supplyId) {
+            try {
+                const supply = await getSupply(supplyId);
+                if (!supply) {
+                    showMessage('Поставка не найдена', 'error');
+                    return;
+                }
+
+                // Загружаем продукты для выбора
+                await loadProductsForSuggestions();
+                
+                // Устанавливаем режим редактирования
+                isEditMode = true;
+                currentEditId = supplyId;
+                formTitle.textContent = 'Редактировать поставку';
+                submitBtn.textContent = 'Сохранить изменения';
+                
+                // Заполняем форму данными поставки
+                selectedProductId = supply.product_id;
+                
+                // Находим название продукта
+                const product = allProducts.find(p => p.id === supply.product_id);
+                if (product) {
+                    supplyProductIdInput.value = `${product.name} (ID: ${product.id})`;
+                } else {
+                    supplyProductIdInput.value = `Товар ID: ${supply.product_id}`;
+                }
+                
+                document.getElementById('supplyQuantity').value = supply.quantity;
+                
+                // Форматируем дату для input
+                const supplyDate = supply.supply_date || supply.delivery_date;
+                if (supplyDate) {
+                    const date = new Date(supplyDate);
+                    document.getElementById('supplyDate').value = date.toISOString().split('T')[0];
+                } else {
+                    document.getElementById('supplyDate').value = today;
+                }
+                
+                document.getElementById('supplySupplier').value = supply.supplier || '';
+                document.getElementById('supplyStatus').value = supply.status || 'pending';
+                document.getElementById('supplyNotes').value = supply.notes || '';
+                
+                // Показываем форму
+                addForm.style.display = 'block';
+                supplyProductIdInput.focus();
+                
+            } catch (error) {
+                console.error('Ошибка при редактировании поставки:', error);
+                showMessage('Ошибка при загрузке данных поставки: ' + error.message, 'error');
+            }
+        }
+
+        // Удаление поставки
+        async function deleteSupply(supplyId) {
+            const shouldDelete = confirm('Вы уверены, что хотите удалить эту поставку?');
+            
+            if (!shouldDelete) {
+                return;
+            }
+
+            try {
+                await deleteSupplyRequest(supplyId);
+                showMessage('Поставка успешно удалена', 'success');
+                await loadSupplies(); // Перезагружаем список
+                
+            } catch (error) {
+                console.error('Ошибка при удалении поставки:', error);
+                showMessage('Ошибка при удалении поставки: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== API функции ====================
+
+        // Получить все поставки
+        async function getSupplies() {
+            const response = await fetch(`${API_BASE_URL}/supplies`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Ошибка получения поставок:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Получить одну поставку
+        async function getSupply(supplyId) {
+            const response = await fetch(`${API_BASE_URL}/supplies/${supplyId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Ошибка получения поставки:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Создать поставку
+        async function createSupply(supplyData) {
+            console.log('Отправка запроса на создание поставки:', supplyData);
+            
+            const response = await fetch(`${API_BASE_URL}/supplies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(supplyData)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при создании поставки';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Обновить поставку (пробуем PUT, если не работает - PATCH)
+        async function updateSupply(supplyId, supplyData) {
+            console.log('Обновление поставки:', supplyId, supplyData);
+            
+            // Сначала пробуем PUT
+            let response = await fetch(`${API_BASE_URL}/supplies/${supplyId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(supplyData)
+            });
+            
+            // Если PUT не работает, пробуем PATCH
+            if (!response.ok && response.status === 405) {
+                console.log('PUT не сработал, пробуем PATCH...');
+                response = await fetch(`${API_BASE_URL}/supplies/${supplyId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(supplyData)
+                });
+            }
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при обновлении поставки';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Удалить поставку
+        async function deleteSupplyRequest(supplyId) {
+            const response = await fetch(`${API_BASE_URL}/supplies/${supplyId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа сервера:', errorText);
+                let errorDetail = 'Ошибка при удалении поставки';
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorDetail = errorJson.detail || errorText;
+                } catch {
+                    errorDetail = errorText || `HTTP ${response.status}`;
+                }
+                
+                throw new Error(errorDetail);
+            }
+            
+            return await response.json();
+        }
+
+        // Функция для показа сообщений
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageDiv);
+            
+            // Автоматически скрыть сообщение через 5 секунд
+            setTimeout(() => {
+                if (messageDiv.parentNode === messageContainer) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Сделаем функции глобальными для использования в onclick
+        window.editSupply = editSupply;
+        window.deleteSupply = deleteSupply;
+    </script>
+</body>
+</html>
