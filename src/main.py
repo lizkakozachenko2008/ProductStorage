@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Engine
+from sqlalchemy import create_engine, Engine, select
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi import APIRouter, Body, FastAPI, HTTPException, Depends, Path, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -97,7 +97,7 @@ async def startup_event():
                 print(f"  - ID: {a.id}, Логин: '{a.login}', Пароль: '{a.password}'")
                 
     except Exception as e:
-        print(f"⚠️  Ошибка при создании администратора: {e}")
+        print(f"  Ошибка при создании администратора: {e}")
         import traceback
         traceback.print_exc()
     
@@ -251,13 +251,20 @@ class ShipmentBase(BaseModel):
     user_id: Optional[int] = None
     order_id: Optional[int] = None
 
+    price: Optional[float] = None
+    total_amount: Optional[float] = None
+    cancel_reason: Optional[str] = None
+
+
 class ShipmentCreate(ShipmentBase):
     pass
+
 
 class ShipmentResponse(ShipmentBase):
     id: int
     shipment_date: datetime
     product_name: Optional[str] = None
+
 
 class OrderItemBase(BaseModel):
     product_id: int
@@ -348,10 +355,10 @@ class MoveToOverflowRequest(BaseModel):
     notes: Optional[str] = None
 
 @app.middleware("http")
-async def add_cors_headers(request, call_next):
+async def add_cors_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
@@ -361,10 +368,11 @@ async def options_handler():
         content={"status": "ok"},
         headers={
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
             "Access-Control-Allow-Headers": "*",
-        }
+        },
     )
+
 
 @app.get("/")
 def root():
@@ -412,10 +420,10 @@ def get_all_orders_admin(
 ):
     """Получить все заказы (для администратора)"""
     try:
-        print(f" Запрос заказов (статус={status})")
+        print(f"Запрос заказов (статус={status})")
         
         query = db.query(OrderORM)
-        
+
         if status:
             query = query.filter(OrderORM.status == status)
         
@@ -432,7 +440,7 @@ def get_all_orders_admin(
                         for item in items_data:
                             items.append(OrderItemResponse(
                                 product_id=item.get('product_id'),
-                                product_name=item.get('product_name'),
+                                product_name=item.get('product_name') or item.get('name'),
                                 quantity=item.get('quantity'),
                                 price=item.get('price'),
                                 unit=item.get('unit')
@@ -494,45 +502,26 @@ def update_admin_order_status(
     db: Session = Depends(get_db)
 ):
     """Обновить статус заказа"""
-    print(f" Обновление статуса заказа {order_id} на '{status}'")
+    print(f"🔄 Обновление статуса заказа {order_id} на '{status}'")
     
     order = db.query(OrderORM).filter(OrderORM.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Заказ не найден")
     
     order.status = status
-    db.commit()
     
-    return {
-        "success": True,
-        "message": f"Статус заказа #{order.order_number} обновлен на '{status}'",
-        "order_id": order_id,
-        "order_number": order.order_number,
-        "new_status": status
-    }
-
-@admins_router.put("/orders/{order_id}/status", response_model=dict)
-def update_order_status(
-    order_id: int,
-    status: str = Query(..., description="Новый статус заказа"),
-    db: Session = Depends(get_db)
-):
-    """Обновить статус заказа"""
-    order = db.query(OrderORM).filter(OrderORM.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Заказ не найден")
-    
-    order.status = status
-    
+    # Обновляем статус связанных отгрузок
     shipments = db.query(ShipmentORM).filter(ShipmentORM.order_id == order_id).all()
     for shipment in shipments:
         shipment.status = status
         
+        # Если статус 'completed', списываем товар со склада
         if status == 'completed':
             product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
             if product:
                 if product.current_quantity >= shipment.quantity:
                     product.current_quantity -= shipment.quantity
+                    print(f"📦 Списано {shipment.quantity} шт. товара '{product.name}'")
                 else:
                     db.rollback()
                     raise HTTPException(
@@ -543,11 +532,219 @@ def update_order_status(
     db.commit()
     
     return {
-        "message": "Статус заказа обновлен",
+        "success": True,
+        "message": f"Статус заказа #{order.order_number} обновлен на '{status}'",
         "order_id": order_id,
-        "new_status": status,
-        "shipments_updated": len(shipments)
+        "order_number": order.order_number,
+        "new_status": status
     }
+
+@admins_router.get("/debug/check-orders")
+def debug_check_orders(db: Session = Depends(get_db)):
+    """Проверить заказы в базе данных"""
+    try:
+        orders = db.query(OrderORM).all()
+        
+        result = []
+        for order in orders:
+            # Проверяем структуру items_json
+            items = []
+            try:
+                if order.items_json:
+                    items_data = json.loads(order.items_json)
+                    items = items_data if isinstance(items_data, list) else []
+            except:
+                items = []
+            
+            result.append({
+                "id": order.id,
+                "order_number": order.order_number,
+                "customer_name": order.customer_name,
+                "customer_email": order.customer_email,
+                "status": order.status,
+                "order_date": order.order_date.isoformat() if order.order_date else None,
+                "total_amount": float(order.total_amount) if order.total_amount else 0.0,
+                "items_count": len(items),
+                "has_shipments": bool(db.query(ShipmentORM).filter(ShipmentORM.order_id == order.id).first())
+            })
+        
+        return {
+            "success": True,
+            "total_orders": len(orders),
+            "orders": result,
+            "status_summary": {
+                "pending": len([o for o in orders if o.status == "pending"]),
+                "processing": len([o for o in orders if o.status == "processing"]),
+                "completed": len([o for o in orders if o.status == "completed"]),
+                "cancelled": len([o for o in orders if o.status == "cancelled"])
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+@admins_router.get("/debug/test-api")
+def debug_test_api():
+    """Тестовый эндпоинт для проверки доступности API"""
+    return {
+        "status": "API работает",
+        "timestamp": datetime.now().isoformat(),
+        "endpoints": {
+            "GET /admins/orders": "Все заказы",
+            "GET /admins/orders?status=pending": "Новые заказы",
+            "GET /admins/orders/debug": "Отладочная информация",
+            "GET /admins/debug/check-orders": "Проверка заказов",
+            "PUT /admins/orders/{id}/status": "Обновление статуса",
+            "POST /api/orders": "Создание заказа пользователем"
+        }
+    }
+
+@admins_router.get("/debug/all-orders-raw")
+def debug_all_orders_raw(db: Session = Depends(get_db)):
+    """Отладочный эндпоинт для проверки сырых данных заказов"""
+    try:
+        orders = db.query(OrderORM).order_by(OrderORM.order_date.desc()).all()
+        
+        result = []
+        for order in orders:
+            result.append({
+                "id": order.id,
+                "order_number": order.order_number,
+                "customer_name": order.customer_name,
+                "customer_email": order.customer_email,
+                "status": order.status,
+                "order_date": order.order_date.isoformat() if order.order_date else None,
+                "total_amount": float(order.total_amount) if order.total_amount else 0.0,
+                "has_items_json": bool(order.items_json),
+                "user_id": order.user_id
+            })
+        
+        return {
+            "success": True,
+            "total_orders": len(result),
+            "orders": result,
+            "statuses": sorted(set(o["status"] for o in result))
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+@admins_router.get("/debug/check-orders-creation")
+def debug_check_orders_creation(db: Session = Depends(get_db)):
+    """Проверить, правильно ли создаются заказы"""
+    try:
+        # Проверяем, есть ли заказы вообще
+        total_orders = db.query(OrderORM).count()
+        
+        # Последние 10 заказов
+        recent_orders = db.query(OrderORM).order_by(OrderORM.order_date.desc()).limit(10).all()
+        
+        recent_data = []
+        for order in recent_orders:
+            recent_data.append({
+                "id": order.id,
+                "order_number": order.order_number,
+                "customer": order.customer_name,
+                "email": order.customer_email,
+                "status": order.status,
+                "date": order.order_date.isoformat() if order.order_date else None,
+                "total": float(order.total_amount) if order.total_amount else 0.0
+            })
+        
+        # Проверяем таблицу shipments
+        total_shipments = db.query(ShipmentORM).count()
+        recent_shipments = db.query(ShipmentORM).order_by(ShipmentORM.shipment_date.desc()).limit(5).all()
+        
+        return {
+            "success": True,
+            "database": "connected",
+            "total_orders": total_orders,
+            "total_shipments": total_shipments,
+            "recent_orders": recent_data,
+            "recent_shipments": [
+                {
+                    "id": s.id,
+                    "order_id": s.order_id,
+                    "product_id": s.product_id,
+                    "quantity": s.quantity,
+                    "status": s.status
+                }
+                for s in recent_shipments
+            ],
+            "notes": "Если total_orders = 0, значит заказы не создаются. Проверьте фронтенд."
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "notes": "Проверьте подключение к базе данных"
+        }
+
+@admins_router.get("/debug/database-structure")
+def debug_database_structure(db: Session = Depends(get_db)):
+    """Проверить структуру базы данных"""
+    try:
+        # Проверяем существование таблиц
+        from sqlalchemy import inspect
+        inspector = inspect(db.bind)
+        tables = inspector.get_table_names()
+        
+        # Проверяем таблицу orders
+        orders_columns = []
+        if 'customer_orders' in tables:
+            orders_columns = inspector.get_columns('customer_orders')
+        
+        # Проверяем таблицу shipments
+        shipments_columns = []
+        if 'shipments' in tables:
+            shipments_columns = inspector.get_columns('shipments')
+        
+        # Считаем записи
+        orders_count = db.query(OrderORM).count()
+        shipments_count = db.query(ShipmentORM).count()
+        
+        # Последние записи
+        last_orders = db.query(OrderORM).order_by(OrderORM.id.desc()).limit(3).all()
+        
+        return {
+            "success": True,
+            "tables": tables,
+            "orders_table": {
+                "exists": 'customer_orders' in tables,
+                "columns": [{"name": c["name"], "type": str(c["type"])} for c in orders_columns],
+                "count": orders_count
+            },
+            "shipments_table": {
+                "exists": 'shipments' in tables,
+                "columns": [{"name": c["name"], "type": str(c["type"])} for c in shipments_columns],
+                "count": shipments_count
+            },
+            "last_orders": [
+                {
+                    "id": o.id,
+                    "order_number": o.order_number,
+                    "customer": o.customer_name,
+                    "status": o.status,
+                    "date": o.order_date.isoformat() if o.order_date else None
+                }
+                for o in last_orders
+            ]
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
 
 @admins_router.get("/orders/debug")
 def debug_admin_orders(db: Session = Depends(get_db)):
@@ -1450,7 +1647,7 @@ def update_purchase_order(order_id: int, order_update: PurchaseOrderBase, db: Se
     order.product_id = order_update.product_id
     order.quantity = order_update.quantity
     order.supplier = order_update.supplier
-    order.expected_delivery_date = order_update.expected_delivery_date
+    order.expected_delivery_date = order.expected_delivery_date
     order.notes = order_update.notes
     
     db.commit()
@@ -2249,7 +2446,7 @@ def get_shipments(
 ):
     """Получить все отгрузки с возможностью фильтрации"""
     
-    query = db.query(ShipmentORM)
+    query = select(ShipmentORM)
     
     if user_email:
         query = query.filter(ShipmentORM.customer_email == user_email)
@@ -2259,28 +2456,35 @@ def get_shipments(
     
     if order_number:
         query = query.filter(ShipmentORM.order_number == order_number)
-    
-    shipments = query.order_by(ShipmentORM.shipment_date.desc()).all()
+
+    query.options(*ShipmentORM.get_loads())
+    query.order_by(ShipmentORM.shipment_date.desc())
+
+    shipments = db.execute(query).scalars().all()
     
     result = []
     for shipment in shipments:
         product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
         product_name = product.name if product else "Неизвестный товар"
-        
+
         result.append({
-            "id": shipment.id,
-            "product_id": shipment.product_id,
-            "quantity": shipment.quantity,
-            "destination": shipment.destination,
-            "customer": shipment.customer,
-            "customer_email": shipment.customer_email,
-            "order_number": shipment.order_number,
-            "status": shipment.status,
-            "shipment_date": shipment.shipment_date,
-            "user_id": shipment.user_id,
-            "order_id": shipment.order_id,
-            "product_name": product_name
+        "id": shipment.id,
+        "product_id": shipment.product_id,
+        "quantity": shipment.quantity,
+        "destination": shipment.destination,
+        "customer": shipment.customer,
+        "customer_email": shipment.customer_email,
+        "order_number": shipment.order_number,
+        "status": shipment.status,
+        "shipment_date": shipment.shipment_date,
+        "user_id": shipment.user_id,
+        "order_id": shipment.order_id,
+        "product_name": product_name,
+        "price": shipment.price,
+        "total_amount": shipment.total_amount,
+        "cancel_reason": shipment.cancel_reason,
         })
+
     
     return result
 
@@ -2294,20 +2498,24 @@ def get_shipment(shipment_id: int, db: Session = Depends(get_db)):
     product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
     product_name = product.name if product else "Неизвестный товар"
     
-    return {
-        "id": shipment.id,
-        "product_id": shipment.product_id,
-        "quantity": shipment.quantity,
-        "destination": shipment.destination,
-        "customer": shipment.customer,
-        "customer_email": shipment.customer_email,
-        "order_number": shipment.order_number,
-        "status": shipment.status,
-        "shipment_date": shipment.shipment_date,
-        "user_id": shipment.user_id,
-        "order_id": shipment.order_id,
-        "product_name": product_name
+    return{
+    "id": shipment.id,
+    "product_id": shipment.product_id,
+    "quantity": shipment.quantity,
+    "destination": shipment.destination,
+    "customer": shipment.customer,
+    "customer_email": shipment.customer_email,
+    "order_number": shipment.order_number,
+    "status": shipment.status,
+    "shipment_date": shipment.shipment_date,
+    "user_id": shipment.user_id,
+    "order_id": shipment.order_id,
+    "product_name": product_name,
+    "price": shipment.price,
+    "total_amount": shipment.total_amount,
+    "cancel_reason": shipment.cancel_reason,
     }
+
 
 @shipments_router.patch("/{shipment_id}/status")
 def update_shipment_status(
@@ -2315,28 +2523,39 @@ def update_shipment_status(
     status_data: dict = Body(...),
     db: Session = Depends(get_db)
 ):
-    """Обновить только статус отгрузки"""
     shipment = db.query(ShipmentORM).filter(ShipmentORM.id == shipment_id).first()
     if not shipment:
         raise HTTPException(status_code=404, detail="Отгрузка не найдена")
-    
+
     new_status = status_data.get("status")
+    cancel_reason = status_data.get("cancel_reason")
+
     if not new_status:
-        raise HTTPException(status_code=400, detail="Статус не указан")
-    
-    valid_statuses = ["pending", "processing", "completed", "cancelled"]
+        raise HTTPException(status_code=400, detail="Новый статус не указан")
+
+    valid_statuses = ["pending", "processing", "approved", "shipped", "completed", "cancelled"]
     if new_status not in valid_statuses:
-        raise HTTPException(status_code=400, detail=f"Неверный статус. Допустимые: {', '.join(valid_statuses)}")
-    
+        raise HTTPException(
+            status_code=400,
+            detail=f"Недопустимый статус. Допустимые: {', '.join(valid_statuses)}"
+        )
+
     shipment.status = new_status
+
+    # если отмена — сохраняем причину
+    if new_status == "cancelled" and cancel_reason:
+        shipment.cancel_reason = cancel_reason
+
     db.commit()
-    
+
     return {
         "success": True,
         "message": "Статус обновлен",
         "shipment_id": shipment_id,
-        "new_status": new_status
+        "new_status": new_status,
+        "cancel_reason": shipment.cancel_reason,
     }
+
 
 @shipments_router.get("/user/{user_email}", response_model=List[ShipmentResponse])
 def get_shipments_by_user(
@@ -2381,29 +2600,39 @@ def create_shipment(shipment: ShipmentBase, db: Session = Depends(get_db)):
     product = db.query(ProductORM).filter(ProductORM.id == shipment.product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Товар не найден")
-    
+
     if shipment.quantity > product.current_quantity:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Недостаточно товара. Доступно: {product.current_quantity}, запрошено: {shipment.quantity}"
         )
-    
+
+    # если цену не передали, берём из товара
+    price = shipment.price if shipment.price is not None else (product.price or 0.0)
+    total_amount = shipment.total_amount if shipment.total_amount is not None else price * shipment.quantity
+
     new_shipment = ShipmentORM(
+        customer_email=shipment.customer_email,
         product_id=shipment.product_id,
         quantity=shipment.quantity,
         destination=shipment.destination,
         customer=shipment.customer,
         order_number=shipment.order_number,
         status=shipment.status,
-        shipment_date=datetime.now()
+        shipment_date=datetime.now(),
+        price=price,
+        total_amount=total_amount,
+        cancel_reason=shipment.cancel_reason,
+        user_id=shipment.user_id,
+        order_id=shipment.order_id,
     )
-    
+
     product.current_quantity -= shipment.quantity
-    
+
     db.add(new_shipment)
     db.commit()
     db.refresh(new_shipment)
-    
+
     return {
         "id": new_shipment.id,
         "product_id": new_shipment.product_id,
@@ -2413,8 +2642,15 @@ def create_shipment(shipment: ShipmentBase, db: Session = Depends(get_db)):
         "order_number": new_shipment.order_number,
         "status": new_shipment.status,
         "shipment_date": new_shipment.shipment_date,
-        "product_name": product.name
+        "product_name": product.name,
+        "customer_email": new_shipment.customer_email,
+        "price": new_shipment.price,
+        "total_amount": new_shipment.total_amount,
+        "cancel_reason": new_shipment.cancel_reason,
+        "user_id": new_shipment.user_id,
+        "order_id": new_shipment.order_id,
     }
+
 
 @shipments_router.put("/{shipment_id}", response_model=ShipmentResponse)
 def update_shipment(
@@ -2464,6 +2700,14 @@ def update_shipment(
     shipment.customer = shipment_update.customer
     shipment.order_number = shipment_update.order_number
     shipment.status = shipment_update.status
+    shipment.customer_email = shipment_update.customer_email
+
+    shipment.price = shipment_update.price
+    shipment.total_amount = shipment_update.total_amount
+    shipment.cancel_reason = shipment_update.cancel_reason
+    shipment.user_id = shipment_update.user_id
+    shipment.order_id = shipment_update.order_id
+
     
     db.commit()
     db.refresh(shipment)
@@ -2471,16 +2715,23 @@ def update_shipment(
     print(f"Отгрузка {shipment_id} обновлена успешно")
     
     return {
-        "id": shipment.id,
-        "product_id": shipment.product_id,
-        "quantity": shipment.quantity,
-        "destination": shipment.destination,
-        "customer": shipment.customer,
-        "order_number": shipment.order_number,
-        "status": shipment.status,
-        "shipment_date": shipment.shipment_date,
-        "product_name": product.name
-    }
+    "id": shipment.id,
+    "product_id": shipment.product_id,
+    "quantity": shipment.quantity,
+    "destination": shipment.destination,
+    "customer": shipment.customer,
+    "order_number": shipment.order_number,
+    "status": shipment.status,
+    "shipment_date": shipment.shipment_date,
+    "customer_email": shipment.customer_email,
+    "product_name": product.name,
+    "price": shipment.price,
+    "total_amount": shipment.total_amount,
+    "cancel_reason": shipment.cancel_reason,
+    "user_id": shipment.user_id,
+    "order_id": shipment.order_id,
+}
+
 
 @shipments_router.delete("/{shipment_id}", response_model=dict)
 def delete_shipment(shipment_id: int, db: Session = Depends(get_db)):
@@ -2510,20 +2761,23 @@ def create_customer_order(
 ):
     """Создать заказ клиента с привязкой к пользователю"""
     try:
-        print(f"Создание заказа для: {order.customer_email}")
-        print(f"Товары: {order.items}")
+        print(f" Создание заказа для: {order.customer_email}")
+        print(f" Товары: {order.items}")
+        print(f" Общая сумма: {order.total_amount}")
         
         user_id = None
         if order.user_token:
-            print(f"Проверяем токен: {order.user_token[:20]}...")
+            print(f" Проверяем токен: {order.user_token[:20]}...")
             user_data = user_tokens.get(order.user_token)
             if user_data:
                 user_id = user_data["user_id"]
-                print(f"Найден пользователь ID: {user_id}")
+                print(f"👤 Найден пользователь ID: {user_id}")
                 order.customer_email = user_data["email"]
         
         order_number = f"ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        print(f" Номер заказа: {order_number}")
         
+        # Проверяем наличие товаров
         for item in order.items:
             product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
             if not product:
@@ -2537,7 +2791,10 @@ def create_customer_order(
                     status_code=400,
                     detail=f"Недостаточно товара '{product.name}'. В наличии: {product.current_quantity}, требуется: {item.quantity}"
                 )
+            else:
+                print(f" Товар '{product.name}': {item.quantity} из {product.current_quantity} в наличии")
         
+        # Создаем заказ
         new_order = OrderORM(
             order_number=order_number,
             user_id=user_id,
@@ -2547,14 +2804,15 @@ def create_customer_order(
             customer_phone=order.customer_phone,
             order_comment=order.order_comment,
             total_amount=order.total_amount,
-            status="pending",
+            status="pending",  # Важно: используем "pending" для новых заказов
             items_json=json.dumps([item.dict() for item in order.items])
         )
         
         db.add(new_order)
-        db.commit()
-        db.refresh(new_order)
+        db.flush()  # Получаем ID заказа
+        print(f" Заказ создан с ID: {new_order.id}")
         
+        # Создаем отгрузки для каждого товара
         for item in order.items:
             product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
             
@@ -2570,10 +2828,13 @@ def create_customer_order(
                 user_id=user_id
             )
             db.add(shipment)
+            
+            # Уменьшаем количество товара на складе
+            product.current_quantity -= item.quantity
+            print(f" Создана отгрузка для товара '{product.name}'")
         
         db.commit()
-        
-        print(f"Заказ успешно создан: {order_number}")
+        print(f" Заказ успешно создан: {order_number}")
         
         return {
             "id": new_order.id,
@@ -2592,10 +2853,11 @@ def create_customer_order(
         
     except HTTPException:
         db.rollback()
+        print(" Ошибка HTTP при создании заказа")
         raise
     except Exception as e:
         db.rollback()
-        print(f"Ошибка создания заказа: {str(e)}")
+        print(f" Критическая ошибка создания заказа: {str(e)}")
         traceback.print_exc()
         raise HTTPException(
             status_code=500, 
@@ -2796,7 +3058,7 @@ def get_cart(user_data: dict = Depends(get_current_user)):
 
 # ===== ПОДКЛЮЧЕНИЕ ВСЕХ РОУТЕРОВ =====
 
-app.include_router(admins_router)  # ПЕРВЫЙ И ВАЖНЫЙ!
+app.include_router(admins_router) 
 app.include_router(users_router)
 app.include_router(categories_router)
 app.include_router(products_router)

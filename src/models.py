@@ -265,11 +265,16 @@ class ShipmentORM(Base):
     order_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default='pending')
     user_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'), nullable=True)
-    order_id: Mapped[Optional[int]] = mapped_column(ForeignKey('customer_orders.id'), nullable=True) 
+    order_id: Mapped[Optional[int]] = mapped_column(ForeignKey('customer_orders.id'), nullable=True)
+
+    price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    total_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    cancel_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     product: Mapped['ProductORM'] = relationship(back_populates='shipments')
-    user: Mapped[Optional['UserORM']] = relationship()
-    order: Mapped[Optional['OrderORM']] = relationship(back_populates='shipments')  
+    user: Mapped[Optional['UserORM']] = relationship(backref="shipments")
+    order: Mapped[Optional['OrderORM']] = relationship(back_populates='shipments')
+
 
 #Таблица для заказов 
 class OrderORM(Base):

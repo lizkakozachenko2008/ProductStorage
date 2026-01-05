@@ -683,7 +683,7 @@
                                     Единица измерения: ${item.unit || 'шт'}<br>
                                     В наличии: ${item.current_quantity || 0} ${item.unit || 'шт'}
                                 </div>
-                                <div class="item-price">₽ ${item.price ? item.price.toFixed(2) : '0.00'}</div>
+                                <div class="item-price">Br ${item.price ? item.price.toFixed(2) : '0.00'}</div>
                             </div>
                             <div class="item-controls">
                                 <div class="quantity-controls">
@@ -692,7 +692,7 @@
                                     <button class="quantity-btn plus" data-product-id="${item.id}">+</button>
                                 </div>
                                 <div class="item-total-price" style="font-weight: bold; color: #ff6b6b;">
-                                    ₽ ${totalPrice.toFixed(2)}
+                                    Br ${totalPrice.toFixed(2)}
                                 </div>
                                 <button class="remove-btn" data-product-id="${item.id}">Удалить</button>
                             </div>
@@ -729,12 +729,12 @@
                         
                         <div class="summary-item">
                             <span>Общая сумма:</span>
-                            <span id="totalAmount">0 ₽</span>
+                            <span id="totalAmount">0 Br</span>
                         </div>
                         
                         <div class="summary-total">
                             <span>К оплате:</span>
-                            <span class="total-amount" id="totalToPay">0 ₽</span>
+                            <span class="total-amount" id="totalToPay">0 Br</span>
                         </div>
                         
                         <form id="orderForm" class="order-form">
@@ -797,8 +797,8 @@
             
             // Обновляем UI
             document.getElementById('selectedItemsCount').textContent = selectedItemsCount;
-            document.getElementById('totalAmount').textContent = `${totalAmount.toFixed(2)} ₽`;
-            document.getElementById('totalToPay').textContent = `${totalAmount.toFixed(2)} ₽`;
+            document.getElementById('totalAmount').textContent = `${totalAmount.toFixed(2)}Br`;
+            document.getElementById('totalToPay').textContent = `${totalAmount.toFixed(2)} Br`;
             
             // Блокируем кнопку оформления, если ничего не выбрано
             const placeOrderBtn = document.getElementById('placeOrderBtn');
@@ -889,7 +889,7 @@
                 const price = cart[itemIndex].price || 0;
                 const totalElement = document.querySelector(`.cart-item[data-product-id="${productId}"] .item-total-price`);
                 if (totalElement) {
-                    totalElement.textContent = `₽ ${(price * newQuantity).toFixed(2)}`;
+                    totalElement.textContent = `Br${(price * newQuantity).toFixed(2)}`;
                 }
                 
                 updateOrderSummary();
@@ -979,8 +979,9 @@ async function handleOrderSubmit(event) {
                     quantity: item.quantity || 1,
                     destination: orderData.delivery_address,
                     customer: orderData.customer_name,
+                    customer_email: orderData.customer_email,
                     order_number: `ORDER_${Date.now()}_${item.id}`,
-                    status: 'completed' // Статус "завершено" - товар сразу убывает со склада
+                    status: 'pending'
                 };
                 
                 // Отправляем запрос на создание отгрузки

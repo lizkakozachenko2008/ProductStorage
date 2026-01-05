@@ -139,17 +139,19 @@
 
         /* Кнопки действий */
         .action-button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center; /* центр по горизонтали */
+        gap: 8px;
+    }
+
 
         .btn-primary {
             background: #4CAF50;
@@ -264,6 +266,7 @@
             margin-top: 20px;
         }
 
+
         @media (max-width: 768px) {
             .orders-grid {
                 grid-template-columns: 1fr;
@@ -327,38 +330,35 @@
             margin-left: 15px;
         }
 
-        /* Статусы */
-        .status-pending { background: #FFF3CD; color: #856404; border: 1px solid #ffeaa7; }
-        .status-processing { background: #D1ECF1; color: #0C5460; border: 1px solid #bee5eb; }
-        .status-shipped { background: #D4EDDA; color: #155724; border: 1px solid #c3e6cb; }
-        .status-completed { background: #CCE5FF; color: #004085; border: 1px solid #b8daff; }
-        .status-cancelled { background: #F8D7DA; color: #721c24; border: 1px solid #f5c6cb; }
-
-        /* Товары в заказе */
-        .order-items {
-            margin: 20px 0;
+        .status-pending {
+            background: #FFF3CD;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
-        .order-items table {
-            width: 100%;
-            background: #f9f9f9;
-            box-shadow: none;
+        .status-processing {
+            background: #D1ECF1;
+            color: #0C5460;
+            border: 1px solid #bee5eb;
         }
 
-        .order-items th {
-            background: #F7C48F;
-            padding: 10px 15px;
-            font-size: 0.9rem;
+        .status-shipped {
+            background: #D4EDDA;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        .order-items td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
+        .status-completed {
+            background: #CCE5FF;
+            color: #004085;
+            border: 1px solid #b8daff;
         }
 
-        .item-name { font-weight: 600; color: #5a4a42; }
-        .item-quantity { color: #7a6a52; text-align: center; }
-        .item-status { font-size: 0.85rem; }
+        .status-cancelled {
+            background: #F8D7DA;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
 
         .order-total {
             text-align: right;
@@ -370,7 +370,6 @@
             border-top: 2px solid #F7C48F;
         }
 
-        /* Действия с заказом */
         .order-actions {
             display: flex;
             gap: 10px;
@@ -386,7 +385,7 @@
             min-width: 120px;
         }
 
-        /* Детали заказа */
+        /* Детали заказа (модалка) */
         .order-details {
             margin-top: 20px;
             padding: 20px;
@@ -414,18 +413,44 @@
             line-height: 1.5;
         }
 
-        /* Форма добавления отгрузки */
+        .order-items table {
+            width: 100%;
+            background: #f9f9f9;
+            box-shadow: none;
+        }
+
+        .order-items th {
+            background: #F7C48F;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+
+        .order-items td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #5a4a42;
+        }
+
+        .item-quantity {
+            color: #7a6a52;
+            text-align: center;
+        }
+
+        .item-status {
+            font-size: 0.85rem;
+        }
+
+        /* Форма добавления */
         .add-form {
             background: white;
             border-radius: 12px;
             padding: 30px;
             margin-top: 20px;
             border: 2px dashed #F7C48F;
-            display: none;
-        }
-
-        .add-form.active {
-            display: block;
         }
 
         .form-title {
@@ -478,7 +503,6 @@
             border-top: 1px solid #eee;
         }
 
-        /* Статус опции */
         .status-options {
             display: flex;
             gap: 15px;
@@ -530,34 +554,16 @@
             gap: 12px;
         }
 
-        .notification.error {
-            border-left-color: #f44336;
-        }
-
-        .notification.warning {
-            border-left-color: #ff9800;
-        }
-
-        .notification.info {
-            border-left-color: #2196F3;
-        }
-
-        .notification i {
-            font-size: 1.2rem;
-        }
+        .notification.error { border-left-color: #f44336; }
+        .notification.warning { border-left-color: #ff9800; }
+        .notification.info { border-left-color: #2196F3; }
 
         @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
-        /* Загрузка и пустые состояния */
+        /* Состояния загрузки и пустоты */
         .loading {
             text-align: center;
             padding: 60px 20px;
@@ -565,11 +571,36 @@
             font-size: 1.1rem;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #7a6a52;
-        }
+        /* контейнер с заказами (белый блок) только для НОВЫХ заказов */
+#newView .orders-grid {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* сам пустой блок */
+#newView .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+
+/* сам пустой блок */
+.empty-state {
+    color: #7a6a52;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+
+
 
         .empty-state i {
             font-size: 3rem;
@@ -589,99 +620,49 @@
             margin-bottom: 20px;
         }
 
-        /* Редактируемые поля */
-        .editable {
-            background: rgba(247, 196, 143, 0.1);
-            border: 1px solid #F7C48F;
-            border-radius: 6px;
-            padding: 8px 12px;
-            width: 100%;
-            font-family: inherit;
-            font-size: inherit;
-            transition: all 0.3s ease;
-        }
-
-        .editable:focus {
-            outline: none;
-            border-color: #e8b47a;
-            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
-            background: white;
-        }
-
-        .editable-select {
-            background: rgba(247, 196, 143, 0.1);
-            border: 1px solid #F7C48F;
-            border-radius: 6px;
-            padding: 8px 12px;
-            width: 100%;
-            font-family: inherit;
-            font-size: inherit;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .editable-select:focus {
-            outline: none;
-            border-color: #e8b47a;
-            box-shadow: 0 0 5px rgba(247, 196, 143, 0.5);
-            background: white;
-        }
-
-        /* Адаптивность */
         @media (max-width: 768px) {
             .container {
                 padding: 0 20px;
                 height: 70px;
             }
-
             .admin-content {
                 padding: 20px 15px;
             }
-
             .admin-title {
                 font-size: 2rem;
             }
-
             .view-tabs {
                 flex-direction: column;
             }
-
             .table-header {
                 flex-direction: column;
                 gap: 15px;
                 align-items: flex-start;
             }
-
             th, td {
                 padding: 10px 15px;
                 font-size: 0.9rem;
             }
-
             .order-header {
                 flex-direction: column;
                 gap: 15px;
             }
-
             .order-actions {
                 justify-content: center;
             }
-
             .btn-small {
                 min-width: 100px;
                 flex: 1;
             }
-
+            .form-actions {
+                flex-direction: column;
+            }
             .details-row {
                 flex-direction: column;
                 gap: 5px;
             }
-
             .details-label {
                 width: 100%;
-            }
-
-            .form-actions {
-                flex-direction: column;
             }
         }
 
@@ -689,11 +670,9 @@
             .admin-title {
                 font-size: 1.7rem;
             }
-
             .order-card {
                 padding: 20px;
             }
-
             .orders-grid {
                 gap: 15px;
             }
@@ -710,63 +689,52 @@
     <main class="admin-content">
         <div class="admin-header">
             <h1 class="admin-title">Управление заказами и отгрузками</h1>
-            <p class="admin-subtitle">Просмотр и обработка заказов пользователей, управление статусами</p>
+            <p class="admin-subtitle">Просмотр и изменение статусов заказов клиентов, создание отгрузок</p>
         </div>
 
-        <!-- Уведомления -->
+        <!-- Панель уведомлений -->
         <div class="notification-panel" id="notificationPanel"></div>
 
-        <!-- Вкладки для переключения между видами -->
+        <!-- Вкладки -->
         <div class="view-tabs">
             <button class="view-tab active" data-view="orders">Все заказы</button>
             <button class="view-tab" data-view="new">Новые заказы</button>
-            <button class="view-tab" data-view="shipments">Отгрузки</button>
-            <button class="view-tab" data-view="add">Добавить отгрузку</button>
+            <button class="view-tab" data-view="shipments">Все отгрузки</button>
+            <button class="view-tab" data-view="add">Создать отгрузку</button>
         </div>
 
-        <!-- Контейнер для всех заказов -->
+        <!-- Все заказы -->
         <div class="content-container active" id="ordersView">
             <div class="table-header">
-                <h2 class="table-title">Все заказы пользователей</h2>
-                <button class="action-button btn-add" onclick="refreshOrders()">
-                    <span>🔄</span> Обновить
-                </button>
+                <h2 class="table-title">Все заказы (по отгрузкам)</h2>
             </div>
-            
-            <div class="orders-grid" id="ordersContainer"></div>
+
+            <div class="orders-grid" id="ordersContainer">
+                <!-- Карточки заказов подставляются здесь -->
+            </div>
         </div>
 
-        <!-- Контейнер для новых заказов -->
+        <!-- Новые заказы -->
         <div class="content-container" id="newView">
             <div class="table-header">
-                <h2 class="table-title">Новые заказы (требуют обработки)</h2>
+                <h2 class="table-title">Новые заказы</h2>
                 <div>
                     <button class="action-button btn-secondary" onclick="processAllPending()">
-                        <span>⚡</span> Обработать все
-                    </button>
-                    <button class="action-button btn-add" onclick="refreshOrders()" style="margin-left: 10px;">
-                        <span>🔄</span> Обновить
+                        <span>Отправить все в обработку</span>
                     </button>
                 </div>
             </div>
-            
-            <div class="orders-grid" id="newContainer"></div>
+
+            <div class="orders-grid" id="newContainer">
+                <!-- Тут будут только новые заказы -->
+            </div>
         </div>
 
         <!-- Контейнер для всех отгрузок -->
         <div class="content-container" id="shipmentsView">
             <div class="table-header">
                 <h2 class="table-title">Все отгрузки</h2>
-                <div>
-                    <button class="action-button btn-primary" onclick="exportShipments()">
-                        <span>📥</span> Экспорт
-                    </button>
-                    <button class="action-button btn-add" onclick="refreshShipments()" style="margin-left: 10px;">
-                        <span>🔄</span> Обновить
-                    </button>
-                </div>
             </div>
-            
             
             <table id="shipmentsTable">
                 <thead>
@@ -780,7 +748,6 @@
                     </tr>
                 </thead>
                 <tbody id="shipmentsTableBody">
-                    <!-- Отгрузки будут загружены здесь -->
                 </tbody>
             </table>
         </div>
@@ -818,6 +785,11 @@
                                    placeholder="Введите имя заказчика">
                         </div>
                         <div class="form-group">
+                            <label for="shipmentCustomerEmail">Email клиента</label>
+                            <input type="email" id="shipmentCustomerEmail" class="form-control" 
+                                   placeholder="Введите email клиента">
+                        </div>
+                        <div class="form-group">
                             <label for="shipmentOrderNumber">Номер заказа</label>
                             <input type="text" id="shipmentOrderNumber" class="form-control" 
                                    placeholder="Введите номер заказа (необязательно)">
@@ -825,29 +797,37 @@
                     </div>
 
                     <div class="form-group">
-                    <label>Статус отгрузки *</label>
+                        <label>Статус отгрузки *</label>
                         <div class="status-options">
                             <label class="status-option">
                                 <input type="radio" name="shipmentStatus" value="pending" checked>
-                                <span class="order-status-badge status-pending">В обработке</span>
+                                <span class="order-status-badge status-pending">Новый</span>
                             </label>
                             <label class="status-option">
                                 <input type="radio" name="shipmentStatus" value="processing">
-                                <span class="order-status-badge status-processing">В пути</span>
+                                <span class="order-status-badge status-processing">В обработке</span>
+                            </label>
+                            <label class="status-option">
+                                <input type="radio" name="shipmentStatus" value="shipped">
+                                <span class="order-status-badge status-shipped">Отгружен</span>
                             </label>
                             <label class="status-option">
                                 <input type="radio" name="shipmentStatus" value="completed">
                                 <span class="order-status-badge status-completed">Завершено</span>
+                            </label>
+                            <label class="status-option">
+                                <input type="radio" name="shipmentStatus" value="cancelled">
+                                <span class="order-status-badge status-cancelled">Отменён</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="form-actions">
                         <button type="submit" class="action-button btn-primary" style="flex: 1;">
-                            <span>➕</span> Добавить отгрузку
+                            <span>Создать отгрузку</span>
                         </button>
                         <button type="reset" class="action-button btn-warning" style="flex: 1;">
-                            <span>🗑️</span> Очистить
+                            <span>Очистить</span>
                         </button>
                     </div>
                 </form>
@@ -856,838 +836,932 @@
     </main>
 
     <script>
-    const API_BASE_URL = 'http://localhost:8000';
+        const API_BASE_URL = "http://localhost:8000";
 
-    // Элементы DOM
-    const notificationPanel = document.getElementById('notificationPanel');
-    const ordersContainer = document.getElementById('ordersContainer');
-    const newContainer = document.getElementById('newContainer');
-    const shipmentsTableBody = document.getElementById('shipmentsTableBody');
-    const viewTabs = document.querySelectorAll('.view-tab');
-    const contentContainers = document.querySelectorAll('.content-container');
-    
-    // Форма добавления отгрузки
-    const addShipmentForm = document.getElementById('addShipmentForm');
-    const shipmentProductIdInput = document.getElementById('shipmentProductId');
-    const productSuggestions = document.getElementById('productSuggestions');
-    const stockInfo = document.getElementById('stockInfo');
-    
-    // Данные
-    let allProducts = [];
-    let allOrders = [];
-    let selectedProductId = null;
-    let selectedProductStock = 0;
+        const notificationPanel = document.getElementById("notificationPanel");
+        const ordersContainer = document.getElementById("ordersContainer");
+        const newContainer = document.getElementById("newContainer");
+        const shipmentsTableBody = document.getElementById("shipmentsTableBody");
+        const viewTabs = document.querySelectorAll(".view-tab");
+        const contentContainers = document.querySelectorAll(".content-container");
+        const addShipmentForm = document.getElementById("addShipmentForm");
+        const shipmentProductIdInput = document.getElementById("shipmentProductId");
+        const productSuggestions = document.getElementById("productSuggestions");
+        const stockInfo = document.getElementById("stockInfo");
 
-    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        let allProducts = [];
+        let selectedProductId = null;
+        let selectedProductStock = 0;
+        let lastOrders = [];
+        let cancelReasonsFromServer = {};
 
-    document.addEventListener('DOMContentLoaded', () => {
-        initTabs();
-        loadProductsForSuggestions();
-        loadAllData();
-        
-        // Автообновление каждые 30 секунд
-        setInterval(loadAllData, 30000);
-    });
+        document.addEventListener("DOMContentLoaded", () => {
+            initTabs();
+            loadProductsForSuggestions();
+            loadAllData();
+            setInterval(loadAllData, 30000);
+            testApiConnection();
+        });
 
-    function initTabs() {
-        viewTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const view = tab.dataset.view;
-                
-                // Обновляем активные вкладки
-                viewTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Показываем нужный контейнер
-                contentContainers.forEach(container => {
-                    container.classList.remove('active');
-                    if (container.id === view + 'View') {
-                        container.classList.add('active');
-                        
-                        // Загружаем данные при переключении
-                        switch(view) {
-                            case 'orders':
-                                loadOrders();
-                                break;
-                            case 'new':
-                                loadNewOrders();
-                                break;
-                            case 'shipments':
-                                loadShipmentsTable();
-                                break;
+        window.addEventListener("error", function (event) {
+            console.error("Global error:", event.error);
+        });
+
+        window.addEventListener("unhandledrejection", function (event) {
+            console.error("Unhandled promise rejection:", event.reason);
+        });
+
+        function initTabs() {
+            viewTabs.forEach(tab => {
+                tab.addEventListener("click", () => {
+                    const view = tab.dataset.view;
+                    viewTabs.forEach(t => t.classList.remove("active"));
+                    tab.classList.add("active");
+                    contentContainers.forEach(container => {
+                        container.classList.remove("active");
+                        if (container.id === view + "View") {
+                            container.classList.add("active");
                         }
+                    });
+                    switch (view) {
+                        case "orders":
+                            loadOrders();
+                            break;
+                        case "new":
+                            loadNewOrders();
+                            break;
+                        case "shipments":
+                            loadShipmentsTable();
+                            break;
                     }
                 });
             });
-        });
-    }
+        }
 
-    async function loadAllData() {
-        try {
-            await loadProductsForSuggestions();
-            const activeTab = document.querySelector('.view-tab.active');
-            if (activeTab) {
-                switch(activeTab.dataset.view) {
-                    case 'orders':
-                        await loadOrders();
-                        break;
-                    case 'new':
-                        await loadNewOrders();
-                        break;
-                    case 'shipments':
-                        await loadShipmentsTable();
-                        break;
+        async function loadAllData() {
+            try {
+                await loadProductsForSuggestions();
+                const activeTab = document.querySelector(".view-tab.active");
+                if (activeTab) {
+                    switch (activeTab.dataset.view) {
+                        case "orders":
+                            await loadOrders();
+                            break;
+                        case "new":
+                            await loadNewOrders();
+                            break;
+                        case "shipments":
+                            await loadShipmentsTable();
+                            break;
+                    }
                 }
+            } catch (error) {
+                console.error("loadAllData error:", error);
             }
-        } catch (error) {
-            console.error('Ошибка загрузки данных:', error);
         }
-    }
 
-    // ==================== ЗАКАЗЫ ====================
-
-    async function loadOrders() {
-        showLoading('ordersLoading', 'ordersContainer');
-        
-        try {
-            // Получаем заказы через API администратора
-            const response = await fetch(`${API_BASE_URL}/admins/orders`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            allOrders = await response.json();
-            displayOrders(allOrders, 'ordersContainer');
-        } catch (error) {
-            console.error('Ошибка загрузки заказов:', error);
-            showError('ordersContainer', 'Не удалось загрузить заказы');
+        // === Вспомогательная функция форматирования номера ===
+        function formatOrderNumber(raw) {
+            if (!raw) return "ORD-" + String(Date.now()).slice(-6);
+            if (/^ORD-\d{6}$/i.test(raw)) return raw;
+            const num = parseInt(raw, 10);
+            if (!isNaN(num)) {
+                return "ORD-" + num.toString().padStart(6, "0");
+            }
+            return raw;
         }
-    }
 
-    async function loadNewOrders() {
-        showLoading('newLoading', 'newContainer');
-        
-        try {
-            // Получаем только заказы со статусом pending
-            const response = await fetch(`${API_BASE_URL}/admins/orders?status=pending`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const newOrders = await response.json();
-            displayOrders(newOrders, 'newContainer');
-        } catch (error) {
-            console.error('Ошибка загрузки новых заказов:', error);
-            showError('newContainer', 'Не удалось загрузить новые заказы');
+        // === Загрузка заказов (по отгрузкам) ===
+        async function loadOrders() {
+            showLoading("ordersLoading", "ordersContainer");
+            try {
+                const response = await fetch(`${API_BASE_URL}/shipments`);
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const shipments = await response.json();
+
+                // словарь причин отмены с бэка
+                cancelReasonsFromServer = {};
+                shipments.forEach(s => {
+                    if (s.cancel_reason && s.id) {
+                        cancelReasonsFromServer[s.id] = s.cancel_reason;
+                    }
+                });
+
+                const orders = shipments.filter(shipment =>
+                    shipment.customer || shipment.destination || shipment.order_number
+                );
+                displayOrders(orders, "ordersContainer");
+            } catch (error) {
+                console.error("loadOrders error:", error);
+                showError("ordersContainer", "Не удалось загрузить заказы");
+            }
         }
-    }
 
-    function displayOrders(orders, containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        
-        if (orders.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <span>📦</span>
-                    <h3>Заказы не найдены</h3>
-                    <p>Пока нет заказов для отображения</p>
+        async function loadNewOrders() {
+            showLoading("newLoading", "newContainer");
+            try {
+                const response = await fetch(`${API_BASE_URL}/shipments?status=pending`);
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const shipments = await response.json();
+
+                shipments.forEach(s => {
+                    if (s.cancel_reason && s.id) {
+                        cancelReasonsFromServer[s.id] = s.cancel_reason;
+                    }
+                });
+
+                const newOrders = shipments.filter(shipment =>
+                    shipment.customer || shipment.destination || shipment.order_number
+                );
+                displayOrders(newOrders, "newContainer");
+            } catch (error) {
+                console.error("loadNewOrders error:", error);
+                showError("newContainer", "Не удалось загрузить новые заказы");
+            }
+        }
+
+        function displayOrders(orders, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error("Container not found:", containerId);
+                return;
+            }
+
+            lastOrders = orders || [];
+
+            if (!orders || orders.length === 0) {
+                container.innerHTML = `
+          <div class="empty-state">
+            <h3>🧺</h3>
+            <h3>Пока нет заказов</h3>
+            <p>Создайте новую отгрузку или подождите новых заказов.</p>
+          </div>
+        `;
+                return;
+            }
+
+            let html = "";
+            orders.forEach(order => {
+                const orderDate = order.shipment_date
+                    ? new Date(order.shipment_date).toLocaleString("ru-RU", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    })
+                    : "—";
+
+                const statusClass = getStatusClass(order.status);
+                const statusText = getStatusText(order.status);
+
+                const itemPrice = order.price != null ? parseFloat(order.price) : null;
+                const itemQuantity = order.quantity || 0;
+                const itemTotal = itemPrice != null ? itemPrice * itemQuantity : null;
+
+                const totalAmount = order.total_amount != null
+                    ? parseFloat(order.total_amount)
+                    : (itemTotal != null ? itemTotal : 0);
+
+                let actionsHtml = "";
+                if (order.status === "pending") {
+                    actionsHtml = `
+            <button class="action-button btn-primary btn-small" onclick="approveOrder(${order.id})">
+              <span>Одобрить</span>
+            </button>
+            <button class="action-button btn-secondary btn-small" onclick="processOrder(${order.id})">
+              <span>В обработку</span>
+            </button>
+            <button class="action-button btn-danger btn-small" onclick="rejectOrder(${order.id})">
+              <span>Отклонить</span>
+            </button>
+          `;
+                } else if (order.status === "processing") {
+                    actionsHtml = `
+            <button class="action-button btn-info btn-small" onclick="shipOrder(${order.id})">
+              <span>Отгрузить</span>
+            </button>
+            <button class="action-button btn-primary btn-small" onclick="completeOrder(${order.id})">
+              <span>Завершить</span>
+            </button>
+          `;
+                } else if (order.status === "shipped") {
+                    actionsHtml = `
+            <button class="action-button btn-primary btn-small" onclick="completeOrder(${order.id})">
+              <span>Завершить</span>
+            </button>
+          `;
+                }
+
+                html += `
+          <div class="order-card">
+            <div class="order-header">
+              <div class="order-info">
+                <div class="order-number">
+                  ${formatOrderNumber(order.order_number || order.id)} (ID: ${order.id})
+                  <span class="order-status-badge ${statusClass}">${statusText}</span>
                 </div>
-            `;
-            return;
-        }
-        
-        let html = '';
-        orders.forEach(order => {
-            const orderDate = new Date(order.order_date).toLocaleDateString('ru-RU', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                <div class="order-customer">
+                  <strong>Клиент:</strong> ${order.customer || "—"}<br>
+                  <strong>Email:</strong> ${order.customer_email || "—"}<br>
+                  <strong>Адрес:</strong> ${order.destination || "—"}<br>
+                  <strong>Дата:</strong> ${orderDate}
+                </div>
+              </div>
+            </div>
+            <div class="order-total">
+              Итого: ${totalAmount.toFixed(2)} Br
+            </div>
+            <div class="order-actions">
+              ${actionsHtml}
+              <button class="action-button btn-warning btn-small" onclick="viewOrderDetails(${order.id})">
+                <span>Детали</span>
+              </button>
+            </div>
+          </div>
+        `;
             });
-            
-            // Определяем статус
+
+            container.innerHTML = html;
+        }
+
+        // === Таблица отгрузок ===
+        async function loadShipmentsTable() {
+            if (!shipmentsTableBody) return;
+            showLoading("shipmentsLoading", "shipmentsTableBody");
+            try {
+                const response = await fetch(`${API_BASE_URL}/shipments`);
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const shipments = await response.json();
+                displayShipmentsTable(shipments);
+            } catch (error) {
+                console.error("loadShipmentsTable error:", error);
+                showError("shipmentsTableBody", "Не удалось загрузить отгрузки");
+            }
+        }
+
+        function displayShipmentsTable(shipments) {
+            if (!shipmentsTableBody) return;
+            if (!shipments || shipments.length === 0) {
+                shipmentsTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: #7a6a52;">
+              Нет отгрузок
+            </td>
+          </tr>
+        `;
+                return;
+            }
+
+            let html = "";
+            shipments.forEach(shipment => {
+                const shipmentDate = shipment.shipment_date
+                    ? new Date(shipment.shipment_date).toLocaleDateString("ru-RU")
+                    : "—";
+                const statusClass = getStatusClass(shipment.status);
+                const statusText = getStatusText(shipment.status);
+
+                html += `
+          <tr>
+            <td class="id-column">${shipment.id}</td>
+            <td class="name-column">${shipment.product_name || ("ID " + shipment.product_id)}</td>
+            <td class="quantity-column">${shipment.quantity || 0}</td>
+            <td class="date-column">${shipmentDate}</td>
+            <td class="status-column">
+              <span class="order-status-badge ${statusClass}">${statusText}</span>
+            </td>
+            <td class="actions-column">
+              <div style="display: flex; gap: 5px; justify-content: center;">
+                <button class="action-button btn-primary" style="padding: 6px 12px; font-size: 0.9rem;" onclick="editShipment(${shipment.id})">
+                  Редактировать
+                </button>
+                <button class="action-button btn-danger" style="padding: 6px 12px; font-size: 0.9rem;" onclick="deleteShipment(${shipment.id})">
+                  Удалить
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+            });
+
+            shipmentsTableBody.innerHTML = html;
+        }
+
+        // === Подсказки по товарам ===
+        async function loadProductsForSuggestions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products`);
+                if (!response.ok) throw new Error("Не удалось загрузить товары");
+                allProducts = await response.json();
+            } catch (error) {
+                console.error("loadProductsForSuggestions error:", error);
+                showNotification("Ошибка загрузки товаров: " + error.message, "error");
+            }
+        }
+
+        if (shipmentProductIdInput) {
+            shipmentProductIdInput.addEventListener("input", (e) => {
+                const searchTerm = e.target.value.trim();
+                if (searchTerm.length < 2) {
+                    productSuggestions.style.display = "none";
+                    return;
+                }
+                const filteredProducts = allProducts.filter(product =>
+                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    product.id.toString().includes(searchTerm)
+                );
+                if (filteredProducts.length === 0) {
+                    productSuggestions.innerHTML = "";
+                    productSuggestions.style.display = "none";
+                    return;
+                }
+                productSuggestions.innerHTML = filteredProducts.map(product => `
+          <div style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee; background: white;"
+               onmouseover="this.style.background='#f9f9f9'"
+               onmouseout="this.style.background='white'"
+               onclick="selectProduct(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.current_quantity || 0}, ${product.price != null ? product.price : 0})">
+            <div style="font-weight: 600; color: #5a4a42;">${product.name}</div>
+            <div style="font-size: 0.9rem; color: #7a6a52;">
+              ID: ${product.id}, Остаток: ${product.current_quantity || 0} ${product.unit || ""}, Цена: ${(product.price || 0).toFixed ? product.price.toFixed(2) : product.price} Br
+            </div>
+          </div>
+        `).join("");
+                productSuggestions.style.display = "block";
+            });
+        }
+
+        let selectedProductPrice = 0;
+
+        window.selectProduct = function (productId, productName, stock, price) {
+            selectedProductId = productId;
+            selectedProductStock = stock;
+            selectedProductPrice = price || 0;
+            shipmentProductIdInput.value = `${productName} (ID: ${productId})`;
+            productSuggestions.style.display = "none";
+            stockInfo.innerHTML = `
+        <span style="color: ${stock > 0 ? "#27ae60" : "#e74c3c"}; font-weight: 600;">
+          На складе: ${stock}
+        </span>
+        &nbsp;&nbsp;
+        <span>Цена: ${(selectedProductPrice || 0).toFixed(2)} Br</span>
+      `;
+        };
+
+        if (addShipmentForm) {
+            addShipmentForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const quantity = parseInt(document.getElementById("shipmentQuantity").value);
+                const destination = document.getElementById("shipmentDestination").value.trim();
+                const customer = document.getElementById("shipmentCustomer").value.trim();
+                const customerEmail = document.getElementById("shipmentCustomerEmail").value.trim();
+                const orderNumber = document.getElementById("shipmentOrderNumber").value.trim();
+                const status = document.querySelector('input[name="shipmentStatus"]:checked').value;
+
+                if (!selectedProductId) {
+                    showNotification("Выберите товар из списка", "error");
+                    return;
+                }
+                if (!quantity || quantity < 1) {
+                    showNotification("Укажите корректное количество (минимум 1)", "error");
+                    return;
+                }
+                if (!destination) {
+                    showNotification("Укажите пункт назначения", "error");
+                    return;
+                }
+                if (quantity > selectedProductStock) {
+                    showNotification(`Недостаточно товара на складе. Доступно: ${selectedProductStock}`, "error");
+                    return;
+                }
+
+                try {
+                    const price = selectedProductPrice || 0;
+                    const totalAmount = price * quantity;
+
+                    const shipmentData = {
+                        product_id: selectedProductId,
+                        quantity,
+                        destination,
+                        status,
+                        price,
+                        total_amount: totalAmount
+                    };
+                    if (customer) shipmentData.customer = customer;
+                    if (customerEmail) shipmentData.customer_email = customerEmail;
+                    if (orderNumber) shipmentData.order_number = orderNumber;
+
+                    const response = await fetch(`${API_BASE_URL}/shipments`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(shipmentData)
+                    });
+
+                    if (!response.ok) {
+                        let errorText = "Ошибка создания отгрузки";
+                        try {
+                            const error = await response.json();
+                            errorText = error.detail || JSON.stringify(error);
+                        } catch {
+                            errorText = await response.text();
+                        }
+                        throw new Error(errorText);
+                    }
+
+                    await response.json();
+                    showNotification("Отгрузка успешно создана", "success");
+                    addShipmentForm.reset();
+                    selectedProductId = null;
+                    selectedProductStock = 0;
+                    selectedProductPrice = 0;
+                    stockInfo.innerHTML = "";
+                    productSuggestions.style.display = "none";
+                    loadShipmentsTable();
+                    loadOrders();
+                } catch (error) {
+                    console.error("addShipment error:", error);
+                    showNotification(error.message, "error");
+                }
+            });
+        }
+
+        // === Обновление статуса (PATCH /shipments/{id}/status) ===
+        async function updateShipmentStatus(shipmentId, newStatus, successMessage, extra = {}) {
+            try {
+                const body = Object.assign({ status: newStatus }, extra);
+                const response = await fetch(`${API_BASE_URL}/shipments/${shipmentId}/status`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error("HTTP " + response.status + " " + errorText);
+                }
+                showNotification(successMessage, "success");
+                await loadAllData();
+            } catch (error) {
+                console.error("updateShipmentStatus error:", error);
+                showNotification(error.message, "error");
+            }
+        }
+
+        async function approveOrder(orderId) {
+            await updateShipmentStatus(orderId, "approved", "Заказ одобрен");
+        }
+
+        async function rejectOrder(orderId) {
+            const reason = prompt("Укажите причину отклонения:");
+            if (!reason) return;
+            await updateShipmentStatus(orderId, "cancelled", "Заказ отклонён", { cancel_reason: reason });
+        }
+
+        async function processOrder(orderId) {
+            await updateShipmentStatus(orderId, "processing", "Заказ отправлен в обработку");
+        }
+
+        async function shipOrder(orderId) {
+            await updateShipmentStatus(orderId, "shipped", "Заказ отгружен");
+        }
+
+        async function completeOrder(orderId) {
+            await updateShipmentStatus(orderId, "completed", "Заказ завершён");
+        }
+
+        async function processAllPending() {
+            if (!confirm("Отправить все новые заказы в обработку?")) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/shipments?status=pending`);
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const pendingOrders = await response.json();
+                for (const order of pendingOrders) {
+                    await updateShipmentStatus(order.id, "processing", "Заказ отправлен в обработку");
+                }
+                showNotification(`Обработано заказов: ${pendingOrders.length}`, "success");
+                await loadAllData();
+            } catch (error) {
+                console.error("processAllPending error:", error);
+                showNotification(error.message, "error");
+            }
+        }
+
+        // === Детали заказа (таблица только в модалке) ===
+        window.viewOrderDetails = function(orderId) {
+            const order = lastOrders.find(o => o.id === orderId);
+            if (!order) {
+                showNotification("Заказ не найден в текущем списке", "error");
+                return;
+            }
+
+            const itemPrice = order.price != null ? parseFloat(order.price) : null;
+            const itemQuantity = order.quantity || 0;
+            const itemTotal = itemPrice != null ? itemPrice * itemQuantity : null;
+
+            const totalAmount = order.total_amount != null
+                ? parseFloat(order.total_amount)
+                : (itemTotal != null ? itemTotal : 0);
+
             const statusClass = getStatusClass(order.status);
             const statusText = getStatusText(order.status);
-            
-            // Товары заказа
-            let itemsHtml = '';
-            if (order.items && order.items.length > 0) {
-                itemsHtml = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Товар</th>
-                                <th>Количество</th>
-                                <th>Статус</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${order.items.map(item => `
-                                <tr>
-                                    <td class="item-name">${item.product_name || 'Товар'}</td>
-                                    <td class="item-quantity">${item.quantity} шт.</td>
-                                    <td class="item-status">
-                                        <span class="order-status-badge ${getStatusClass(item.status || order.status)}">
-                                            ${getStatusText(item.status || order.status)}
-                                        </span>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-            }
-            
-            // Действия в зависимости от статуса
-            let actionsHtml = '';
-            if (order.status === 'pending') {
-                actionsHtml = `
-                    <button class="action-button btn-primary btn-small" onclick="approveOrder(${order.id})">
-                        <span>✅</span> Одобрить
-                    </button>
-                    <button class="action-button btn-secondary btn-small" onclick="processOrder(${order.id})">
-                        <span>⚡</span> В обработку
-                    </button>
-                    <button class="action-button btn-danger btn-small" onclick="rejectOrder(${order.id})">
-                        <span>❌</span> Отклонить
-                    </button>
-                `;
-            } else if (order.status === 'processing') {
-                actionsHtml = `
-                    <button class="action-button btn-info btn-small" onclick="shipOrder(${order.id})">
-                        <span>🚚</span> Отправить
-                    </button>
-                    <button class="action-button btn-primary btn-small" onclick="completeOrder(${order.id})">
-                        <span>🏁</span> Завершить
-                    </button>
-                `;
-            } else if (order.status === 'shipped') {
-                actionsHtml = `
-                    <button class="action-button btn-primary btn-small" onclick="completeOrder(${order.id})">
-                        <span>🏁</span> Завершить доставку
-                    </button>
-                `;
-            }
-            
-            html += `
-                <div class="order-card">
-                    <div class="order-header">
-                        <div class="order-info">
-                            <div class="order-number">
-                                Заказ #${order.order_number}
-                                <span class="order-status-badge ${statusClass}">${statusText}</span>
-                            </div>
-                            <div class="order-customer">
-                                <strong>Клиент:</strong> ${order.customer_name}<br>
-                                <strong>Email:</strong> ${order.customer_email}<br>
-                                <strong>Адрес:</strong> ${order.delivery_address}<br>
-                                <strong>Дата:</strong> ${orderDate}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="order-items">
-                        ${itemsHtml}
-                    </div>
-                    
-                    <div class="order-total">
-                        Итого: ${order.total_amount ? order.total_amount.toFixed(2) : '0'} ₽
-                    </div>
-                    
-                    ${order.order_comment ? `
-                    <div class="order-details">
-                        <div class="details-row">
-                            <div class="details-label">Комментарий:</div>
-                            <div class="details-value">${order.order_comment}</div>
-                        </div>
-                    </div>
-                    ` : ''}
-                    
-                    <div class="order-actions">
-                        ${actionsHtml}
-                        <button class="action-button btn-warning btn-small" onclick="viewOrderDetails(${order.id})">
-                            <span>👁️</span> Детали
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html;
-    }
 
-    // ==================== ОТГРУЗКИ ====================
+            const orderDate = order.shipment_date
+                ? new Date(order.shipment_date).toLocaleString("ru-RU", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                })
+                : "—";
 
-    async function loadShipmentsTable() {
-        showLoading('shipmentsLoading', 'shipmentsTableBody');
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/shipments`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const shipments = await response.json();
-            displayShipmentsTable(shipments);
-        } catch (error) {
-            console.error('Ошибка загрузки отгрузок:', error);
-            showError('shipmentsTableBody', 'Не удалось загрузить отгрузки');
-        }
-    }
+            const reason = cancelReasonsFromServer[orderId] || order.cancel_reason || null;
+            const reasonHtml = reason ? `
+        <div class="details-row">
+          <div class="details-label">Причина отмены:</div>
+          <div class="details-value">${reason}</div>
+        </div>
+      ` : "";
 
-    function displayShipmentsTable(shipments) {
-        if (!shipmentsTableBody) return;
-        
-        if (shipments.length === 0) {
-            shipmentsTableBody.innerHTML = `
+            const modalHtml = `
+      <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 25px; border-radius: 12px; max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto;">
+          <h2 style="margin-bottom: 15px;">Детали заказа ${formatOrderNumber(order.order_number || order.id)}</h2>
+          <div class="order-details">
+            <div class="details-row">
+              <div class="details-label">Клиент:</div>
+              <div class="details-value">${order.customer || "—"}</div>
+            </div>
+            <div class="details-row">
+              <div class="details-label">Email:</div>
+              <div class="details-value">${order.customer_email || "—"}</div>
+            </div>
+            <div class="details-row">
+              <div class="details-label">Адрес:</div>
+              <div class="details-value">${order.destination || "—"}</div>
+            </div>
+            <div class="details-row">
+              <div class="details-label">Дата:</div>
+              <div class="details-value">${orderDate}</div>
+            </div>
+            <div class="details-row">
+              <div class="details-label">Статус:</div>
+              <div class="details-value">
+                <span class="order-status-badge ${statusClass}">${statusText}</span>
+              </div>
+            </div>
+            ${reasonHtml}
+          </div>
+
+          <div class="order-items" style="margin-top:20px;">
+            <table>
+              <thead>
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px; color: #7a6a52;">
-                        Отгрузки не найдены
-                    </td>
+                  <th>Товар</th>
+                  <th>Количество</th>
+                  <th>Цена</th>
+                  <th>Сумма</th>
+                  <th>Статус</th>
                 </tr>
-            `;
-            return;
-        }
-        
-        let html = '';
-        shipments.forEach(shipment => {
-            const shipmentDate = shipment.shipment_date ? 
-                new Date(shipment.shipment_date).toLocaleDateString('ru-RU') : 
-                'Не указана';
-            
-            const statusClass = getStatusClass(shipment.status);
-            const statusText = getStatusText(shipment.status);
-            
-            html += `
+              </thead>
+              <tbody>
                 <tr>
-                    <td class="id-column">${shipment.id}</td>
-                    <td class="name-column">
-                        ${shipment.product_name || `Товар #${shipment.product_id}`}
-                    </td>
-                    <td class="quantity-column">${shipment.quantity} шт.</td>
-                    <td class="date-column">${shipmentDate}</td>
-                    <td class="status-column">
-                        <span class="order-status-badge ${statusClass}">${statusText}</span>
-                    </td>
-                    <td class="actions-column">
-                        <div style="display: flex; gap: 5px; justify-content: center;">
-                            <button class="action-button btn-primary" style="padding: 6px 12px; font-size: 0.9rem;" 
-                                    onclick="editShipment(${shipment.id})">
-                                ✏️
-                            </button>
-                            <button class="action-button btn-danger" style="padding: 6px 12px; font-size: 0.9rem;" 
-                                    onclick="deleteShipment(${shipment.id})">
-                                🗑️
-                            </button>
-                        </div>
-                    </td>
+                  <td class="item-name">${order.product_name || "—"}</td>
+                  <td class="item-quantity">${itemQuantity} шт.</td>
+                  <td class="item-price">${itemPrice != null ? itemPrice.toFixed(2) + " Br" : "0.00 Br"}</td>
+                  <td class="item-total">${itemTotal != null ? itemTotal.toFixed(2) + " Br" : "0.00 Br"}</td>
+                  <td class="item-status">
+                    <span class="order-status-badge ${statusClass}">${statusText}</span>
+                  </td>
                 </tr>
-            `;
-        });
-        
-        shipmentsTableBody.innerHTML = html;
-    }
+              </tbody>
+            </table>
+            <div class="order-total" style="margin-top: 10px;">
+              Итого: ${totalAmount.toFixed(2)} Br
+            </div>
+          </div>
 
-    // ==================== ФОРМА ДОБАВЛЕНИЯ ОТГРУЗКИ ====================
+          <div style="margin-top: 20px; text-align: right;">
+            <button class="action-button btn-warning" id="closeDetailsBtn">Закрыть</button>
+          </div>
+        </div>
+      </div>
+    `;
 
-    async function loadProductsForSuggestions() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/products`);
-            if (!response.ok) throw new Error('Ошибка загрузки продуктов');
-            
-            allProducts = await response.json();
-        } catch (error) {
-            console.error('Ошибка загрузки продуктов:', error);
-            showNotification('Не удалось загрузить список продуктов', 'error');
-        }
-    }
+            const modal = document.createElement("div");
+            modal.innerHTML = modalHtml;
+            document.body.appendChild(modal);
 
-    // Автодополнение для продуктов
-    if (shipmentProductIdInput) {
-        shipmentProductIdInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.trim();
-            
-            if (searchTerm.length < 2) {
-                productSuggestions.style.display = 'none';
-                return;
-            }
-
-            const filteredProducts = allProducts.filter(product => 
-                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.id.toString().includes(searchTerm)
-            );
-
-            if (filteredProducts.length > 0) {
-                productSuggestions.innerHTML = filteredProducts.map(product => `
-                    <div style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee; 
-                         background: white; transition: background 0.3s;"
-                         onmouseover="this.style.background='#f9f9f9'" 
-                         onmouseout="this.style.background='white'"
-                         onclick="selectProduct(${product.id}, '${product.name}', ${product.current_quantity || 0})">
-                        <div style="font-weight: 600; color: #5a4a42;">${product.name}</div>
-                        <div style="font-size: 0.9rem; color: #7a6a52;">
-                            ID: ${product.id} | В наличии: ${product.current_quantity || 0} ${product.unit || 'шт'}
-                        </div>
-                    </div>
-                `).join('');
-                productSuggestions.style.display = 'block';
-            } else {
-                productSuggestions.style.display = 'none';
-            }
-        });
-    }
-
-    window.selectProduct = function(productId, productName, stock) {
-        selectedProductId = productId;
-        selectedProductStock = stock;
-        shipmentProductIdInput.value = `${productName} (ID: ${productId})`;
-        productSuggestions.style.display = 'none';
-        
-        stockInfo.innerHTML = `
-            <span style="color: ${stock > 0 ? '#27ae60' : '#e74c3c'}; font-weight: 600;">
-                В наличии: ${stock} шт.
-            </span>
-        `;
-    };
-
-    // Обработка формы
-    if (addShipmentForm) {
-        addShipmentForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const quantity = parseInt(document.getElementById('shipmentQuantity').value);
-            const destination = document.getElementById('shipmentDestination').value.trim();
-            const customer = document.getElementById('shipmentCustomer').value.trim();
-            const orderNumber = document.getElementById('shipmentOrderNumber').value.trim();
-            const status = document.querySelector('input[name="shipmentStatus"]:checked').value;
-
-            // Валидация
-            if (!selectedProductId) {
-                showNotification('Пожалуйста, выберите продукт из списка', 'error');
-                return;
-            }
-
-            if (!quantity || quantity < 1) {
-                showNotification('Введите корректное количество', 'error');
-                return;
-            }
-
-            if (!destination) {
-                showNotification('Введите пункт назначения', 'error');
-                return;
-            }
-
-            if (quantity > selectedProductStock) {
-                showNotification(`Недостаточно товара. В наличии: ${selectedProductStock} шт.`, 'error');
-                return;
-            }
-
-            try {
-                const shipmentData = {
-                    product_id: selectedProductId,
-                    quantity: quantity,
-                    destination: destination,
-                    status: status
-                };
-
-                if (customer) shipmentData.customer = customer;
-                if (orderNumber) shipmentData.order_number = orderNumber;
-
-                const response = await fetch(`${API_BASE_URL}/shipments`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(shipmentData)
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.detail || 'Ошибка создания отгрузки');
+            modal.querySelector("#closeDetailsBtn").addEventListener("click", () => {
+                document.body.removeChild(modal);
+            });
+            modal.firstElementChild.addEventListener("click", e => {
+                if (e.target === e.currentTarget) {
+                    document.body.removeChild(modal);
                 }
-
-                const result = await response.json();
-                
-                showNotification('Отгрузка успешно создана', 'success');
-                addShipmentForm.reset();
-                selectedProductId = null;
-                selectedProductStock = 0;
-                stockInfo.innerHTML = '';
-                productSuggestions.style.display = 'none';
-                
-                // Обновляем данные
-                loadShipmentsTable();
-                loadOrders();
-
-            } catch (error) {
-                console.error('Ошибка при создании отгрузки:', error);
-                showNotification('Ошибка: ' + error.message, 'error');
-            }
-        });
-    }
-
-    // ==================== ДЕЙСТВИЯ С ЗАКАЗАМИ ====================
-
-    async function approveOrder(orderId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/admins/orders/${orderId}/status?status=approved`, {
-                method: 'PUT'
             });
-            
-            if (!response.ok) throw new Error('Ошибка одобрения заказа');
-            
-            showNotification('Заказ одобрен', 'success');
-            loadAllData();
-        } catch (error) {
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
-    }
+        };
 
-    async function rejectOrder(orderId) {
-        const reason = prompt('Укажите причину отклонения заказа:');
-        if (!reason) return;
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/admins/orders/${orderId}/status?status=cancelled`, {
-                method: 'PUT'
-            });
-            
-            if (!response.ok) throw new Error('Ошибка отклонения заказа');
-            
-            showNotification(`Заказ отклонен. Причина: ${reason}`, 'warning');
-            loadAllData();
-        } catch (error) {
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
-    }
-
-    async function processOrder(orderId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/admins/orders/${orderId}/status?status=processing`, {
-                method: 'PUT'
-            });
-            
-            if (!response.ok) throw new Error('Ошибка обработки заказа');
-            
-            showNotification('Заказ переведен в обработку', 'success');
-            loadAllData();
-        } catch (error) {
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
-    }
-
-    async function shipOrder(orderId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/admins/orders/${orderId}/status?status=shipped`, {
-                method: 'PUT'
-            });
-            
-            if (!response.ok) throw new Error('Ошибка отправки заказа');
-            
-            showNotification('Заказ отправлен', 'success');
-            loadAllData();
-        } catch (error) {
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
-    }
-
-    async function completeOrder(orderId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/admins/orders/${orderId}/status?status=completed`, {
-                method: 'PUT'
-            });
-            
-            if (!response.ok) throw new Error('Ошибка завершения заказа');
-            
-            showNotification('Заказ завершен', 'success');
-            loadAllData();
-        } catch (error) {
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
-    }
-
-    async function processAllPending() {
-        if (!confirm('Обработать все новые заказы?')) return;
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/admins/orders?status=pending`);
-            if (!response.ok) throw new Error('Ошибка загрузки заказов');
-            
-            const pendingOrders = await response.json();
-            
-            for (const order of pendingOrders) {
-                await fetch(`${API_BASE_URL}/admins/orders/${order.id}/status?status=processing`, {
-                    method: 'PUT'
-                });
-            }
-            
-            showNotification(`Обработано ${pendingOrders.length} заказов`, 'success');
-            loadAllData();
-        } catch (error) {
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
-    }
-
-    // ==================== ДЕЙСТВИЯ С ОТГРУЗКАМИ ====================
-
-    async function editShipment(shipmentId) {
+        // === Редактирование / удаление отгрузок ===
+async function editShipment(shipmentId) {
     try {
-        // Получаем данные отгрузки
         const response = await fetch(`${API_BASE_URL}/shipments/${shipmentId}`);
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            throw new Error("HTTP " + response.status + " " + errorText);
         }
-        
         const shipment = await response.json();
-        
-        // Создаем модальное окно для редактирования
+
+        const statusClass = getStatusClass(shipment.status);
+        const statusText = getStatusText(shipment.status);
+
         const modalHtml = `
-            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center;">
-                <div style="background: white; padding: 30px; border-radius: 15px; width: 500px; max-width: 90%; max-height: 90%; overflow-y: auto;">
-                    <h2 style="margin-bottom: 20px; color: #5a4a42;">Редактировать отгрузку #${shipment.id}</h2>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Товар:</label>
-                        <div style="padding: 10px; background: #f9f9f9; border-radius: 8px;">
-                            ${shipment.product_name || `Товар #${shipment.product_id}`}
-                        </div>
-                        <input type="hidden" id="editProductId" value="${shipment.product_id}">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Количество:</label>
-                        <input type="number" id="editQuantity" value="${shipment.quantity}" min="1"
-                               style="width: 100%; padding: 10px; border: 2px solid #F7C48F; border-radius: 8px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Пункт назначения:</label>
-                        <input type="text" id="editDestination" value="${shipment.destination}" 
-                               style="width: 100%; padding: 10px; border: 2px solid #F7C48F; border-radius: 8px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Заказчик:</label>
-                        <input type="text" id="editCustomer" value="${shipment.customer || ''}" 
-                               style="width: 100%; padding: 10px; border: 2px solid #F7C48F; border-radius: 8px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Номер заказа:</label>
-                        <input type="text" id="editOrderNumber" value="${shipment.order_number || ''}" 
-                               style="width: 100%; padding: 10px; border: 2px solid #F7C48F; border-radius: 8px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Статус:</label>
-                        <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 8px;">
-                                <input type="radio" name="editStatus" value="pending" ${shipment.status === 'pending' ? 'checked' : ''}>
-                                <span class="order-status-badge status-pending">В обработке</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px;">
-                                <input type="radio" name="editStatus" value="processing" ${shipment.status === 'processing' ? 'checked' : ''}>
-                                <span class="order-status-badge status-processing">В пути</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px;">
-                                <input type="radio" name="editStatus" value="completed" ${shipment.status === 'completed' ? 'checked' : ''}>
-                                <span class="order-status-badge status-completed">Завершено</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px;">
-                                <input type="radio" name="editStatus" value="cancelled" ${shipment.status === 'cancelled' ? 'checked' : ''}>
-                                <span class="order-status-badge status-cancelled">Отменено</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 25px;">
-                        <button id="saveEditBtn" style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                            Сохранить
-                        </button>
-                        <button id="cancelEditBtn" style="flex: 1; padding: 12px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                            Отмена
-                        </button>
-                    </div>
-                </div>
+      <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2100; display: flex; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto;">
+          <h2 style="margin-bottom: 15px;">Редактирование отгрузки #${shipment.id}</h2>
+          
+          <div class="order-details">
+            <div class="details-row">
+              <div class="details-label">Товар (ID):</div>
+              <div class="details-value">
+                ${shipment.product_name || "—"} (ID: ${shipment.product_id})
+              </div>
             </div>
-        `;
-        
-        // Добавляем модальное окно
-        const modal = document.createElement('div');
+          </div>
+
+          <div style="margin-top: 15px;">
+            <div class="form-group">
+              <label>Количество</label>
+              <input type="number" id="editQuantity" class="form-control"
+                     value="${shipment.quantity || 0}" min="1">
+            </div>
+            <div class="form-group">
+              <label>Пункт назначения</label>
+              <input type="text" id="editDestination" class="form-control"
+                     value="${shipment.destination || ""}">
+            </div>
+            <div class="form-group">
+              <label>Клиент</label>
+              <input type="text" id="editCustomer" class="form-control"
+                     value="${shipment.customer || ""}">
+            </div>
+            <div class="form-group">
+              <label>Email клиента</label>
+              <input type="email" id="editCustomerEmail" class="form-control"
+                     value="${shipment.customer_email || ""}">
+            </div>
+            <div class="form-group">
+              <label>Номер заказа</label>
+              <input type="text" id="editOrderNumber" class="form-control"
+                     value="${shipment.order_number || ""}">
+            </div>
+            <div class="form-group">
+              <label>Цена за единицу (Br)</label>
+              <input type="number" step="0.01" id="editPrice" class="form-control"
+                     value="${shipment.price != null ? shipment.price : 0}">
+            </div>
+            <div class="form-group">
+              <label>Статус</label>
+              <div class="status-options">
+                <label class="status-option">
+                  <input type="radio" name="editStatus" value="pending" ${shipment.status === "pending" ? "checked" : ""}>
+                  <span class="order-status-badge status-pending">Новый</span>
+                </label>
+                <label class="status-option">
+                  <input type="radio" name="editStatus" value="processing" ${shipment.status === "processing" ? "checked" : ""}>
+                  <span class="order-status-badge status-processing">В обработке</span>
+                </label>
+                <label class="status-option">
+                  <input type="radio" name="editStatus" value="shipped" ${shipment.status === "shipped" ? "checked" : ""}>
+                  <span class="order-status-badge status-shipped">Отгружен</span>
+                </label>
+                <label class="status-option">
+                  <input type="radio" name="editStatus" value="completed" ${shipment.status === "completed" ? "checked" : ""}>
+                  <span class="order-status-badge status-completed">Завершён</span>
+                </label>
+                <label class="status-option">
+                  <input type="radio" name="editStatus" value="cancelled" ${shipment.status === "cancelled" ? "checked" : ""}>
+                  <span class="order-status-badge status-cancelled">Отменён</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Причина отмены</label>
+              <textarea id="editCancelReason" class="form-control" rows="2"
+                        placeholder="Укажите причину, если отгрузка отменена">${shipment.cancel_reason || ""}</textarea>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+            <button class="action-button btn-primary" id="saveEditBtn">Сохранить</button>
+            <button class="action-button btn-warning" id="cancelEditBtn">Отмена</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+        const modal = document.createElement("div");
         modal.innerHTML = modalHtml;
         document.body.appendChild(modal);
-        
-        // Обработчики для кнопок
-        document.getElementById('saveEditBtn').addEventListener('click', async () => {
+
+        const closeModal = () => {
+            if (modal.parentNode) document.body.removeChild(modal);
+        };
+
+        modal.querySelector("#cancelEditBtn").addEventListener("click", closeModal);
+        modal.firstElementChild.addEventListener("click", e => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+
+        modal.querySelector("#saveEditBtn").addEventListener("click", async () => {
+            const quantity = parseInt(document.getElementById("editQuantity").value);
+            const destination = document.getElementById("editDestination").value.trim();
+            const customer = document.getElementById("editCustomer").value.trim();
+            const customerEmail = document.getElementById("editCustomerEmail").value.trim();
+            const orderNumber = document.getElementById("editOrderNumber").value.trim();
+            const price = parseFloat(document.getElementById("editPrice").value) || 0;
+            const status = document.querySelector('input[name="editStatus"]:checked').value;
+            const cancelReason = document.getElementById("editCancelReason").value.trim();
+
+            if (!destination) {
+                showNotification("Укажите пункт назначения", "error");
+                return;
+            }
+            if (!quantity || quantity < 1) {
+                showNotification("Количество должно быть >= 1", "error");
+                return;
+            }
+
+            const totalAmount = price * quantity;
+
+            const updatedData = {
+                product_id: shipment.product_id,
+                quantity,
+                destination,
+                customer: customer || null,
+                customer_email: customerEmail || null,
+                order_number: orderNumber || null,
+                status,
+                price,
+                total_amount: totalAmount,
+                cancel_reason: cancelReason || null,
+                user_id: shipment.user_id || null,
+                order_id: shipment.order_id || null
+            };
+
             try {
-                const updatedData = {
-                    product_id: parseInt(document.getElementById('editProductId').value),
-                    quantity: parseInt(document.getElementById('editQuantity').value),
-                    destination: document.getElementById('editDestination').value.trim(),
-                    customer: document.getElementById('editCustomer').value.trim() || null,
-                    order_number: document.getElementById('editOrderNumber').value.trim() || null,
-                    status: document.querySelector('input[name="editStatus"]:checked').value
-                };
-                
-                // Валидация
-                if (!updatedData.destination) {
-                    showNotification('Пожалуйста, укажите пункт назначения', 'error');
-                    return;
-                }
-                
-                if (updatedData.quantity < 1) {
-                    showNotification('Количество должно быть больше 0', 'error');
-                    return;
-                }
-                
-                const saveResponse = await fetch(`${API_BASE_URL}/shipments/${shipmentId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                const resp = await fetch(`${API_BASE_URL}/shipments/${shipmentId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(updatedData)
                 });
-                
-                if (!saveResponse.ok) {
-                    const error = await saveResponse.json();
-                    throw new Error(error.detail || 'Ошибка сохранения');
+                if (!resp.ok) {
+                    let err = "";
+                    try {
+                        const data = await resp.json();
+                        err = data.detail || JSON.stringify(data);
+                    } catch {
+                        err = await resp.text();
+                    }
+                    throw new Error(err);
                 }
-                
-                // Удаляем модальное окно
-                document.body.removeChild(modal);
-                
-                // Обновляем данные
-                loadShipmentsTable();
-                showNotification('Отгрузка успешно обновлена', 'success');
-                
+                showNotification("Отгрузка обновлена", "success");
+                closeModal();
+                await loadShipmentsTable();
+                await loadOrders();
             } catch (error) {
-                showNotification('Ошибка сохранения: ' + error.message, 'error');
+                console.error("save edit error:", error);
+                showNotification("Ошибка сохранения: " + error.message, "error");
             }
         });
-        
-        document.getElementById('cancelEditBtn').addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
-        
-        // Закрытие по клику вне модального окна
-        modal.querySelector('div:first-child').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                document.body.removeChild(modal);
-            }
-        });
-        
+
     } catch (error) {
-        console.error('Ошибка редактирования отгрузки:', error);
-        showNotification('Ошибка загрузки данных отгрузки: ' + error.message, 'error');
+        console.error("editShipment error:", error);
+        showNotification("Не удалось загрузить отгрузку: " + error.message, "error");
     }
 }
 
-    async function deleteShipment(shipmentId) {
-        if (!confirm('Удалить эту отгрузку?')) return;
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/shipments/${shipmentId}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) throw new Error('Ошибка удаления отгрузки');
-            
-            showNotification('Отгрузка удалена', 'success');
-            loadShipmentsTable();
-        } catch (error) {
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
-    }
 
-    // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-
-    function getStatusText(status) {
-        const statusMap = {
-            'pending': 'На рассмотрении',
-            'approved': 'Одобрено',
-            'processing': 'В обработке',
-            'shipped': 'Отправлено',
-            'completed': 'Завершено',
-            'cancelled': 'Отменено'
-        };
-        return statusMap[status] || status;
-    }
-
-    function getStatusClass(status) {
-        const classMap = {
-            'pending': 'status-pending',
-            'approved': 'status-processing',
-            'processing': 'status-processing',
-            'shipped': 'status-shipped',
-            'completed': 'status-completed',
-            'cancelled': 'status-cancelled'
-        };
-        return classMap[status] || 'status-pending';
-    }
-
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        
-        let icon = '✅';
-        if (type === 'error') icon = '❌';
-        if (type === 'warning') icon = '⚠️';
-        if (type === 'info') icon = 'ℹ️';
-        
-        notification.innerHTML = `
-            <span style="font-size: 1.2rem;">${icon}</span>
-            <div>${message}</div>
-        `;
-        
-        notificationPanel.appendChild(notification);
-        
-        setTimeout(() => {
-            if (notification.parentNode === notificationPanel) {
-                notification.remove();
+        async function deleteShipment(shipmentId) {
+            if (!confirm("Удалить отгрузку #" + shipmentId + " и вернуть товар на склад?")) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/shipments/${shipmentId}`, {
+                    method: "DELETE"
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error("HTTP " + response.status + " " + errorText);
+                }
+                showNotification("Отгрузка удалена", "success");
+                loadShipmentsTable();
+                loadOrders();
+            } catch (error) {
+                console.error("deleteShipment error:", error);
+                showNotification(error.message, "error");
             }
-        }, 5000);
-    }
-
-    function showLoading(loadingId, containerId) {
-        const loadingElement = document.getElementById(loadingId);
-        const container = document.getElementById(containerId);
-        
-        if (loadingElement) {
-            loadingElement.style.display = 'block';
         }
-        
-        if (container) {
-            container.innerHTML = '';
+
+        // === Утилиты ===
+        function getStatusText(status) {
+            const statusMap = {
+                pending: "Новый",
+                approved: "Одобрен",
+                processing: "В обработке",
+                shipped: "Отгружен",
+                completed: "Завершён",
+                cancelled: "Отменён"
+            };
+            return statusMap[status] || status;
         }
-    }
 
-    function showError(containerId, message) {
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <span>❌</span>
-                    <h3>Ошибка</h3>
-                    <p>${message}</p>
-                    <button class="action-button btn-primary" onclick="loadAllData()">
-                        <span>🔄</span> Попробовать снова
-                    </button>
-                </div>
-            `;
+        function getStatusClass(status) {
+            const classMap = {
+                pending: "status-pending",
+                approved: "status-processing",
+                processing: "status-processing",
+                shipped: "status-shipped",
+                completed: "status-completed",
+                cancelled: "status-cancelled"
+            };
+            return classMap[status] || "status-pending";
         }
-    }
 
-    // Экспортные функции для кнопок
-    window.refreshOrders = loadOrders;
-    window.refreshShipments = loadShipmentsTable;
-    window.viewOrderDetails = function(orderId) {
-        showNotification('Просмотр деталей заказа #' + orderId, 'info');
-    };
-
-    window.exportShipments = function() {
-        showNotification('Экспорт отгрузок в разработке', 'info');
-    };
-
-    // Скрыть подсказки при клике вне поля
-    document.addEventListener('click', (e) => {
-        if (!shipmentProductIdInput.contains(e.target) && !productSuggestions.contains(e.target)) {
-            productSuggestions.style.display = 'none';
+        function showNotification(message, type = "success") {
+            const notification = document.createElement("div");
+            notification.className = `notification ${type}`;
+            let icon = "✔️";
+            if (type === "error") icon = "⚠️";
+            if (type === "warning") icon = "⚠️";
+            if (type === "info") icon = "ℹ️";
+            notification.innerHTML = `
+        <span style="font-size: 1.2rem">${icon}</span>
+        <div>${message}</div>
+      `;
+            notificationPanel.appendChild(notification);
+            setTimeout(() => {
+                if (notification.parentNode === notificationPanel) {
+                    notification.remove();
+                }
+            }, 5000);
         }
-    });
 
+        function showLoading(loadingId, containerId) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+        <div class="loading">
+          <span>Загрузка...</span>
+        </div>
+      `;
+            } else if (containerId === "shipmentsTableBody" && shipmentsTableBody) {
+                shipmentsTableBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 20px;">Загрузка...</td>
+        </tr>
+      `;
+            }
+        }
+
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+        <div class="empty-state">
+          <i>⚠️</i>
+          <h3>Ошибка</h3>
+          <p>${message}</p>
+        </div>
+      `;
+            } else if (containerId === "shipmentsTableBody" && shipmentsTableBody) {
+                shipmentsTableBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 20px; color: #7a6a52;">
+            Ошибка: ${message}
+          </td>
+        </tr>
+      `;
+            }
+        }
+
+        async function testApiConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                console.log("API статус:", data);
+            } catch (error) {
+                console.error("API недоступно:", error);
+                showNotification("API недоступно: " + error.message, "error");
+            }
+        }
+
+        document.addEventListener("click", (e) => {
+            if (shipmentProductIdInput && productSuggestions &&
+                !shipmentProductIdInput.contains(e.target) &&
+                !productSuggestions.contains(e.target)) {
+                productSuggestions.style.display = "none";
+            }
+        });
+
+        window.refreshShipments = loadShipmentsTable;
     </script>
 </body>
 </html>
