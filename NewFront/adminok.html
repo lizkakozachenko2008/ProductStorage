@@ -1,152 +1,270 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ру">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Администратор - StoreMarket</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+   <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
-            min-height: 100vh;
-            color: #5a4a42;
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+        min-height: 100vh;
+        color: #5a4a42;
+        /* убираем flex, чтобы контент не сжимался */
+        /* display: flex;
+           flex-direction: column; */
+    }
+
+
+    .container {
+        width: 100%;
+        height: 80px;
+        background: #F7C48F;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 30px;
+        border-bottom: 1px solid rgba(222, 193, 150, 0.5);
+        box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+    }
+
+    .logo {
+        font-size: 24px;
+        font-weight: 700;
+        color: #5a4a42;
+        text-decoration: none;
+    }
+
+    .admin-content {
+        padding: 50px 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding-bottom: 120px; /* отступ под футер, чтобы не прятался контент */
+    }
+
+    .admin-header {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .admin-title {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #5a4a42;
+        margin-bottom: 15px;
+    }
+
+    .admin-subtitle {
+        font-size: 1.2rem;
+        color: #7a6a52;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* 4 карточки в ряд на десктопе */
+    .admin-controls {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+    }
+
+    .control-card {
+        background: rgba(255, 253, 248, 0.95);
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        border: 1px solid rgba(247, 196, 143, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .control-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(247, 196, 143, 0.3);
+    }
+
+    .control-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .control-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #5a4a42;
+        margin-bottom: 15px;
+    }
+
+    .control-description {
+        color: #7a6a52;
+        line-height: 1.6;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+        flex-grow: 1;
+    }
+
+    .action-btn {
+        background: #F7C48F;
+        color: #5a4a42;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        width: 100%;
+        max-width: 200px;
+        margin: 0 auto;
+        margin-top: auto;
+        border: 1px solid rgba(222, 193, 150, 0.5);
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .action-btn:hover {
+        background: #e8b47a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
+    }
+
+    /* Футер у низа (при min-height:100vh + паддинг у main) */
+    .site-footer {
+        width: 100%;
+        background-color: #F7C48F;
+        color: #333;
+        padding: 25px 0 12px;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        /* margin-top: auto;  уже не нужен, можно оставить или убрать */
+    }
+
+    .footer-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        text-align: left;
+    }
+
+    .footer-column {
+        flex: 0 1 220px;
+        max-width: 260px;
+    }
+
+    .footer-column h3,
+    .footer-column h4 {
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    .footer-column p {
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .footer-column ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .footer-column ul li {
+        margin-bottom: 6px;
+        font-size: 0.95rem;
+    }
+
+    .footer-column a {
+        color: #333;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .footer-column a:hover {
+        color: #8B7355;
+    }
+
+    .footer-socials {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .footer-socials a {
+        padding: 5px 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.5);
+        font-size: 0.9rem;
+        color: #333;
+    }
+
+    .footer-socials a:hover {
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .footer-bottom {
+        max-width: 1200px;
+        margin: 15px auto 0;
+        padding: 10px 20px 0;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
+    /* Адаптив: 2 карточки на планшете, 1 на телефоне */
+    @media (max-width: 1024px) {
+        .admin-controls {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 600px) {
+        .admin-controls {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .admin-title {
+            font-size: 2.5rem;
         }
 
         .container {
-            width: 100%;
-            height: 80px;
-            background: #F7C48F;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            border-bottom: 1px solid rgba(222, 193, 150, 0.5);
-            box-shadow: 0 2px 10px rgba(247, 196, 143, 0.3);
+            padding: 0 20px;
         }
 
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            color: #5a4a42;
-            text-decoration: none;
-        }
-
-        .admin-content {
-            padding: 50px 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .admin-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .admin-title {
-            font-size: 3rem;
-            font-weight: 700;
-            color: #5a4a42;
-            margin-bottom: 15px;
-        }
-
-        .admin-subtitle {
-            font-size: 1.2rem;
-            color: #7a6a52;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        .admin-controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-        }
-
-        .control-card {
-            background: rgba(255, 253, 248, 0.95);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            border: 1px solid rgba(247, 196, 143, 0.3);
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
-            display: flex;
+        .footer-inner {
             flex-direction: column;
-            height: 100%;
+            align-items: center;
+            text-align: center;
+            gap: 20px;
         }
 
-        .control-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(247, 196, 143, 0.3);
+        .footer-column {
+            max-width: none;
         }
 
-        .control-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            display: block;
+        .footer-socials {
+            justify-content: center;
         }
+    }
+</style>
 
-        .control-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #5a4a42;
-            margin-bottom: 15px;
-        }
-
-        .control-description {
-            color: #7a6a52;
-            line-height: 1.6;
-            font-size: 0.95rem;
-            margin-bottom: 20px;
-            flex-grow: 1;
-        }
-
-        .action-btn {
-            background: #F7C48F;
-            color: #5a4a42;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-            width: 100%;
-            max-width: 200px;
-            margin: 0 auto;
-            margin-top: auto;
-            border: 1px solid rgba(222, 193, 150, 0.5);
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .action-btn:hover {
-            background: #e8b47a;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
-        }
-
-        @media (max-width: 768px) {
-            .admin-title {
-                font-size: 2.5rem;
-            }
-
-            .admin-controls {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding: 0 20px;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -155,76 +273,113 @@
         </div>
     </div>
 
-    <main class="admin-content">
-        <div class="admin-header">
-            <h1 class="admin-title">Управление складом</h1>
-            <p class="admin-subtitle">Простой и удобный интерфейс для управления складскими операциями</p>
-        </div>
+    <div class="page-wrapper">
+        <main class="admin-content">
+            <div class="admin-header">
+                <h1 class="admin-title">Управление складом</h1>
+                <p class="admin-subtitle">Простой и удобный интерфейс для управления складскими операциями</p>
+            </div>
 
-        <div class="admin-controls">
-            <div class="control-card">
-                <div class="control-icon">👥</div>
-                <h3 class="control-title">Пользователи</h3>
-                <p class="control-description">Управление учетными записями сотрудников</p>
-                <a href="pepol.html" class="action-btn">Управление</a>
+            <div class="admin-controls">
+                <div class="control-card">
+                    <div class="control-icon">👥</div>
+                    <h3 class="control-title">Пользователи</h3>
+                    <p class="control-description">Управление учетными записями сотрудников</p>
+                    <a href="pepol.html" class="action-btn">Управление</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">📂</div>
+                    <h3 class="control-title">Категории</h3>
+                    <p class="control-description">Создание и редактирование категорий</p>
+                    <a href="category.html" class="action-btn">Редактировать</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">🗄️</div>
+                    <h3 class="control-title">Стеллажи</h3>
+                    <p class="control-description">Управление системой хранения товаров на складе</p>
+                    <a href="stelaz.html" class="action-btn">Настроить</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">📦</div>
+                    <h3 class="control-title">Товары</h3>
+                    <p class="control-description">Добавление и редактирование товаров</p>
+                    <a href="products.html" class="action-btn">Управление</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">📊</div>
+                    <h3 class="control-title">Запасы</h3>
+                    <p class="control-description">Управление остатками на складе</p>
+                    <a href="product_placements.html" class="action-btn">Просмотр</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">⚠️</div>
+                    <h3 class="control-title">Отстойник</h3>
+                    <p class="control-description">Товары требующие внимания</p>
+                    <a href="overflow.html" class="action-btn">Проверить</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">🚚</div>
+                    <h3 class="control-title">Поставки</h3>
+                    <p class="control-description">Учет поступлений товаров</p>
+                    <a href="supplies.html" class="action-btn">Учет</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">📤</div>
+                    <h3 class="control-title">Отгрузки</h3>
+                    <p class="control-description">Управление отгрузками</p>
+                    <a href="shipments.html" class="action-btn">Управление</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">🛒</div>
+                    <h3 class="control-title">Заказы</h3>
+                    <p class="control-description">Заказы на закупку товаров</p>
+                    <a href="purchase_orders.html" class="action-btn">Создать</a>
+                </div>
+                <div class="control-card">
+                    <div class="control-icon">📈</div>
+                    <h3 class="control-title">Отчеты</h3>
+                    <p class="control-description">Аналитика и статистика</p>
+                    <a href="report.html" class="action-btn">Смотреть</a>
+                </div>
             </div>
-            <div class="control-card">
-                <div class="control-icon">📂</div>
-                <h3 class="control-title">Категории</h3>
-                <p class="control-description">Создание и редактирование категорий</p>
-                <a href="category.html" class="action-btn">Редактировать</a>
-            </div>
-            <div class="control-card">
-                <div class="control-icon">🗄️</div>
-                <h3 class="control-title">Стеллажи</h3>
-                <p class="control-description">Управление системой хранения товаров на складе</p>
-                <a href="stelaz.html" class="action-btn">Настроить</a>
-            </div>
-            <div class="control-card">
-                <div class="control-icon">📦</div>
-                <h3 class="control-title">Товары</h3>
-                <p class="control-description">Добавление и редактирование товаров</p>
-                <a href="products.html" class="action-btn">Управление</a>
-            </div>
-            <div class="control-card">
-                <div class="control-icon">📊</div>
-                <h3 class="control-title">Запасы</h3>
-                <p class="control-description">Управление остатками на складе</p>
-                <a href="product_placements.html" class="action-btn">Просмотр</a>
-            </div>
-            <div class="control-card">
-                <div class="control-icon">⚠️</div>
-                <h3 class="control-title">Отстойник</h3>
-                <p class="control-description">Товары требующие внимания</p>
-                <a href="overflow.html" class="action-btn">Проверить</a>
-            </div>
-            <div class="control-card">
-                <div class="control-icon">🚚</div>
-                <h3 class="control-title">Поставки</h3>
-                <p class="control-description">Учет поступлений товаров</p>
-                <a href="supplies.html" class="action-btn">Учет</a>
-            </div>
-            <div class="control-card">
-                <div class="control-icon">📤</div>
-                <h3 class="control-title">Отгрузки</h3>
-                <p class="control-description">Управление отгрузками</p>
-                <a href="shipments.html" class="action-btn">Управление</a>
+        </main>
 
+        <footer class="site-footer">
+          <div class="footer-inner">
+            <div class="footer-column">
+              <h3>StoreMarket</h3>
+              <p>Современный онлайн‑магазин свежих продуктов с быстрой доставкой.</p>
             </div>
-            <div class="control-card">
-                <div class="control-icon">🛒</div>
-                <h3 class="control-title">Заказы</h3>
-                <p class="control-description">Заказы на закупку товаров</p>
-                <a href="purchase_orders.html" class="action-btn">Создать</a>
-
+            <div class="footer-column">
+              <h4>Навигация</h4>
+              <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="shop.html">Магазин</a></li>
+                <li><a href="cart.html">Корзина</a></li>
+                <li><a href="profile.html">Личный кабинет</a></li>
+              </ul>
             </div>
-            <div class="control-card">
-                <div class="control-icon">📈</div>
-                <h3 class="control-title">Отчеты</h3>
-                <p class="control-description">Аналитика и статистика</p>
-                <a href="report.html" class="action-btn">Смотреть</a>
+            <div class="footer-column">
+              <h4>Контакты</h4>
+              <ul>
+                <li>+375 (25) SPH 57 66</li>
+                <li>support@storemarket.by</li>
+                <li>г. Минск</li>
+              </ul>
             </div>
-        </div>
-    </main>
+            <div class="footer-column">
+              <h4>Мы в соцсетях</h4>
+              <div class="footer-socials">
+                <a href="#">VK</a>
+                <a href="#">Telegram</a>
+                <a href="#">Instagram</a>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <span>© 2026 StoreMarket. Все права защищены.</span>
+          </div>
+        </footer>
+    </div>
 </body>
 </html>

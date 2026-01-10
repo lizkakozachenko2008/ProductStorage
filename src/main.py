@@ -14,7 +14,7 @@ from src.service import ProductServiceType
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import secrets
-
+from sqlalchemy import func
 from .models import (
     Base, 
     UserORM, 
@@ -132,6 +132,10 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+
+class UserPasswordChange(BaseModel):
+    old_password: str
+    new_password: str
 
 class CategoryBase(BaseModel):
     name: str
@@ -1021,43 +1025,37 @@ def get_users(db: Session = Depends(get_db)):
         for user in users
     ]
 
-@users_router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    """Получить пользователя по ID"""
-    user = db.query(UserORM).filter(UserORM.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-    
-    return {"id": user.id, "login": user.login, "email": user.email}
+
 
 @users_router.get("/orders", response_model=List[dict])
 def get_user_orders(
-    token: str = Query(..., description="Токен пользователя"),
-    db: Session = Depends(get_db)
+    token: Optional[str] = Query(None, description="Токен пользователя"),
+    db: Session = Depends(get_db),
 ):
-    """Получить заказы пользователя по токену"""
+    if not token:
+        raise HTTPException(status_code=401, detail="Токен не передан")
+
     user_data = user_tokens.get(token)
     if not user_data:
         raise HTTPException(status_code=401, detail="Неавторизованный доступ")
-    
+
     user_id = user_data["user_id"]
-    
+
     orders = db.query(OrderORM).filter(
         (OrderORM.user_id == user_id) | (OrderORM.customer_email == user_data["email"])
     ).all()
-    
+
     result = []
     for order in orders:
-        items = []
         try:
             items = json.loads(order.items_json) if order.items_json else []
-        except:
+        except Exception:
             items = []
-        
+
         shipments = db.query(ShipmentORM).filter(
             ShipmentORM.order_id == order.id
         ).all()
-        
+
         result.append({
             "id": order.id,
             "order_number": order.order_number,
@@ -1078,13 +1076,23 @@ def get_user_orders(
                     "quantity": s.quantity,
                     "status": s.status,
                     "shipment_date": s.shipment_date,
-                    "destination": s.destination
+                    "destination": s.destination,
                 }
                 for s in shipments
-            ]
+            ],
         })
-    
+
     return result
+
+
+@users_router.get("/{user_id}", response_model=UserResponse)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    """Получить пользователя по ID"""
+    user = db.query(UserORM).filter(UserORM.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    
+    return {"id": user.id, "login": user.login, "email": user.email}
 
 @users_router.post("", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -1138,6 +1146,36 @@ def update_user(user_id: int, user_update: UserBase, db: Session = Depends(get_d
     
     return {"id": user.id, "login": user.login, "email": user.email}
 
+@users_router.post("/orders", response_model=dict)
+def create_order(order_data: dict = Body(...), db: Session = Depends(get_db)):
+    """Создать заказ пользователя и связанные отгрузки"""
+    # ✅ фиксируем время создания (UTC)
+    order_datetime = datetime.now()
+    # 1. создаём OrderORM
+    new_order = OrderORM(
+        order_number=order_data.get("order_number"),
+        customer_name=order_data.get("customer_name"),
+        customer_email=order_data.get("customer_email"),
+        delivery_address=order_data.get("delivery_address"),
+        customer_phone=order_data.get("customer_phone"),
+        order_comment=order_data.get("order_comment"),
+        total_amount=order_data.get("total_amount"),
+        status="pending",
+        order_date=order_datetime,
+        user_id=order_data.get("user_id"),
+        items_json=json.dumps(order_data.get("items", []), ensure_ascii=False),
+    )
+    db.add(new_order)
+    db.commit()
+    db.refresh(new_order)
+
+    return {
+        "id": new_order.id,
+        "order_number": new_order.order_number,
+        "status": new_order.status,
+    }
+
+
 @users_router.delete("/{user_id}", response_model=dict)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     """Удалить пользователя"""
@@ -1153,6 +1191,23 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         "deleted_id": user_id,
         "login": user.login
     }
+
+@users_router.put("/{userid}/password", response_model=dict)
+def change_user_password(
+    userid: int,
+    pwdata: UserPasswordChange,
+    db: Session = Depends(get_db)
+):
+    user = db.query(UserORM).filter(UserORM.id == userid).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if user.password != pwdata.old_password:
+        raise HTTPException(status_code=400, detail="Неверный старый пароль")
+
+    user.password = pwdata.new_password
+    db.commit()
+    return {"success": True, "message": "Пароль успешно изменен"}
 
 # ===== КАТЕГОРИИ =====
 categories_router = APIRouter(prefix="/categories", tags=["Категории"])
@@ -1289,6 +1344,45 @@ def get_products(
         })
     
     return result
+
+@products_router.get("/{product_id}/distribution")
+def get_product_distribution(product_id: int, db: Session = Depends(get_db)):
+    # Сумма количества по стеллажам
+    shelf_rows = (
+        db.query(
+            ShelfORM.name.label("shelf_name"),
+            func.sum(ProductPlacementORM.quantity).label("quantity")
+        )
+        .join(ShelfORM, ShelfORM.id == ProductPlacementORM.shelf_id)
+        .filter(
+            ProductPlacementORM.product_id == product_id,
+            ProductPlacementORM.shelf_id.is_not(None)
+        )
+        .group_by(ShelfORM.id, ShelfORM.name)
+        .all()
+    )
+
+    shelves = [
+        {
+            "shelf_name": row.shelf_name,
+            "quantity": int(row.quantity or 0)
+        }
+        for row in shelf_rows
+    ]
+
+    # Сумма количества в отстойнике
+    overflow_quantity = (
+        db.query(func.sum(OverflowBinORM.quantity))
+        .filter(OverflowBinORM.product_id == product_id)
+        .scalar()
+    ) or 0
+
+    return {
+        "product_id": product_id,
+        "shelves": shelves,
+        "overflow_quantity": int(overflow_quantity),
+    }
+
 
 @products_router.get("/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):
@@ -2542,9 +2636,13 @@ def update_shipment_status(
 
     shipment.status = new_status
 
-    # если отмена — сохраняем причину
     if new_status == "cancelled" and cancel_reason:
         shipment.cancel_reason = cancel_reason
+
+    if shipment.order_id:
+        order = db.query(OrderORM).filter(OrderORM.id == shipment.order_id).first()
+        if order:
+            order.status = new_status
 
     db.commit()
 
@@ -2555,6 +2653,8 @@ def update_shipment_status(
         "new_status": new_status,
         "cancel_reason": shipment.cancel_reason,
     }
+
+
 
 
 @shipments_router.get("/user/{user_email}", response_model=List[ShipmentResponse])
@@ -2753,47 +2853,75 @@ def delete_shipment(shipment_id: int, db: Session = Depends(get_db)):
         "product_id": shipment.product_id,
         "quantity_returned": shipment.quantity
     }
+    
+
+def generate_order_number(db: Session) -> str:
+    """
+    Короткий номер заказа вида O-26DD-N,
+    где 26 – год, DD – день месяца, N – следующий ID заказа.
+    """
+    last_id = db.query(func.max(OrderORM.id)).scalar() or 0
+    next_id = last_id + 1
+
+    now = datetime.now()  
+    year = now.year % 100    # 26
+    day = now.day            # 1..31
+
+    return f"O-{year:02d}{day:02d}-{next_id}"
+
 
 @app.post("/api/orders", response_model=OrderResponse)
 def create_customer_order(
-    order: OrderCreate, 
+    order: OrderCreate,
     db: Session = Depends(get_db)
 ):
     """Создать заказ клиента с привязкой к пользователю"""
     try:
-        print(f" Создание заказа для: {order.customer_email}")
-        print(f" Товары: {order.items}")
-        print(f" Общая сумма: {order.total_amount}")
-        
+        print(f"🛒 Создание заказа для: {order.customer_email}")
+        print(f"   Товары: {order.items}")
+        print(f"   Общая сумма: {order.total_amount}")
+
         user_id = None
         if order.user_token:
-            print(f" Проверяем токен: {order.user_token[:20]}...")
+            print(f"   Проверяем токен: {order.user_token[:20]}...")
             user_data = user_tokens.get(order.user_token)
             if user_data:
                 user_id = user_data["user_id"]
                 print(f"👤 Найден пользователь ID: {user_id}")
+                # фиксируем email по профилю
                 order.customer_email = user_data["email"]
-        
-        order_number = f"ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        print(f" Номер заказа: {order_number}")
-        
+
+        # ✅ короткий номер заказа
+        order_number = generate_order_number(db)
+        print(f"   Номер заказа: {order_number}")
+
+        # ✅ фиксируем время создания (UTC)
+        order_datetime = datetime.now() 
+
         # Проверяем наличие товаров
         for item in order.items:
             product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
             if not product:
                 raise HTTPException(
-                    status_code=404, 
+                    status_code=404,
                     detail=f"Товар с ID {item.product_id} не найден"
                 )
-            
+
             if product.current_quantity < item.quantity:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Недостаточно товара '{product.name}'. В наличии: {product.current_quantity}, требуется: {item.quantity}"
+                    detail=(
+                        f"Недостаточно товара '{product.name}'. "
+                        f"В наличии: {product.current_quantity}, "
+                        f"требуется: {item.quantity}"
+                    )
                 )
             else:
-                print(f" Товар '{product.name}': {item.quantity} из {product.current_quantity} в наличии")
-        
+                print(
+                    f"   Товар '{product.name}': "
+                    f"{item.quantity} из {product.current_quantity} в наличии"
+                )
+
         # Создаем заказ
         new_order = OrderORM(
             order_number=order_number,
@@ -2804,18 +2932,19 @@ def create_customer_order(
             customer_phone=order.customer_phone,
             order_comment=order.order_comment,
             total_amount=order.total_amount,
-            status="pending",  # Важно: используем "pending" для новых заказов
-            items_json=json.dumps([item.dict() for item in order.items])
+            status="pending",
+            order_date=order_datetime, 
+            items_json=json.dumps([item.dict() for item in order.items], ensure_ascii=False),
         )
-        
+
         db.add(new_order)
         db.flush()  # Получаем ID заказа
-        print(f" Заказ создан с ID: {new_order.id}")
-        
+        print(f"   Заказ создан с ID: {new_order.id}")
+
         # Создаем отгрузки для каждого товара
         for item in order.items:
             product = db.query(ProductORM).filter(ProductORM.id == item.product_id).first()
-            
+
             shipment = ShipmentORM(
                 order_id=new_order.id,
                 product_id=item.product_id,
@@ -2824,18 +2953,18 @@ def create_customer_order(
                 customer=order.customer_name,
                 customer_email=order.customer_email,
                 order_number=order_number,
-                status='pending',
-                user_id=user_id
+                status="pending",
+                user_id=user_id,
             )
             db.add(shipment)
-            
+
             # Уменьшаем количество товара на складе
             product.current_quantity -= item.quantity
-            print(f" Создана отгрузка для товара '{product.name}'")
-        
+            print(f"   Создана отгрузка для товара '{product.name}'")
+
         db.commit()
-        print(f" Заказ успешно создан: {order_number}")
-        
+        print(f"✅ Заказ успешно создан: {order_number}")
+
         return {
             "id": new_order.id,
             "order_number": order_number,
@@ -2848,20 +2977,20 @@ def create_customer_order(
             "status": new_order.status,
             "order_date": new_order.order_date,
             "items": order.items,
-            "user_token": order.user_token
+            "user_token": order.user_token,
         }
-        
+
     except HTTPException:
         db.rollback()
-        print(" Ошибка HTTP при создании заказа")
+        print("❌ Ошибка HTTP при создании заказа")
         raise
     except Exception as e:
         db.rollback()
-        print(f" Критическая ошибка создания заказа: {str(e)}")
+        print(f"🔥 Критическая ошибка создания заказа: {str(e)}")
         traceback.print_exc()
         raise HTTPException(
-            status_code=500, 
-            detail=f"Ошибка создания заказа: {str(e)}"
+            status_code=500,
+            detail=f"Ошибка создания заказа: {str(e)}",
         )
 
 # ===== ОТЧЕТЫ =====

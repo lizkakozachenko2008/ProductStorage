@@ -1048,18 +1048,18 @@ async function handleMoveFromOverflow(e) {
         // Инициализация
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('DOM Content Loaded - Страница отстойника');
-            
-            // Загружаем все данные параллельно
-            await Promise.all([
-                loadProducts(),
-                loadOverflowItems(),
-                loadShelves()
-            ]);
-            
+
+            // Сначала товары
+            await loadProducts();
+            // потом стеллажи
+            await loadShelves();
+            // а потом уже элементы отстойника (таблица увидит products)
+            await loadOverflowItems();
+
             setupEventListeners();
-            
             showMessage('Отстойник товаров загружен', 'success');
         });
+
     </script>
 </body>
 </html>

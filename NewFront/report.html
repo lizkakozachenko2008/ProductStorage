@@ -40,14 +40,14 @@
 
     .admin-header {
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
     }
 
     .admin-title {
       font-size: 3rem;
       font-weight: 700;
       color: #5a4a42;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
     .admin-subtitle {
@@ -58,20 +58,62 @@
       line-height: 1.6;
     }
 
+    /* Табы */
+    .reports-tabs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 25px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(222, 193, 150, 0.7);
+      background: rgba(255, 253, 248, 0.9);
+      color: #5a4a42;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: #F7C48F;
+      box-shadow: 0 3px 8px rgba(247, 196, 143, 0.4);
+    }
+
+    .tab-btn:hover {
+      background: #f3d3a3;
+    }
+
+    .tab-section {
+      display: none;
+    }
+
+    .tab-section.active {
+      display: block;
+    }
+
+    /* Общий стиль блоков-таблиц */
     .shelves-table-container {
       background: rgba(255, 253, 248, 0.95);
       border-radius: 15px;
       padding: 30px;
       border: 1px solid rgba(247, 196, 143, 0.3);
       box-shadow: 0 5px 15px rgba(247, 196, 143, 0.2);
-      margin-top: 30px;
+      margin-top: 20px;
     }
 
     .table-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .table-title {
@@ -98,12 +140,6 @@
       box-shadow: 0 4px 12px rgba(247, 196, 143, 0.4);
     }
 
-    .form-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -117,6 +153,7 @@
       padding: 15px 20px;
       text-align: left;
       border-bottom: 1px solid rgba(247, 196, 143, 0.3);
+      vertical-align: top;
     }
 
     th {
@@ -126,11 +163,11 @@
       font-size: 0.95rem;
     }
 
-    tr:hover { background: rgba(247, 196, 143, 0.1); }
+    tr:hover { background: rgba(247, 196, 143, 0.08); }
 
     .status-critical { color: #e74c3c; font-weight: 600; }
-    .status-normal { color: #27ae60; }
-    .status-warning { color: #f39c12; }
+    .status-normal   { color: #27ae60; }
+    .status-warning  { color: #f39c12; }
 
     .empty-message {
       text-align: center;
@@ -168,6 +205,7 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
     }
 
     .month-selector input[type="month"] {
@@ -182,10 +220,9 @@
     @media (max-width: 768px) {
       .admin-title { font-size: 2.2rem; }
       th, td { padding: 10px 15px; }
-      .table-header { flex-direction: column; gap: 15px; align-items: flex-start; }
-      .form-row { flex-direction: column; width: 100%; }
-      .form-row input, .form-row button { width: 100%; }
-      .month-selector { flex-direction: column; width: 100%; }
+      .table-header { flex-direction: column; align-items: flex-start; }
+      .month-selector { flex-direction: column; align-items: flex-start; }
+      .reports-tabs { justify-content: flex-start; }
     }
   </style>
 </head>
@@ -200,146 +237,166 @@
       <p class="admin-subtitle">Аналитика по наличию, размещению, поставкам и отгрузкам</p>
     </div>
 
+    <!-- Табы -->
+    <div class="reports-tabs">
+      <button data-tab="placements" class="tab-btn active">Размещения</button>
+      <button data-tab="inventory" class="tab-btn">Запасы</button>
+      <button data-tab="supplies" class="tab-btn">Поставки</button>
+      <button data-tab="monthly"  class="tab-btn">За месяц</button>
+      <button data-tab="recent"   class="tab-btn">Последние</button>
+    </div>
+
     <!-- Сообщения -->
     <div id="messageContainer"></div>
 
-    <!-- Отчет по размещениям -->
-    <div class="shelves-table-container">
-      <div class="table-header">
-        <h2 class="table-title">Отчет по размещениям товаров</h2>
-        <button class="add-shelf-btn" id="refreshPlacement">Обновить</button>
-      </div>
-      <table id="placementTable">
-        <thead>
-          <tr>
-            <th>Товар</th>
-            <th>Категория</th>
-            <th>Стеллаж</th>
-            <th>Количество</th>
-            <th>Всего на складе</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="6" class="empty-message">Загрузка...</td></tr>
-        </tbody>
-      </table>
-    </div>
 
-    <!-- Инвентаризация -->
-    <div class="shelves-table-container">
-      <div class="table-header">
-        <h2 class="table-title">Сводка по запасам</h2>
-        <button class="add-shelf-btn" id="refreshInventory">Обновить</button>
-      </div>
-      <table id="inventoryTable">
-        <thead>
-          <tr>
-            <th>Товар</th>
-            <th>Категория</th>
-            <th>На складе</th>
-            <th>Мин. запас</th>
-            <th>Ед. изм.</th>
-            <th>Статус</th>
-            <th>Стоимость</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="7" class="empty-message">Загрузка...</td></tr>
-        </tbody>
-      </table>
+<!-- ТАБ: Размещения -->
+<section id="tab-placements" class="tab-section active">
+  <div class="shelves-table-container">
+    <div class="table-header">
+      <h2 class="table-title">Отчет по размещениям товаров</h2>
+      <button class="add-shelf-btn" id="refreshPlacement">Обновить</button>
     </div>
-
-    <!-- Статистика по поставкам -->
-    <div class="shelves-table-container">
-      <div class="table-header">
-        <h2 class="table-title">Статистика по поставкам</h2>
-        <button class="add-shelf-btn" id="refreshSupplies">Обновить</button>
-      </div>
-      <table id="suppliesTable">
-        <thead>
-          <tr>
-            <th>Товар</th>
-            <th>Количество поставок</th>
-            <th>Всего поставлено</th>
-            <th>Средняя поставка</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="4" class="empty-message">Загрузка...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Поставки и отгрузки за указанный месяц -->
-    <div class="shelves-table-container">
-      <div class="table-header">
-        <h2 class="table-title">Поставки и отгрузки за месяц</h2>
-        <div class="month-selector">
-          <input type="month" id="monthSelector" value="">
-          <button class="add-shelf-btn" id="refreshMonthly">Показать</button>
-        </div>
-      </div>
-      <table id="monthlyTable">
-        <thead>
-          <tr>
-            <th>Дата</th>
-            <th>Тип</th>
-            <th>Товар</th>
-            <th>Количество</th>
-            <th>Детали</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="5" class="empty-message">Выберите месяц и нажмите "Показать"</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Поставки и отгрузки -->
-    <div class="shelves-table-container">
-      <div class="table-header">
-        <h2 class="table-title">Последние поставки</h2>
-        <button class="add-shelf-btn" id="refreshRecentSupplies">Обновить</button>
-      </div>
-      <table id="recentSuppliesTable">
-        <thead>
-          <tr>
-            <th>Дата</th>
-            <th>Товар</th>
-            <th>Количество</th>
-            <th>Поставщик</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="5" class="empty-message">Загрузка...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Отгрузки -->
-    <div class="shelves-table-container">
-      <div class="table-header">
-        <h2 class="table-title">Последние отгрузки</h2>
-        <button class="add-shelf-btn" id="refreshShipments">Обновить</button>
-      </div>
-      <table id="shipmentsTable">
-        <thead>
-          <tr>
-            <th>Дата</th>
-            <th>Товар</th>
-            <th>Количество</th>
-            <th>Направление</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="5" class="empty-message">Загрузка...</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <table id="placementTable">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Категория</th>
+          <th>Стеллаж</th>
+          <th>Количество</th>
+          <th>Всего на складе</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" class="empty-message">Загрузка...</td></tr>
+      </tbody>
+    </table>
   </div>
+</section>
+
+<!-- ТАБ: Запасы -->
+<section id="tab-inventory" class="tab-section">
+  <div class="shelves-table-container">
+    <div class="table-header">
+      <h2 class="table-title">Сводка по запасам</h2>
+      <button class="add-shelf-btn" id="refreshInventory">Обновить</button>
+    </div>
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Категория</th>
+          <th>На складе</th>
+          <th>Мин. запас</th>
+          <th>Ед. изм.</th>
+          <th>Статус</th>
+          <th>Стоимость</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="7" class="empty-message">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ТАБ: Поставки (статистика) -->
+<section id="tab-supplies" class="tab-section">
+  <div class="shelves-table-container">
+    <div class="table-header">
+      <h2 class="table-title">Статистика по поставкам</h2>
+      <button class="add-shelf-btn" id="refreshSupplies">Обновить</button>
+    </div>
+    <table id="suppliesTable">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Количество поставок</th>
+          <th>Всего поставлено</th>
+          <th>Средняя поставка</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4" class="empty-message">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ТАБ: За месяц -->
+<section id="tab-monthly" class="tab-section">
+  <div class="shelves-table-container">
+    <div class="table-header">
+      <h2 class="table-title">Поставки и отгрузки за месяц</h2>
+      <div class="month-selector">
+        <input type="month" id="monthSelector" value="">
+        <button class="add-shelf-btn" id="refreshMonthly">Показать</button>
+      </div>
+    </div>
+    <table id="monthlyTable">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Тип</th>
+          <th>Товар</th>
+          <th>Количество</th>
+          <th>Детали</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" class="empty-message">Выберите месяц и нажмите "Показать"</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ТАБ: Последние (поставки + отгрузки) -->
+<section id="tab-recent" class="tab-section">
+  <div class="shelves-table-container">
+    <div class="table-header">
+      <h2 class="table-title">Последние поставки</h2>
+      <button class="add-shelf-btn" id="refreshRecentSupplies">Обновить</button>
+    </div>
+    <table id="recentSuppliesTable">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Товар</th>
+          <th>Количество</th>
+          <th>Поставщик</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" class="empty-message">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shelves-table-container">
+    <div class="table-header">
+      <h2 class="table-title">Последние отгрузки</h2>
+      <button class="add-shelf-btn" id="refreshShipments">Обновить</button>
+    </div>
+    <table id="shipmentsTable">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Товар</th>
+          <th>Количество</th>
+          <th>Направление</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" class="empty-message">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
 
   <script>
     const API_BASE_URL = 'http://localhost:8000';
@@ -397,83 +454,127 @@
       }, 5000);
     }
 
+    function translateStatus(status) {
+  if (!status) return '';
+  switch (status) {
+    case 'pending':     return 'Новый';
+    case 'processing':  return 'В обработке';
+    case 'shipped':     return 'Отгружен';
+    case 'completed':   return 'Завершён';
+    case 'cancelled':   return 'Отменён';
+    case 'delivered':   return 'Доставлен';
+    case 'draft':       return 'Черновик';
+    case 'approved':    return 'Одобрен'
+    default:            return status; 
+  }
+}
+
     // 1. Отчет по размещениям товаров
-    async function loadPlacementReport() {
-      const tbody = document.querySelector('#placementTable tbody');
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Загрузка...</td></tr>';
-      
-      try {
-        // Получаем размещения
-        const placements = await fetchAPI('/product-placements');
-        
-        // Получаем товары для получения категорий
-        const products = await fetchAPI('/products');
-        const categories = await fetchAPI('/categories');
-        const shelves = await fetchAPI('/shelves');
-        const overflow = await fetchAPI('/overflow-bins');
-        
-        tbody.innerHTML = '';
-        
-        if (!placements || placements.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Нет размещений</td></tr>';
-          return;
-        }
-        
-        placements.forEach(placement => {
-          // Находим товар
-          const product = products.find(p => p.id === placement.product_id);
-          if (!product) return;
-          
-          // Находим категорию
-          const category = categories.find(c => c.id === product.category_id);
-          
-          // Находим стеллаж
-          let shelfName = 'Не размещен';
-          if (placement.shelf_id) {
-            const shelf = shelves.find(s => s.id === placement.shelf_id);
-            shelfName = shelf ? shelf.name : `Стеллаж ${placement.shelf_id}`;
-          }
-          
-          // Проверяем, в отстойнике ли товар
-          const inOverflow = overflow.find(o => o.product_id === product.id);
-          if (inOverflow) {
-            shelfName = 'В отстойнике';
-          }
-          
-          // Определяем статус запаса
-          const isCritical = product.current_quantity <= product.min_quantity * 0.5;
-          const isLow = product.current_quantity <= product.min_quantity;
-          let status = '';
-          let statusClass = '';
-          
-          if (isCritical) {
-            status = 'Критический';
-            statusClass = 'status-critical';
-          } else if (isLow) {
-            status = 'Низкий';
-            statusClass = 'status-warning';
-          } else {
-            status = 'В норме';
-            statusClass = 'status-normal';
-          }
-          
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><strong>${product.name}</strong></td>
-            <td>${category ? category.name : 'Без категории'}</td>
-            <td>${shelfName}</td>
-            <td>${placement.quantity} ${product.unit}</td>
-            <td>${product.current_quantity} ${product.unit}</td>
-            <td class="${statusClass}">${status}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-        
-      } catch (error) {
-        console.error('Ошибка загрузки отчета по размещениям:', error);
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-message">Ошибка: ${error.message}</td></tr>`;
-      }
+async function loadPlacementReport() {
+  const tbody = document.querySelector('#placementTable tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Загрузка...</td></tr>';
+  
+  try {
+    const placements = await fetchAPI('/product-placements');
+    const products   = await fetchAPI('/products');
+    const categories = await fetchAPI('/categories');
+    const shelves    = await fetchAPI('/shelves');
+    const overflow   = await fetchAPI('/overflow-bins');
+
+    tbody.innerHTML = '';
+
+    if ((!placements || placements.length === 0) && (!overflow || overflow.length === 0)) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Нет размещений</td></tr>';
+      return;
     }
+
+    // сгруппируем всё по продукту
+    const byProduct = new Map();
+
+    // размещения на стеллажах
+    (placements || []).forEach(pl => {
+      if (!byProduct.has(pl.product_id)) {
+        byProduct.set(pl.product_id, { shelves: [], overflowQty: 0 });
+      }
+      const entry = byProduct.get(pl.product_id);
+      if (pl.shelf_id) {
+        const shelf = shelves.find(s => s.id === pl.shelf_id);
+        entry.shelves.push({
+          name: shelf ? shelf.name : `Стеллаж ${pl.shelf_id}`,
+          quantity: pl.quantity
+        });
+      }
+    });
+
+    // отстойник
+    (overflow || []).forEach(o => {
+      if (!byProduct.has(o.product_id)) {
+        byProduct.set(o.product_id, { shelves: [], overflowQty: 0 });
+      }
+      const entry = byProduct.get(o.product_id);
+      entry.overflowQty += o.quantity;
+    });
+
+    // для каждого продукта рисуем одну строку,
+    // а в столбце "Стеллаж" перечисляем ВСЕ места
+    byProduct.forEach((info, productId) => {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const category = categories.find(c => c.id === product.category_id);
+
+      const places = [];
+
+      info.shelves.forEach(s => {
+        places.push(`${s.name} – ${s.quantity} ${product.unit}`);
+      });
+
+      if (info.overflowQty > 0) {
+        places.push(`Отстойник – ${info.overflowQty} ${product.unit}`);
+      }
+
+      const placesText = places.length > 0 ? places.join('<br>') : 'Не размещен';
+
+      // статус по общему количеству товара
+      const isCritical = product.current_quantity <= product.min_quantity * 0.5;
+      const isLow      = product.current_quantity <= product.min_quantity;
+      let status       = '';
+      let statusClass  = '';
+
+      if (isCritical) {
+        status = 'Критический';
+        statusClass = 'status-critical';
+      } else if (isLow) {
+        status = 'Низкий';
+        statusClass = 'status-warning';
+      } else {
+        status = 'В норме';
+        statusClass = 'status-normal';
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${product.name}</strong></td>
+        <td>${category ? category.name : 'Без категории'}</td>
+        <td>${placesText}</td>
+        <td>
+          ${
+            info.shelves.reduce((sum, s) => sum + s.quantity, 0) +
+            info.overflowQty
+          } ${product.unit}
+        </td>
+        <td>${product.current_quantity} ${product.unit}</td>
+        <td class="${statusClass}">${status}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (error) {
+    console.error('Ошибка загрузки отчета по размещениям:', error);
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-message">Ошибка: ${error.message}</td></tr>`;
+  }
+}
+
 
     // 2. Сводка по запасам (инвентаризация)
     async function loadInventoryReport() {
@@ -760,7 +861,7 @@
             <td><strong>${product ? product.name : 'Неизвестный товар'}</strong></td>
             <td>${supply.quantity}</td>
             <td>${supply.supplier || '-'}</td>
-            <td>${supply.status === 'delivered' ? 'Доставлено' : supply.status}</td>
+            <td>${translateStatus(supply.status)}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -802,7 +903,7 @@
             <td><strong>${product ? product.name : 'Неизвестный товар'}</strong></td>
             <td>${shipment.quantity}</td>
             <td>${shipment.destination || '-'}</td>
-            <td>${shipment.status === 'completed' ? 'Завершена' : shipment.status}</td>
+            <td>${translateStatus(shipment.status)}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -812,10 +913,28 @@
         tbody.innerHTML = `<tr><td colspan="5" class="empty-message">Ошибка: ${error.message}</td></tr>`;
       }
     }
+    function setupTabs() {
+  const buttons = document.querySelectorAll('.tab-btn');
+  const sections = document.querySelectorAll('.tab-section');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-tab');
+
+      buttons.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+
+      btn.classList.add('active');
+      const section = document.getElementById(`tab-${tab}`);
+      if (section) section.classList.add('active');
+    });
+  });
+}
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', () => {
       try {
+        setupTabs();             
         // Устанавливаем текущий месяц по умолчанию
         const now = new Date();
         const monthSelector = document.getElementById('monthSelector');

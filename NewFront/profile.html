@@ -11,6 +11,10 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
@@ -87,6 +91,7 @@
             max-width: 1200px;
             margin-left: auto;
             margin-right: auto;
+            padding-bottom: 120px; /* отступ под футер */
         }
 
         .profile-header {
@@ -466,6 +471,106 @@
             text-align: center;
             font-size: 1.1rem;
         }
+
+        /* Футер как в админке */
+
+        .site-footer {
+            width: 100%;
+            background-color: #F7C48F;
+            color: #333;
+            padding: 25px 0 12px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            text-align: left;
+        }
+
+        .footer-column {
+            flex: 0 1 220px;
+            max-width: 260px;
+        }
+
+        .footer-column h3,
+        .footer-column h4 {
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .footer-column p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        .footer-column a {
+            color: #333;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-column a:hover {
+            color: #8B7355;
+        }
+
+        .footer-socials {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .footer-socials a {
+            padding: 5px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .footer-socials a:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 15px auto 0;
+            padding: 10px 20px 0;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .footer-inner {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 20px;
+            }
+
+            .footer-column {
+                max-width: none;
+            }
+
+            .footer-socials {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -499,28 +604,28 @@
             </div>
         </div>
 
-        <!-- Табы навигации -->
+        <!-- Табы -->
         <div class="profile-tabs">
-            <button class="tab-btn active" data-tab="orders">Мои заказы</button>
-            <button class="tab-btn" data-tab="shipments">Мои отгрузки</button>
-            <button class="tab-btn" data-tab="settings">Настройки</button>
+            <button class="tab-btn active" data-tab="history">История заказов</button>
+            <button class="tab-btn" data-tab="current">Мои заказы</button>
+            <button class="tab-btn" data-tab="settings">Настройки профиля</button>
         </div>
 
         <!-- Контент табов -->
-        
-        <!-- Таб "Мои заказы" -->
-        <div class="tab-content active" id="ordersTab">
+
+        <!-- История заказов (все завершённые / прошлые) -->
+        <div class="tab-content active" id="historyTab">
             <h2 class="section-title">История заказов</h2>
-            <div class="orders-list" id="ordersList">
-                <div class="loading">Загрузка заказов...</div>
+            <div class="orders-list" id="historyList">
+                <div class="loading">Загрузка истории...</div>
             </div>
         </div>
 
-        <!-- Таб "Мои отгрузки" -->
-        <div class="tab-content" id="shipmentsTab">
-            <h2 class="section-title">Отгрузки товаров</h2>
-            <div class="shipments-list" id="shipmentsList">
-                <div class="loading">Загрузка отгрузок...</div>
+        <!-- Мои заказы (текущие, со статусом от админа) -->
+        <div class="tab-content" id="currentTab">
+            <h2 class="section-title">Текущие заказы</h2>
+            <div class="orders-list" id="currentList">
+                <div class="loading">Загрузка текущих заказов...</div>
             </div>
         </div>
 
@@ -537,13 +642,63 @@
                     <input type="email" id="emailInput" placeholder="Введите новый email">
                 </div>
                 <div class="form-group">
-                    <label for="passwordInput">Новый пароль</label>
-                    <input type="password" id="passwordInput" placeholder="Введите новый пароль">
+                    <label for="oldPasswordInput">Старый пароль</label>
+                    <input type="password" id="oldPasswordInput" placeholder="Введите старый пароль">
                 </div>
+
+                <div class="form-group">
+                    <label for="newPasswordInput">Новый пароль</label>
+                    <input type="password" id="newPasswordInput" placeholder="Введите новый пароль">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPasswordInput">Подтвердите новый пароль</label>
+                    <input type="password" id="confirmPasswordInput" placeholder="Повторите новый пароль">
+                </div>
+
                 <button class="save-btn" id="saveSettingsBtn">Сохранить изменения</button>
             </div>
         </div>
     </main>
+
+    
+    <!-- Футер как в админке -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-column">
+          <h3>StoreMarket</h3>
+          <p>Современный онлайн‑магазин свежих продуктов с быстрой доставкой.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Навигация</h4>
+          <ul>
+            <li><a href="index.html">Главная</a></li>
+            <li><a href="shop.html">Магазин</a></li>
+            <li><a href="cart.html">Корзина</a></li>
+            <li><a href="profile.html">Личный кабинет</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Контакты</h4>
+          <ul>
+            <li>+375 (25) SPH 57 66</li>
+            <li>support@storemarket.by</li>
+            <li>г. Минск</li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Мы в соцсетях</h4>
+          <div class="footer-socials">
+            <a href="#">VK</a>
+            <a href="#">Telegram</a>
+            <a href="#">Instagram</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 StoreMarket. Все права защищены.</span>
+      </div>
+    </footer>
 
     <script>
     // Конфигурация API
@@ -595,34 +750,39 @@
 
     // Загрузка информации о пользователе
     async function loadUserInfo() {
-        if (!currentUser) return;
-        
-        try {
+    if (!currentUser) return;
 
-            const response = await fetch(`${API_BASE_URL}/users/check-token/${userToken}`);
-            
-            if (!response.ok) {
-                throw new Error('Токен недействителен');
-            }
-            
-            const data = await response.json();
-            console.log('Данные пользователя:', data);
-            
-            if (data.valid && data.user) {
-                // Обновляем информацию о пользователе
-                currentUser = data.user;
-                localStorage.setItem('user_info', JSON.stringify(data.user));
-                updateUserUI(data.user);
-            } else {
-                // Используем данные из localStorage
-                updateUserUI(currentUser);
-            }
-        } catch (error) {
-            console.error('Ошибка проверки токена:', error);
-            // Используем данные из localStorage как fallback
-            updateUserUI(currentUser);
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/check-token/${userToken}`);
+
+        if (!response.ok) {
+            throw new Error('Токен недействителен');
         }
+
+        const data = await response.json();
+        console.log('Данные пользователя:', data);
+
+        if (data.valid && data.user) {
+    // data.user имеет поле user_id, приводим к единому виду
+    currentUser = {
+        id: data.user.user_id,     // ВАЖНО
+        login: data.user.login,
+        email: data.user.email
+    };
+
+    localStorage.setItem('user_info', JSON.stringify(currentUser));
+    updateUserUI(currentUser);
+} else {
+    updateUserUI(currentUser);
+}
+
+
+    } catch (error) {
+        console.error('Ошибка проверки токена:', error);
+        updateUserUI(currentUser);
     }
+}
+
 
     // Обновление интерфейса пользователя
     function updateUserUI(user) {
@@ -635,100 +795,204 @@
         document.getElementById('emailInput').value = user.email || '';
     }
 
-    // Загрузка заказов пользователя
-    async function loadUserOrders() {
-    const ordersList = document.getElementById('ordersList');
-    ordersList.innerHTML = '<div class="loading">Загрузка заказов...</div>';
-    
+    // Загрузка всех заказов пользователя и разбрасывание по "Истории" и "Моим заказам"
+async function loadUserOrders() {
+    const historyList = document.getElementById('historyList');
+    const currentList = document.getElementById('currentList');
+
+    if (historyList) historyList.innerHTML = '<div class="loading">Загрузка истории...</div>';
+    if (currentList) currentList.innerHTML = '<div class="loading">Загрузка текущих заказов...</div>';
+
     if (!userToken) {
-        ordersList.innerHTML = '<div class="error-message">Необходима авторизация</div>';
+        if (historyList) historyList.innerHTML = '<div class="error-message">Необходима авторизация</div>';
+        if (currentList) currentList.innerHTML = '<div class="error-message">Необходима авторизация</div>';
         return;
     }
-    
+
     try {
-        // Используем новый эндпоинт
-        const response = await fetch(`${API_BASE_URL}/users/orders?token=${userToken}`);
-        
+        // эндпоинт, который уже есть у тебя
+        const response = await fetch(`${API_BASE_URL}/users/orders?token=${encodeURIComponent(String(userToken))}`);
+    
+
         if (!response.ok) {
             throw new Error(`HTTP ошибка ${response.status}`);
         }
-        
+
         const orders = await response.json();
-        
-        if (orders.length === 0) {
-            ordersList.innerHTML = `
-                <div class="no-orders">
-                    <h3>У вас пока нет заказов</h3>
-                    <p>Совершите первую покупку в нашем магазине!</p>
-                    <a href="shop.html" class="buttonn" style="margin-top: 20px; display: inline-block;">
-                        Перейти в магазин
-                    </a>
-                </div>
-            `;
-            return;
-        }
-        
-        displayUserOrders(orders);
-        
+
+        // делим заказы: завершённые/доставленные → история, остальные → текущие
+        const historyOrders = [];
+        const currentOrders = [];
+
+        orders.forEach(o => {
+            const status = (o.status || '').toLowerCase();
+            if (['delivered', 'completed', 'shipped'].includes(status)) {
+                historyOrders.push(o);
+            } else {
+                currentOrders.push(o);
+            }
+
+        });
+
+        renderOrdersList(historyOrders, historyList, { showReorder: true });
+        renderOrdersList(currentOrders, currentList, { showReorder: false });
+
     } catch (error) {
         console.error('Ошибка загрузки заказов:', error);
-        ordersList.innerHTML = `
-            <div class="error-message">
-                <h3>Ошибка загрузки заказов</h3>
-                <p>${error.message}</p>
-                <p><small>Попробуйте позже или обратитесь в поддержку</small></p>
-            </div>
-        `;
+        if (historyList) {
+            historyList.innerHTML = `
+                <div class="error-message">
+                    <h3>Ошибка загрузки истории заказов</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+        if (currentList) {
+            currentList.innerHTML = `
+                <div class="error-message">
+                    <h3>Ошибка загрузки текущих заказов</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
     }
 }
 
-    // Отображение заказов
-    function displayOrders(orders) {
-        const ordersList = document.getElementById('ordersList');
-        ordersList.innerHTML = '';
-        
-        orders.sort((a, b) => new Date(b.shipment_date || b.order_date) - new Date(a.shipment_date || a.order_date));
-        
-        orders.forEach(order => {
-            const orderDate = order.shipment_date ? 
-                new Date(order.shipment_date).toLocaleDateString('ru-RU', {
+
+    // Универсальный рендер списка заказов
+function renderOrdersList(orders, container, options = {}) {
+    const { showReorder = false } = options;
+
+    if (!container) return;
+
+    if (!orders || orders.length === 0) {
+        container.innerHTML = `
+            <div class="no-orders">
+                <h3>Заказов пока нет</h3>
+                <p>Совершите покупку в нашем магазине.</p>
+                <a href="shop.html" class="buttonn" style="margin-top: 20px; display: inline-block;">
+                    Перейти в магазин
+                </a>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '';
+
+    orders
+        .sort((a, b) => new Date(b.order_date) - new Date(a.order_date))
+        .forEach(order => {
+            const dateStr = order.order_date
+                ? new Date(order.order_date).toLocaleString('ru-RU', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
-                }) : 'Дата не указана';
-            
-            const orderCard = document.createElement('div');
-            orderCard.className = 'order-card';
-            orderCard.innerHTML = `
+                })
+                : 'Дата не указана';
+
+            const itemsHtml = (order.items || []).map(item => `
+                <div class="order-item">
+                    <span>${item.product_name || `Товар #${item.product_id}`} × ${item.quantity} шт</span>
+                    <span>${item.price ? (item.price * item.quantity).toFixed(2) + ' BYN' : '—'}</span>
+                </div>
+            `).join('');
+
+            const totalStr = order.total_amount != null
+                ? Number(order.total_amount).toFixed(2) + ' BYN'
+                : '0.00 BYN';
+
+            const statusText = getStatusText(order.status || 'pending');
+
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.innerHTML = `
                 <div class="order-header">
                     <div>
-                        <span class="order-number">Заказ #${order.order_number}</span>
-                        <span class="order-date">${orderDate}</span>
+                        <div class="order-number">Заказ #${order.order_number || order.id}</div>
+                        <div class="order-date">${dateStr}</div>
                     </div>
-                    <div class="order-status ${order.status}">
-                        ${getStatusText(order.status)}
+                    <div class="order-status">
+                        ${statusText}
                     </div>
                 </div>
-                
+
                 <div class="order-items">
-                    ${order.items.map(item => `
-                        <div class="order-item">
-                            <span>${item.product_name} × ${item.quantity} шт</span>
-                            <span>₽ ${item.price ? (item.price * item.quantity).toFixed(2) : '—'}</span>
-                        </div>
-                    `).join('')}
+                    ${itemsHtml || '<div class="order-item"><span>Без позиций</span><span>—</span></div>'}
                 </div>
-                
+
                 <div class="order-total">
-                    Итого: ₽ ${order.total.toFixed(2)}
+                    Итого: ${totalStr}
                 </div>
+
+                ${showReorder ? `
+                    <div style="margin-top: 15px; text-align: right;">
+                        <button class="buttonn reorder-btn" data-order='${JSON
+                            .stringify(order)
+                            .replace(/'/g, '&apos;')}'>
+                            Заказать снова
+                        </button>
+                    </div>
+                ` : ''}
             `;
-            
-            ordersList.appendChild(orderCard);
+            container.appendChild(card);
+        });
+
+    if (showReorder) {
+        container.querySelectorAll('.reorder-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const order = JSON.parse(
+                    btn.getAttribute('data-order').replace(/&apos;/g, '\'')
+                );
+                handleReorder(order);
+            });
         });
     }
+}
+
+
+
+function handleReorder(order) {
+    const items = order.items || [];
+    if (items.length === 0) {
+        showNotification('В этом заказе нет товаров', 'warning');
+        return;
+    }
+
+    // существующая корзина в формате cart.html
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    items.forEach(item => {
+        const productId = item.product_id;
+        const quantity = item.quantity || 1;
+
+        // ищем по id (а не product_id)
+        const existing = cart.find(c => c.id === productId);
+        if (existing) {
+            existing.quantity = (existing.quantity || 1) + quantity;
+        } else {
+            cart.push({
+                id: productId,
+                name: item.product_name || '',
+                price: item.price || 0,
+                unit: item.unit || 'шт',
+                category_name: item.category_name || 'Без категории',
+                quantity: quantity
+            });
+        }
+    });
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    showNotification('Товары добавлены в корзину. Оформите заказ.', 'success');
+
+    setTimeout(() => {
+        window.location.href = 'cart.html';
+    }, 800);
+}
+
+
 
     // Загрузка отгрузок пользователя
     async function loadUserShipments() {
@@ -853,66 +1117,101 @@
     }
 
     // Получение текста статуса
-    function getStatusText(status) {
-        const statusMap = {
-            'pending': 'В обработке',
-            'processing': 'В процессе',
-            'shipped': 'Отгружено',
-            'delivered': 'Доставлено',
-            'completed': 'Завершено'
-        };
-        return statusMap[status] || status;
-    }
+   function getStatusText(status) {
+            const statusMap = {
+                pending: "Новый",
+                approved: "Одобрен",
+                processing: "В обработке",
+                shipped: "Отгружен",
+                completed: "Завершён",
+                cancelled: "Отменён",
+                delivered: "Доставлен"
+            };
+            return statusMap[status] || status;
+        }
 
     // Сохранение настроек
     async function saveUserSettings() {
-        const login = document.getElementById('loginInput').value.trim();
-        const email = document.getElementById('emailInput').value.trim();
-        const password = document.getElementById('passwordInput').value;
-        
-        if (!login || !email) {
-            showNotification('Заполните обязательные поля', 'error');
-            return;
-        }
-        
-        try {
-            const updateData = { login, email };
-            if (password) {
-                updateData.password = password;
-            }
-            
-            // Используем PUT /users/{user_id} из вашего API
-            const response = await fetch(`${API_BASE_URL}/users/${currentUser.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updateData)
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Ошибка обновления');
-            }
-            
-            const updatedUser = await response.json();
-            
-            // Обновляем локальные данные
-            localStorage.setItem('user_info', JSON.stringify(updatedUser));
-            currentUser = updatedUser;
-            
-            // Обновляем UI
-            updateUserUI(updatedUser);
-            showNotification('Настройки успешно сохранены');
-            
-            // Очищаем поле пароля
-            document.getElementById('passwordInput').value = '';
-            
-        } catch (error) {
-            console.error('Ошибка сохранения настроек:', error);
-            showNotification('Ошибка: ' + error.message, 'error');
-        }
+    const login = document.getElementById('loginInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+
+    const oldPassword    = document.getElementById('oldPasswordInput').value;
+    const newPassword    = document.getElementById('newPasswordInput').value;
+    const confirmPassword= document.getElementById('confirmPasswordInput').value;
+
+    if (!login || !email) {
+        showNotification('Заполните обязательные поля (логин и email)', 'error');
+        return;
     }
+
+    try {
+        const userId = currentUser.id ?? currentUser.user_id;
+        if (!userId) {
+            throw new Error('ID пользователя не найден');
+        }
+
+        // 1) обновляем логин/email
+        const updateData = { login, email };
+
+        const respProfile = await fetch(`${API_BASE_URL}/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+        });
+
+        if (!respProfile.ok) {
+            const err = await respProfile.json().catch(() => ({}));
+            throw new Error(err.detail || 'Ошибка обновления профиля');
+        }
+
+        const updatedUser = await respProfile.json();
+        localStorage.setItem('user_info', JSON.stringify(updatedUser));
+        currentUser = updatedUser;
+        updateUserUI(updatedUser);
+
+        // 2) если заполнены поля пароля — меняем пароль
+        if (oldPassword || newPassword || confirmPassword) {
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                showNotification('Заполните все поля для смены пароля', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showNotification('Новый пароль и подтверждение не совпадают', 'error');
+                return;
+            }
+
+            const respPw = await fetch(`${API_BASE_URL}/users/${userId}/password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    old_password: oldPassword,
+                    new_password: newPassword
+                })
+            });
+
+            if (!respPw.ok) {
+                const err = await respPw.json().catch(() => ({}));
+                throw new Error(err.detail || 'Ошибка смены пароля');
+            }
+
+            showNotification('Настройки и пароль успешно сохранены', 'success');
+
+            // очищаем поля пароля
+            document.getElementById('oldPasswordInput').value = '';
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('confirmPasswordInput').value = '';
+        } else {
+            showNotification('Настройки успешно сохранены', 'success');
+        }
+
+    } catch (error) {
+        console.error('Ошибка сохранения настроек:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+
 
     // Выход из системы
     async function logout() {
@@ -946,49 +1245,44 @@
 
     // Инициализация табов
     function initTabs() {
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-        
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tabId = btn.getAttribute('data-tab');
-                
-                // Обновляем активные кнопки
-                tabBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                // Обновляем активные контенты
-                tabContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === tabId + 'Tab') {
-                        content.classList.add('active');
-                        
-                        // Загружаем данные при переключении
-                        switch(tabId) {
-                            case 'orders':
-                                loadUserOrders();
-                                break;
-                            case 'shipments':
-                                loadUserShipments();
-                                break;
-                        }
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === tabId + 'Tab') {
+                    content.classList.add('active');
+
+                    switch (tabId) {
+                        case 'history':
+                        case 'current':
+                            loadUserOrders(); // одна функция сама обновит оба списка
+                            break;
                     }
-                });
+                }
             });
         });
-    }
+    });
+}
+
 
     // Обновление данных каждые 30 секунд
     function startAutoRefresh() {
-        setInterval(() => {
-            if (document.querySelector('#ordersTab').classList.contains('active')) {
-                loadUserOrders();
-            }
-            if (document.querySelector('#shipmentsTab').classList.contains('active')) {
-                loadUserShipments();
-            }
-        }, 30000);
-    }
+    setInterval(() => {
+        if (document.querySelector('#historyTab').classList.contains('active') ||
+            document.querySelector('#currentTab').classList.contains('active')) {
+            loadUserOrders();
+        }
+    }, 30000);
+}
+
 
     // Инициализация при загрузке страницы
     document.addEventListener('DOMContentLoaded', async function() {

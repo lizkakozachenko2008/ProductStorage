@@ -266,6 +266,14 @@
             margin-top: 20px;
         }
 
+        /* Грид только в разделе "Новые заказы" */
+#newView .orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
 
         @media (max-width: 768px) {
             .orders-grid {
@@ -573,11 +581,14 @@
 
         /* контейнер с заказами (белый блок) только для НОВЫХ заказов */
 #newView .orders-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* ровно 2 колонки */
+    gap: 25px;
+    margin-top: 20px;
     min-height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
+
+
 
 /* сам пустой блок */
 #newView .empty-state {
@@ -992,7 +1003,7 @@
             if (!orders || orders.length === 0) {
                 container.innerHTML = `
           <div class="empty-state">
-            <h3>🧺</h3>
+            <h1>🧺</h1>
             <h3>Пока нет заказов</h3>
             <p>Создайте новую отгрузку или подождите новых заказов.</p>
           </div>
@@ -1286,65 +1297,54 @@
         }
 
         // === Обновление статуса (PATCH /shipments/{id}/status) ===
-        async function updateShipmentStatus(shipmentId, newStatus, successMessage, extra = {}) {
-            try {
-                const body = Object.assign({ status: newStatus }, extra);
-                const response = await fetch(`${API_BASE_URL}/shipments/${shipmentId}/status`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error("HTTP " + response.status + " " + errorText);
-                }
-                showNotification(successMessage, "success");
-                await loadAllData();
-            } catch (error) {
-                console.error("updateShipmentStatus error:", error);
-                showNotification(error.message, "error");
-            }
-        }
+        // Меняем статус ОТГРУЗКИ; бэкенд сам обновит OrderORM, если shipment.orderid задан
+async function setOrderStatus(shipmentId, status) {
+    const resp = await fetch(`${API_BASE_URL }/shipments/${shipmentId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
 
-        async function approveOrder(orderId) {
-            await updateShipmentStatus(orderId, "approved", "Заказ одобрен");
+    if (!resp.ok) {
+        let err;
+        try {
+            const data = await resp.json();
+            err = data.detail || JSON.stringify(data);
+        } catch {
+            err = await resp.text();
         }
-
-        async function rejectOrder(orderId) {
-            const reason = prompt("Укажите причину отклонения:");
-            if (!reason) return;
-            await updateShipmentStatus(orderId, "cancelled", "Заказ отклонён", { cancel_reason: reason });
+        if (resp.status === 404) {
+            throw new Error('Заказ не найден');
         }
+        throw new Error(err);
+    }
 
-        async function processOrder(orderId) {
-            await updateShipmentStatus(orderId, "processing", "Заказ отправлен в обработку");
-        }
+    await loadAllData();
+    showNotification(
+        `Отгрузка #${shipmentId}: статус → ${getStatusText(status)}`,
+        'success'
+    );
+}
 
-        async function shipOrder(orderId) {
-            await updateShipmentStatus(orderId, "shipped", "Заказ отгружен");
-        }
 
-        async function completeOrder(orderId) {
-            await updateShipmentStatus(orderId, "completed", "Заказ завершён");
-        }
+async function rejectOrder(orderId) {
+    const reason = prompt('Укажите причину отмены заказа:');
+    if (!reason) return;
 
-        async function processAllPending() {
-            if (!confirm("Отправить все новые заказы в обработку?")) return;
-            try {
-                const response = await fetch(`${API_BASE_URL}/shipments?status=pending`);
-                if (!response.ok) throw new Error("HTTP " + response.status);
-                const pendingOrders = await response.json();
-                for (const order of pendingOrders) {
-                    await updateShipmentStatus(order.id, "processing", "Заказ отправлен в обработку");
-                }
-                showNotification(`Обработано заказов: ${pendingOrders.length}`, "success");
-                await loadAllData();
-            } catch (error) {
-                console.error("processAllPending error:", error);
-                showNotification(error.message, "error");
-            }
-        }
+    // можно отдельно сохранить reason через PATCH /shipments/{id}, если нужно
+    await setOrderStatus(orderId, 'cancelled');
+}
 
+
+async function approveOrder(orderId)   { await setOrderStatus(orderId, 'approved'); }
+async function processOrder(orderId)   { await setOrderStatus(orderId, 'processing'); }
+async function shipOrder(orderId)      { await setOrderStatus(orderId, 'shipped'); }
+async function completeOrder(orderId)  { await setOrderStatus(orderId, 'completed'); }
+async function rejectOrder(orderId) {
+    const reason = prompt('Причина отмены заказа:');
+    if (!reason) return;
+    await setOrderStatus(orderId, 'cancelled');
+}
         // === Детали заказа (таблица только в модалке) ===
         window.viewOrderDetails = function(orderId) {
             const order = lastOrders.find(o => o.id === orderId);
@@ -1668,7 +1668,8 @@ async function editShipment(shipmentId) {
                 processing: "В обработке",
                 shipped: "Отгружен",
                 completed: "Завершён",
-                cancelled: "Отменён"
+                cancelled: "Отменён",
+                delivered: "Доставлен"
             };
             return statusMap[status] || status;
         }

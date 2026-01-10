@@ -5,382 +5,453 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Склад товаров</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
-        }
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+    }
 
-        .container {
-            width: 100%;
-            height: 70px;
-            background-color: #F7C48F;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+    /* ===== ХЕДЕР ===== */
 
-        .left-section {
-            display: flex;
-            align-items: center;
-        }
+    .container {
+        width: 100%;
+        height: 70px;
+        background-color: #F7C48F;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        position: relative;
+        z-index: 10;
+    }
 
-        .logo-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
+    .left-section {
+        display: flex;
+        align-items: center;
+    }
 
-        .site-icon {
-            width: 80px; 
-            height: 80px; 
-            object-fit: contain;
-        }
+    .logo-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
 
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-            text-decoration: none;
-            text-align: center;
-            line-height: 1;
-        }
+    .site-icon {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+    }
 
-        .right-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .logo {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+        text-decoration: none;
+        text-align: center;
+        line-height: 1;
+    }
 
-        /* Общие стили для всех кнопок */
-        .buttonn, .vxod, .admin {
-            border: 0;
-            background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            font-size: 14px;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
+    .right-section {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        .buttonn:hover, .vxod:hover, .admin:hover {
-            background: linear-gradient(135deg, #F7C48F 0%, #8B7355 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(139, 115, 85, 0.3);
-        }
+    .buttonn, .vxod, .admin {
+        border: 0;
+        background: linear-gradient(135deg, #8B7355 0%, #F7C48F 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
 
-        /* Анимация корзины */
-        .corzina-icon {
-            width: 50px;
-            height: 50px;
-            margin-left: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-            position: relative;
-        }
+    .buttonn:hover, .vxod:hover, .admin:hover {
+        background: linear-gradient(135deg, #F7C48F 0%, #8B7355 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(139, 115, 85, 0.3);
+    }
 
-        .corzina-icon:hover {
-            transform: scale(1.1) translateY(-2px);
-        }
+    .corzina-icon {
+        width: 50px;
+        height: 50px;
+        margin-left: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        position: relative;
+    }
 
-        /* Счетчик товаров в корзине */
-        .cart-count {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ff6b6b;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            animation: pulse 2s infinite;
-        }
+    .corzina-icon:hover {
+        transform: scale(1.1) translateY(-2px);
+    }
 
-        @keyframes pulse {
-            0%, 100% { 
-                transform: scale(1); 
-            }
-            50% { 
-                transform: scale(1.1); 
-            }
-        }
+    .cart-count {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ff6b6b;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        animation: pulse 2s infinite;
+    }
 
-        /* Стили для основного контента */
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    /* ===== ГЛАВНЫЙ БЛОК ===== */
+
+    .main-content {
+    min-height: calc(100vh - 70px); 
+    display: block;                 
+    padding: 35px 0 35px 75px;
+    background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
+    color: #333;
+    position: relative;
+    overflow: visible;
+    }
+
+    .hero-section {
+    padding-bottom: 80px;
+    }
+
+    .hero-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 40px;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .text-content {
+        flex: 0 0 45%;
+        max-width: 500px;
+        margin-top: 40px;
+    }
+
+    .main-title {
+        font-size: 3.2rem;
+        font-weight: bold;
+        margin-bottom: 50px;
+        line-height: 1.1;
+        color: #333;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        white-space: pre-line;
+    }
+
+    .supplier-text {
+        color: #ff6b6b;
+    }
+
+    .shop-button-container {
+        margin: 40px 0;
+    }
+
+    .shop-button {
+        background: #ff6b6b;
+        color: white;
+        border: none;
+        padding: 22px 70px;
+        font-size: 1.6rem;
+        font-weight: bold;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .shop-button:hover {
+        background: #ff5252;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+    }
+
+    .image-content {
+        flex: 0 0 55%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        margin-top: -30px;
+        margin-right: 0;
+    }
+
+    .hero-image {
+        max-width: 750px;
+        width: 130%;
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.15));
+        transform: scale(1.15);
+        margin-right: -50px;
+        animation: float 6s ease-in-out infinite;
+        position: relative;
+        z-index: 0;              
+        pointer-events: none;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: scale(1.15) translateY(0px) rotate(0deg); }
+        50% { transform: scale(1.15) translateY(-20px) rotate(2deg); }
+    }
+
+    .contact-info {
+        position: absolute;
+        left: 80px;
+        bottom: 40px;
+        text-align: left;
+        color: #333;
+        font-size: 1.1rem;
+        line-height: 1.7;
+    }
+
+    .hotline {
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .work-schedule {
+        font-weight: 500;
+    }
+
+    .hotline strong,
+    .work-schedule strong {
+        color: #D4AF37;
+        font-weight: 600;
+    }
+
+    /* ===== ФУТЕР КАК ХЕДЕР, ПО ЦЕНТРУ ===== */
+
+    .site-footer {
+        width: 100%;
+        background-color: #F7C48F;
+        color: #333;
+        padding: 25px 0 12px;
+        margin-top: 0;
+        border-top: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .footer-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        text-align: left;
+    }
+
+    .footer-column {
+        flex: 0 1 220px;
+        max-width: 260px;
+    }
+
+    .footer-column h3,
+    .footer-column h4 {
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    .footer-column p {
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .footer-column ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .footer-column ul li {
+        margin-bottom: 6px;
+        font-size: 0.95rem;
+    }
+
+    .footer-column a {
+        color: #333;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .footer-column a:hover {
+        color: #8B7355;
+    }
+
+    .footer-socials {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .footer-socials a {
+        padding: 5px 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.5);
+        font-size: 0.9rem;
+        color: #333;
+    }
+
+    .footer-socials a:hover {
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .footer-bottom {
+        max-width: 1200px;
+        margin: 15px auto 0;
+        padding: 10px 20px 0;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
+    /* ===== АДАПТИВ ===== */
+
+    @media (max-width: 768px) {
         .main-content {
-            min-height: calc(100vh - 70px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 35px 0 35px 75px;
-            background: linear-gradient(135deg, #FFF7D9 0%, #F7C48F 100%);
-            color: #333;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-section {
-            width: 100%;
+            padding: 40px 30px;
+            overflow: visible;
         }
 
         .hero-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 40px;
-            max-width: 1400px;
-            width: 100%;
+            flex-direction: column;
+            text-align: center;
+            gap: 15px;
         }
 
         .text-content {
-            flex: 0 0 45%;
-            max-width: 500px;
-            margin-top: 40px;
+            flex: 1;
+            max-width: 100%;
+            margin-top: 0;
         }
 
         .main-title {
-            font-size: 3.2rem;
-            font-weight: bold;
-            margin-bottom: 50px;
-            line-height: 1.1;
-            color: #333;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            white-space: pre-line;
-        }
-
-        .supplier-text {
-            color: #ff6b6b;
-        }
-
-        .shop-button-container {
-            margin: 40px 0;
+            font-size: 2.2rem;
+            margin-bottom: 30px;
         }
 
         .shop-button {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 22px 70px;
-            font-size: 1.6rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-decoration: none;
-            display: inline-block;
+            padding: 18px 50px;
+            font-size: 1.3rem;
         }
 
-        .shop-button:hover {
-            background: #ff5252;
-            transform: translateY(-3px);
-            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
-        }
-
-        /* Стили для изображения пакета с анимацией */
         .image-content {
-            flex: 0 0 55%;
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-start;
-            margin-top: -30px;
-            margin-right: 0;
+            flex: 1;
+            justify-content: center;
+            margin-top: 0;
         }
 
         .hero-image {
-            max-width: 750px;
-            width: 130%;
-            height: auto;
-            object-fit: contain;
-            filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.15));
-            transform: scale(1.15);
-            margin-right: -50px;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { 
-                transform: scale(1.15) translateY(0px) rotate(0deg); 
-            }
-            50% { 
-                transform: scale(1.15) translateY(-20px) rotate(2deg); 
-            }
+            max-width: 450px;
+            width: 100%;
+            transform: scale(1);
+            margin-right: 0;
         }
 
         .contact-info {
-            position: absolute;
-            left: 80px;
-            bottom: 40px;
-            text-align: left;
-            color: #333;
+            left: 30px;
+            bottom: 25px;
+            font-size: 1rem;
+        }
+
+        .right-section {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 5px;
+        }
+
+        .buttonn, .vxod, .admin {
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+
+        .footer-inner {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 20px;
+        }
+
+        .footer-column {
+            max-width: none;
+        }
+
+        .footer-socials {
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .main-content {
+            padding: 30px 20px;
+        }
+
+        .main-title {
+            font-size: 1.8rem;
+        }
+
+        .shop-button {
+            padding: 15px 40px;
             font-size: 1.1rem;
-            line-height: 1.7;
+            letter-spacing: 2px;
         }
 
-        .hotline {
-            margin-bottom: 8px;
-            font-weight: 500;
+        .hero-image {
+            max-width: 350px;
         }
 
-        .work-schedule {
-            font-weight: 500;
+        .contact-info {
+            left: 20px;
+            bottom: 20px;
+            font-size: 0.9rem;
         }
 
-        .hotline strong,
-        .work-schedule strong {
-            color: #D4AF37;
-            font-weight: 600;
+        .right-section {
+            gap: 3px;
         }
 
-        /* Адаптивность */
-        @media (max-width: 1200px) {
-            .hero-content {
-                gap: 30px;
-            }
-            
-            .main-title {
-                font-size: 2.8rem;
-            }
-            
-            .text-content {
-                flex: 0 0 50%;
-            }
-            
-            .image-content {
-                flex: 0 0 50%;
-                margin-top: -20px;
-            }
-            
-            .hero-image {
-                max-width: 650px;
-                width: 120%;
-                transform: scale(1.1);
-                margin-right: -30px;
-            }
+        .buttonn, .vxod, .admin {
+            padding: 6px 12px;
+            font-size: 11px;
         }
 
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 40px 30px;
-                overflow: visible;
-            }
-            
-            .hero-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
-            }
-            
-            .text-content {
-                flex: 1;
-                max-width: 100%;
-                margin-top: 0;
-            }
-            
-            .main-title {
-                font-size: 2.2rem;
-                margin-bottom: 30px;
-            }
-            
-            .shop-button {
-                padding: 18px 50px;
-                font-size: 1.3rem;
-            }
-            
-            .image-content {
-                flex: 1;
-                justify-content: center;
-                margin-top: 0;
-            }
-            
-            .hero-image {
-                max-width: 450px;
-                width: 100%;
-                transform: scale(1);
-                margin-right: 0;
-            }
-            
-            .contact-info {
-                left: 30px;
-                bottom: 25px;
-                font-size: 1rem;
-            }
-            
-            .right-section {
-                flex-wrap: wrap;
-                justify-content: flex-end;
-                gap: 5px;
-            }
-            
-            .buttonn, .vxod, .admin {
-                padding: 8px 15px;
-                font-size: 12px;
-            }
+        .corzina-icon {
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
         }
-
-        @media (max-width: 480px) {
-            .main-content {
-                padding: 30px 20px;
-            }
-            
-            .main-title {
-                font-size: 1.8rem;
-            }
-            
-            .shop-button {
-                padding: 15px 40px;
-                font-size: 1.1rem;
-                letter-spacing: 2px;
-            }
-            
-            .hero-image {
-                max-width: 350px;
-            }
-            
-            .contact-info {
-                left: 20px;
-                bottom: 20px;
-                font-size: 0.9rem;
-            }
-            
-            .right-section {
-                gap: 3px;
-            }
-            
-            .buttonn, .vxod, .admin {
-                padding: 6px 12px;
-                font-size: 11px;
-            }
-            
-            .corzina-icon {
-                width: 40px;
-                height: 40px;
-                margin-left: 10px;
-            }
-        }
+    }
     </style>
+
 </head>
 <body>
     <div class="container">
@@ -409,10 +480,6 @@
                     <div class="cart-count" id="cartCounter" style="display: none;">0</div>
                 </div>
                 
-                
-                
-                <!-- Кнопка выхода -->
-                <!--<button id="logoutBtn" class="buttonn" style="padding: 8px 15px; border: none;">Выйти</button> -->
             </div>
         </div>
     </div>
@@ -434,203 +501,238 @@
                 </div>
             </div>
         </section>
-
-        <footer class="contact-info">
-            <div class="hotline">
-                <strong>Горячая линия</strong> +375 (25) SPH 57 66
-            </div>
-            <div class="work-schedule">
-                <strong>График работы:</strong> с 10:00 до 17:00 (в будние)
-            </div>
-        </footer>
     </main>
+    
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-column">
+          <h3>StoreMarket</h3>
+          <p>Современный онлайн‑магазин свежих продуктов с быстрой доставкой.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Навигация</h4>
+          <ul>
+            <li><a href="index.html">Главная</a></li>
+            <li><a href="shop.html">Магазин</a></li>
+            <li><a href="cart.html">Корзина</a></li>
+            <li><a href="profile.html">Личный кабинет</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Контакты</h4>
+          <ul>
+            <li>+375 (25) SPH 57 66</li>
+            <li>support@storemarket.by</li>
+            <li>г. Минск</li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Мы в соцсетях</h4>
+          <div class="footer-socials">
+            <a href="#">VK</a>
+            <a href="#">Telegram</a>
+            <a href="#">Instagram</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 StoreMarket. Все права защищены.</span>
+      </div>
+    </footer>
 
     <script>
-        // Конфигурация API
-        const API_BASE_URL = 'http://localhost:8000';
-        
-        // Функция для обновления счетчика корзины
-        function updateCartCounter() {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-            const counter = document.getElementById('cartCounter');
-            
-            if (counter) {
-                if (totalItems > 0) {
-                    counter.textContent = totalItems;
-                    counter.style.display = 'flex';
-                } else {
-                    counter.style.display = 'none';
-                }
+    const API_BASE_URL = 'http://localhost:8000';
+
+    // Проверка: пользователь авторизован?
+    function isUserAuthenticated() {
+        const token = localStorage.getItem('user_token');
+        const userInfo = localStorage.getItem('user_info');
+        return !!(token && userInfo);
+    }
+
+    // Обновление счетчика корзины
+    function updateCartCounter() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        const counter = document.getElementById('cartCounter');
+
+        if (counter) {
+            if (totalItems > 0) {
+                counter.textContent = totalItems;
+                counter.style.display = 'flex';
+            } else {
+                counter.style.display = 'none';
             }
         }
-        
-        // Функция для проверки авторизации
-        function checkAuth() {
-            const token = localStorage.getItem('user_token');
-            const userInfo = localStorage.getItem('user_info');
-            const guestSection = document.getElementById('guestSection');
-            const loggedInSection = document.getElementById('loggedInSection');
-            
-            if (token && userInfo) {
-                try {
-                    const user = JSON.parse(userInfo);
-                    console.log('Пользователь авторизован:', user.login);
-                    
-                    // Показываем секцию для авторизованных
-                    if (guestSection) guestSection.style.display = 'none';
-                    if (loggedInSection) {
-                        loggedInSection.style.display = 'flex';
-                        loggedInSection.style.alignItems = 'center';
-                    }
-                    
-                    // Обновляем счетчик корзины
-                    updateCartCounter();
-                    
-                    return true;
-                } catch (error) {
-                    console.error('Ошибка парсинга пользователя:', error);
-                    localStorage.removeItem('user_token');
-                    localStorage.removeItem('user_info');
+    }
+
+    // Отрисовка хедера в зависимости от авторизации
+    function checkAuth() {
+        const token = localStorage.getItem('user_token');
+        const userInfo = localStorage.getItem('user_info');
+        const guestSection = document.getElementById('guestSection');
+        const loggedInSection = document.getElementById('loggedInSection');
+
+        if (token && userInfo) {
+            try {
+                const user = JSON.parse(userInfo);
+                console.log('Пользователь авторизован:', user.login);
+
+                if (guestSection) guestSection.style.display = 'none';
+                if (loggedInSection) {
+                    loggedInSection.style.display = 'flex';
+                    loggedInSection.style.alignItems = 'center';
                 }
+
+                updateCartCounter();
+                return true;
+            } catch (error) {
+                console.error('Ошибка парсинга пользователя:', error);
+                localStorage.removeItem('user_token');
+                localStorage.removeItem('user_info');
             }
-            
-            // Показываем гостевую версию
-            if (guestSection) guestSection.style.display = 'flex';
-            if (loggedInSection) loggedInSection.style.display = 'none';
-            
+        }
+
+        if (guestSection) guestSection.style.display = 'flex';
+        if (loggedInSection) loggedInSection.style.display = 'none';
+
+        return false;
+    }
+
+    // Выход
+    async function logout() {
+        const token = localStorage.getItem('user_token');
+        if (token) {
+            try {
+                await fetch(`${API_BASE_URL}/users/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token: token })
+                });
+            } catch (error) {
+                console.error('Ошибка выхода:', error);
+            }
+        }
+
+        localStorage.removeItem('user_token');
+        localStorage.removeItem('user_info');
+
+        checkAuth();
+        alert('Вы вышли из системы');
+
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 500);
+    }
+
+    // Проверка токена на сервере
+    async function verifyToken(token) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/check-token/${token}`);
+            const result = await response.json();
+            return result.valid;
+        } catch (error) {
+            console.error('Ошибка проверки токена:', error);
             return false;
         }
-        
-        // Функция для выхода
-        async function logout() {
-            const token = localStorage.getItem('user_token');
-            if (token) {
-                try {
-                    await fetch(`${API_BASE_URL}/users/logout`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ token: token })
-                    });
-                } catch (error) {
-                    console.error('Ошибка выхода:', error);
+    }
+
+    // Обработчик иконки корзины (гости не могут зайти в cart.html)
+    function setupCartIconHandler() {
+        const cartIcon = document.getElementById('cartIcon');
+        if (cartIcon) {
+            cartIcon.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (!isUserAuthenticated()) {
+                    alert('Для доступа к корзине необходимо войти в систему');
+                    window.location.href = 'vxod.html';
+                    return;
                 }
-            }
-            
-            // Очищаем локальное хранилище
-            localStorage.removeItem('user_token');
-            localStorage.removeItem('user_info');
-            
-            // Обновляем интерфейс
-            checkAuth();
-            
-            // Показываем уведомление
-            alert('Вы вышли из системы');
-            
-            // Перенаправляем на главную
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 500);
+                window.location.href = 'cart.html';
+            });
         }
-        
-        // Функция для проверки токена на сервере
-        async function verifyToken(token) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/users/check-token/${token}`);
-                const result = await response.json();
-                return result.valid;
-            } catch (error) {
-                console.error('Ошибка проверки токена:', error);
+    }
+
+    // Блокируем добавление в корзину на shop.html для неавторизованных
+    function setupAddToCartProtection() {
+        // Кнопки должны иметь класс .add-to-cart и data-product-id
+        const addButtons = document.querySelectorAll('.add-to-cart');
+        if (!addButtons.length) return;
+
+        addButtons.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                if (!isUserAuthenticated()) {
+                    e.preventDefault();
+                    alert('Для добавления товаров в корзину необходимо войти в систему');
+                    window.location.href = 'vxod.html';
+                    return false;
+                }
+                // если авторизован — тут вызывается твоя текущая логика addToCart
+                // пример:
+                // const productId = this.getAttribute('data-product-id');
+                // addToCart(productId);
+            });
+        });
+    }
+
+    // Блокируем оформление заказа на cart.html для неавторизованных (на всякий случай)
+    function setupOrderFormProtection() {
+        const orderForm = document.getElementById('orderForm');
+        if (!orderForm) return;
+
+        orderForm.addEventListener('submit', function (e) {
+            if (!isUserAuthenticated()) {
+                e.preventDefault();
+                alert('Для оформления заказа необходимо войти в систему');
+                window.location.href = 'vxod.html';
                 return false;
             }
-        }
-        
-        // Обработчик для иконки корзины
-        function setupCartIconHandler() {
-            const cartIcon = document.getElementById('cartIcon');
-            if (cartIcon) {
-                cartIcon.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Проверяем авторизацию
-                    const token = localStorage.getItem('user_token');
-                    if (!token) {
-                        alert('Для доступа к корзине необходимо войти в систему');
-                        window.location.href = 'vxod.html';
-                        return;
-                    }
-                    
-                    // Переходим на страницу корзины
-                    console.log('Переход на страницу корзины');
-                    window.location.href = 'cart.html';
-                });
-            }
-        }
-        
-        // Обработчик для кнопки магазина
-        function setupShopButtonHandler() {
-            const shopButton = document.getElementById('shopButton');
-            if (shopButton) {
-                shopButton.addEventListener('click', function(e) {
-                    const token = localStorage.getItem('user_token');
-                    if (!token) {
-                        e.preventDefault();
-                        alert('Для покупок необходимо войти в систему');
-                        window.location.href = 'vxod.html';
-                        return false;
-                    }
-                    return true;
-                });
-            }
-        }
-        
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Главная страница загружена');
-            
-            // Проверяем авторизацию
-            const isAuthenticated = checkAuth();
-            
-            // Если пользователь авторизован, проверяем токен
-            if (isAuthenticated) {
-                const token = localStorage.getItem('user_token');
-                if (token) {
-                    const isValid = await verifyToken(token);
-                    if (!isValid) {
-                        // Токен невалидный, выходим
-                        localStorage.removeItem('user_token');
-                        localStorage.removeItem('user_info');
-                        checkAuth();
-                        alert('Сессия истекла. Пожалуйста, войдите снова.');
-                    }
+        });
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', async function () {
+        console.log('Страница загружена');
+
+        const isAuthenticated = checkAuth();
+
+        if (isAuthenticated) {
+            const token = localStorage.getItem('user_token');
+            if (token) {
+                const isValid = await verifyToken(token);
+                if (!isValid) {
+                    localStorage.removeItem('user_token');
+                    localStorage.removeItem('user_info');
+                    checkAuth();
+                    alert('Сессия истекла. Пожалуйста, войдите снова.');
                 }
             }
-            
-            // Настраиваем обработчики
-            setupCartIconHandler();
-            setupShopButtonHandler();
-            
-            // Назначаем обработчик для кнопки выхода
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', logout);
-            }
-            
-            // Проверяем наличие товаров в корзине (даже для неавторизованных)
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            if (cart.length > 0) {
-                console.log('В корзине товаров:', cart.length);
-            }
-        });
-        
-        // Обновляем счетчик корзины при изменении localStorage
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'cart') {
-                updateCartCounter();
-            }
-        });
-    </script>
+        }
+
+        setupCartIconHandler();
+        setupAddToCartProtection();
+        setupOrderFormProtection();
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+        }
+
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        if (cart.length > 0) {
+            console.log('В корзине товаров:', cart.length);
+        }
+    });
+
+    // Реакция на изменения корзины в localStorage
+    window.addEventListener('storage', function (e) {
+        if (e.key === 'cart') {
+            updateCartCounter();
+        }
+    });
+</script>
+
 </body>
 </html>

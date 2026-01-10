@@ -579,6 +579,14 @@
     // Конфигурация API - используем уже существующие эндпоинты
     const API_BASE_URL = 'http://localhost:8000';
     
+    // **ДОБАВЛЕНО ДЛЯ ПРОВЕРКИ АВТОРИЗАЦИИ**
+    // Проверка: пользователь авторизован?
+    function isUserAuthenticated() {
+        const token = localStorage.getItem('user_token');
+        const userInfo = localStorage.getItem('user_info');
+        return !!(token && userInfo);
+    }
+
     // Эмодзи для категорий
     const categoryEmojis = {
         'овощи': '🥦',
@@ -638,6 +646,7 @@
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
         const counter = document.getElementById('cartCounter');
+        if (!counter) return;
         if (totalItems > 0) {
             counter.textContent = totalItems;
             counter.style.display = 'flex';
@@ -691,13 +700,11 @@
             let url = `${API_BASE_URL}/products`;
             const params = new URLSearchParams();
             
-            // Если выбрана конкретная категория (не "all"), добавляем фильтр на сервер
             if (categoryId && categoryId !== 'all') {
                 params.append('category_id', categoryId);
                 console.log('Фильтр по категории ID:', categoryId);
             }
             
-            // Если нужно, можно добавить low_stock фильтр
             params.append('low_stock', 'false');
             
             if (params.toString()) {
@@ -714,7 +721,6 @@
             let products = await response.json();
             console.log('Получены товары:', products.length, 'для категории:', categoryId);
             
-            // Фильтрация поиска на клиенте (если нужна)
             if (searchQuery && searchQuery.trim()) {
                 const query = searchQuery.toLowerCase();
                 products = products.filter(product => 
@@ -764,7 +770,6 @@
         container.innerHTML = '<div class="products-grid" id="productsGrid"></div>';
         const grid = document.getElementById('productsGrid');
         
-        // Получаем активную категорию для отображения в заголовке
         const activeCategoryButton = document.querySelector('.category-btn.active');
         let categoryName = 'Все товары';
         
@@ -772,7 +777,6 @@
             categoryName = activeCategoryButton.textContent.replace(/[🥦🍎🥛🥩🍚🥤🍞🍫🐟🦐❄️🥫🌶️☕🛒]/g, '').trim();
         }
         
-        // Обновляем заголовок
         const shopTitle = document.querySelector('.shop-title');
         if (shopTitle) {
             shopTitle.textContent = categoryName;
@@ -787,11 +791,14 @@
             const isLowStock = product.current_quantity <= product.min_quantity;
             const stockPercentage = Math.min(100, (product.current_quantity / (product.min_quantity || 1)) * 100);
             
-            // Форматирование цены
             const formattedPrice = product.price ? 
                 `${product.price.toFixed(2)} Br` : 
                 'Цена не указана';
-            
+
+            const inStock = product.current_quantity > 0;
+            const canBuyText = inStock ? 'В корзину' : 'Нет в наличии';
+            const disabledAttr = inStock ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"';
+
             productCard.innerHTML = `
                 <div class="product-image">${getCategoryEmoji(product.category_name)}</div>
                 <div class="product-info">
@@ -816,11 +823,12 @@
                     <div class="product-price">${formattedPrice}</div>
                     
                     <button class="add-to-cart" 
-                            data-product-id="${product.id}"
-                            data-product-name="${product.name}"
-                            data-product-price="${product.price || 0}"
-                            ${isLowStock ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
-                        ${isLowStock ? 'Нет в наличии' : 'В корзину'}
+                        data-product-id="${product.id}"
+                        data-product-name="${product.name}"
+                        data-product-price="${product.price || 0}"
+                        data-max-qty="${product.current_quantity || 0}"
+                        ${disabledAttr}>
+                        ${canBuyText}
                     </button>
                 </div>
             `;
@@ -870,7 +878,18 @@
         const addToCartButtons = document.querySelectorAll('.add-to-cart:not([disabled])');
         
         addToCartButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(e) {
+
+                // **ДОБАВЛЕНО ДЛЯ ПРОВЕРКИ АВТОРИЗАЦИИ**
+                if (!isUserAuthenticated()) {
+                    e.preventDefault();
+                    showNotification('Для добавления товаров в корзину необходимо войти в систему', 'warning');
+                    setTimeout(() => {
+                        window.location.href = 'vxod.html';
+                    }, 3000);
+                    return;
+                }
+
                 const productId = this.getAttribute('data-product-id');
                 const productName = this.getAttribute('data-product-name');
                 const productPrice = parseFloat(this.getAttribute('data-product-price'));
@@ -884,15 +903,24 @@
     // Добавление в корзину
     function addToCart(productId, productName, price) {
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        
-        // Проверяем, есть ли уже такой товар в корзине
+
+        const btn = document.querySelector(`.add-to-cart[data-product-id="${productId}"]`);
+        const maxQty = btn ? parseInt(btn.getAttribute('data-max-qty')) || 0 : 0;
+
         const existingItemIndex = cart.findIndex(item => item.id == productId);
-        
+        let currentQty = existingItemIndex !== -1 ? (cart[existingItemIndex].quantity || 0) : 0;
+
+        if (maxQty > 0 && currentQty >= maxQty) {
+            showNotification(
+                `Нельзя добавить больше ${maxQty} шт. этого товара (столько есть на складе)`,
+                'warning'
+            );
+            return;
+        }
+
         if (existingItemIndex !== -1) {
-            // Увеличиваем количество существующего товара
-            cart[existingItemIndex].quantity += 1;
+            cart[existingItemIndex].quantity = currentQty + 1;
         } else {
-            // Добавляем новый товар
             cart.push({
                 id: productId,
                 name: productName,
@@ -901,22 +929,20 @@
                 addedAt: new Date().toISOString()
             });
         }
-        
+
         localStorage.setItem('cart', JSON.stringify(cart));
         updateCartCounter();
-        
-        // Анимация кнопки
-        const button = document.querySelector(`.add-to-cart[data-product-id="${productId}"]`);
-        if (button) {
-            const originalText = button.textContent;
-            const originalBg = button.style.background;
-            
-            button.style.background = '#4CAF50';
-            button.textContent = '✓ Добавлено';
-            
+
+        if (btn) {
+            const originalText = btn.textContent;
+            const originalBg = btn.style.background;
+
+            btn.style.background = '#4CAF50';
+            btn.textContent = '✓ Добавлено';
+
             setTimeout(() => {
-                button.style.background = originalBg;
-                button.textContent = originalText;
+                btn.style.background = originalBg;
+                btn.textContent = originalText;
             }, 1500);
         }
     }
@@ -924,22 +950,23 @@
     // Обработчик для ссылки корзины
     function setupCartLink() {
         const cartLink = document.querySelector('.cart-link');
+        if (!cartLink) return;
         
         cartLink.addEventListener('click', function(e) {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             
             if (cart.length === 0) {
-                e.preventDefault(); // Отменяем переход, если корзина пуста
+                e.preventDefault();
                 showNotification('Корзина пуста', 'info');
                 
-                // Анимация иконки корзины
                 const icon = this.querySelector('.corzina-icon');
-                icon.style.transform = 'scale(1.2)';
-                setTimeout(() => {
-                    icon.style.transform = 'scale(1)';
-                }, 300);
+                if (icon) {
+                    icon.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        icon.style.transform = 'scale(1)';
+                    }, 300);
+                }
             }
-            // Если корзина не пустая - переход на cart.html произойдет автоматически
         });
     }
 
@@ -947,7 +974,6 @@
     document.addEventListener('DOMContentLoaded', async function() {
         console.log('Страница магазина загружена');
         
-        // Проверяем доступность сервера
         try {
             const response = await fetch(`${API_BASE_URL}/health`);
             if (!response.ok) {
@@ -959,22 +985,12 @@
             showNotification('Сервер не доступен. Запустите бэкенд на localhost:8000', 'error');
         }
         
-        // Загружаем категории
         await loadCategories();
-        
-        // Загружаем все товары
         await loadProducts();
-        
-        // Настраиваем поиск
         setupSearch();
-        
-        // Настраиваем обработчик для корзины
         setupCartLink();
-        
-        // Обновляем счетчик корзины
         updateCartCounter();
         
-        // Обновление данных каждые 60 секунд
         setInterval(() => {
             const activeCategory = document.querySelector('.category-btn.active');
             const categoryId = activeCategory ? activeCategory.getAttribute('data-category') : 'all';
@@ -988,6 +1004,7 @@
         console.error('Глобальная ошибка:', e.error);
         showNotification('Произошла ошибка приложения', 'error');
     });
-    </script>
+</script>
+
 </body>
 </html>
